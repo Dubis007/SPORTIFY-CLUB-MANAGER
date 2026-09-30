@@ -1,0 +1,15 @@
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.csproj.AssemblyReference.cache
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.AssemblyInfoInputs.cache
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.AssemblyInfo.cs
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.csproj.CoreCompileInputs.cache
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\bin\Debug\net10.0\Sportify.Application.deps.json
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\bin\Debug\net10.0\Sportify.Application.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\bin\Debug\net10.0\Sportify.Application.pdb
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\bin\Debug\net10.0\Sportify.Domain.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\bin\Debug\net10.0\Sportify.Domain.pdb
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.7036A82F.Up2Date
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\refint\Sportify.Application.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\Sportify.Application.pdb
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Application\obj\Debug\net10.0\ref\Sportify.Application.dll

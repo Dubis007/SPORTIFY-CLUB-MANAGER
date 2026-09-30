@@ -1,0 +1,11 @@
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\bin\Debug\net10.0\Sportify.Domain.deps.json
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\bin\Debug\net10.0\Sportify.Domain.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\bin\Debug\net10.0\Sportify.Domain.pdb
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.AssemblyInfoInputs.cache
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.AssemblyInfo.cs
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.csproj.CoreCompileInputs.cache
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\refint\Sportify.Domain.dll
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\Sportify.Domain.pdb
+C:\Users\duvan\OneDrive\Documentos\nuevas_tecnologias_2026\PROYECTO\SPORTIFY-CLUB-MANAGER\backend\Sportify.Domain\obj\Debug\net10.0\ref\Sportify.Domain.dll

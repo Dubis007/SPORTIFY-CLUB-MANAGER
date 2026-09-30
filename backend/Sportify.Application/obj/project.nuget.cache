@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "63BDXCwpA0g=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\duvan\\OneDrive\\Documentos\\nuevas_tecnologias_2026\\PROYECTO\\SPORTIFY-CLUB-MANAGER\\backend\\Sportify.Application\\Sportify.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\duvan\\.nuget\\packages\\bcrypt.net-next\\4.2.0\\bcrypt.net-next.4.2.0.nupkg.sha512"
+  ],
+  "logs": []
+}
