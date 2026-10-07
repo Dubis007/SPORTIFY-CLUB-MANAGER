@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Sportify.Infrastructure.Persistence;
+using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
 namespace Sportify.Api.Controllers;
@@ -11,54 +10,42 @@ namespace Sportify.Api.Controllers;
 [Authorize(Roles = "ADMIN")]
 public class MembershipPlansController : ControllerBase
 {
-    private readonly SportifyDbContext _context;
+    private readonly IMembershipPlanService _planService;
 
-    public MembershipPlansController(SportifyDbContext context)
+    public MembershipPlansController(IMembershipPlanService planService)
     {
-        _context = context;
+        _planService = planService;
     }
 
     [HttpGet]
     [AllowAnonymous] // Permitir ver los planes sin login
     public async Task<IActionResult> GetAll()
     {
-        var planes = await _context.PlanesMembresia.ToListAsync();
+        var planes = await _planService.GetAllAsync();
         return Ok(planes);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PlanMembresia dto)
     {
-        dto.CreadoEn = DateTime.UtcNow;
-        _context.PlanesMembresia.Add(dto);
-        await _context.SaveChangesAsync();
-        return Ok(dto);
+        var result = await _planService.CreateAsync(dto);
+        return Ok(result);
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] PlanMembresia dto)
     {
-        var plan = await _context.PlanesMembresia.FindAsync(id);
-        if (plan == null) return NotFound();
-
-        plan.Nombre = dto.Nombre;
-        plan.Descripcion = dto.Descripcion;
-        plan.PrecioCOP = dto.PrecioCOP;
-        plan.DuracionDias = dto.DuracionDias;
-        plan.Activo = dto.Activo;
-
-        await _context.SaveChangesAsync();
-        return Ok(plan);
+        var result = await _planService.UpdateAsync(id, dto);
+        if (result == null) return NotFound();
+        return Ok(result);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var plan = await _context.PlanesMembresia.FindAsync(id);
-        if (plan == null) return NotFound();
+        var success = await _planService.DeleteAsync(id);
+        if (!success) return NotFound();
 
-        plan.Activo = false;
-        await _context.SaveChangesAsync();
         return Ok(new { message = "Plan desactivado correctamente." });
     }
 }

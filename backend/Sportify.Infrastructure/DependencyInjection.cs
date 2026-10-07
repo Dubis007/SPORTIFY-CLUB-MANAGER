@@ -20,6 +20,13 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+        services.AddScoped<ITrainingRepository, TrainingRepository>();
+        services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+        services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+        services.AddScoped<ILocationRepository, LocationRepository>();
+        services.AddScoped<IMembershipPlanRepository, MembershipPlanRepository>();
+        services.AddScoped<IMemberProfileRepository, MemberProfileRepository>();
 
         // Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();

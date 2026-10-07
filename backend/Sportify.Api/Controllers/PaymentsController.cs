@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
-using Sportify.Domain.Entities;
-using Sportify.Domain.Enums;
-using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Api.Controllers;
 
@@ -16,12 +12,10 @@ namespace Sportify.Api.Controllers;
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
-    private readonly SportifyDbContext _context;
 
-    public PaymentsController(IPaymentService paymentService, SportifyDbContext context)
+    public PaymentsController(IPaymentService paymentService)
     {
         _paymentService = paymentService;
-        _context = context;
     }
 
     [HttpGet]
@@ -37,29 +31,8 @@ public class PaymentsController : ControllerBase
     [Authorize(Roles = "CONTADOR,ADMIN")]
     public async Task<IActionResult> GetOptions()
     {
-        // Usuarios que sean MIEMBROS
-        var members = await _context.Usuarios
-            .Include(u => u.UsuarioRoles)
-            .ThenInclude(ur => ur.Rol)
-            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO"))
-            .Select(u => new { u.Id, u.Nombre, u.Apellido })
-            .OrderBy(u => u.Nombre)
-            .ToListAsync();
-
-        // Membresias activas, suspendidas o vencidas, o planes
-        var memberships = await _context.Membresias
-            .Include(m => m.PlanMembresia)
-            .Select(m => new { 
-                m.Id, 
-                m.UsuarioId, 
-                m.Estado, 
-                Plan = m.PlanMembresia.Nombre,
-                m.FechaInicio,
-                m.FechaFin
-            })
-            .ToListAsync();
-            
-        return Ok(new { Members = members, Memberships = memberships });
+        var options = await _paymentService.GetOptionsAsync();
+        return Ok(options);
     }
 
     [HttpPost]
@@ -85,30 +58,7 @@ public class PaymentsController : ControllerBase
         if (!int.TryParse(aprobadorIdClaim, out var aprobadorId))
             return Unauthorized();
 
-        var pago = new Pago
-        {
-            UsuarioId = dto.UsuarioId,
-            MembresiaId = dto.MembresiaId,
-            MontoCOP = dto.MontoCOP,
-            Estado = EstadoPago.APROBADO,
-            FechaPago = DateTime.UtcNow,
-            FechaAprobacion = DateTime.UtcNow,
-            AprobadoPorId = aprobadorId
-        };
-
-        _context.Pagos.Add(pago);
-        
-        if (dto.MembresiaId.HasValue) 
-        {
-            var membresia = await _context.Membresias.FindAsync(dto.MembresiaId);
-            if (membresia != null && membresia.Estado != EstadoMembresia.ACTIVA)
-            {
-                membresia.Estado = EstadoMembresia.ACTIVA;
-            }
-        }
-        
-        await _context.SaveChangesAsync();
-        
+        var pago = await _paymentService.ManualRegisterAsync(aprobadorId, dto);
         return Ok(pago);
     }
 
@@ -116,48 +66,15 @@ public class PaymentsController : ControllerBase
     [Authorize(Roles = "MIEMBRO,CONTADOR,ADMIN")]
     public async Task<IActionResult> ManualWithReceipt([FromForm] ManualPaymentWithReceiptDto dto)
     {
-        // 1. Guardar el archivo en el sistema de archivos
-        if (dto.Archivo == null || dto.Archivo.Length == 0)
-            return BadRequest(new { message = "Se requiere un archivo PDF/Imagen válido." });
-
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "receipts");
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
-        var uniqueFileName = Guid.NewGuid().ToString() + "_" + dto.Archivo.FileName;
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        try
         {
-            await dto.Archivo.CopyToAsync(stream);
+            var result = await _paymentService.ManualWithReceiptAsync(dto);
+            return Ok(result);
         }
-
-        // 2. Crear el pago primero
-        var pago = new Pago
+        catch (ArgumentException ex)
         {
-            UsuarioId = dto.UsuarioId,
-            MembresiaId = dto.MembresiaId,
-            MontoCOP = dto.MontoCOP,
-            Estado = EstadoPago.PENDIENTE,
-            FechaPago = DateTime.UtcNow
-        };
-        _context.Pagos.Add(pago);
-        await _context.SaveChangesAsync();
-
-        // 3. Crear el registro en ComprobantesPago
-        var comprobante = new ComprobantePago
-        {
-            PagoId = pago.Id,
-            RutaArchivo = "/uploads/receipts/" + uniqueFileName,
-            NombreArchivo = dto.Archivo.FileName,
-            TipoMime = dto.Archivo.ContentType,
-            TamanoBytes = dto.Archivo.Length,
-            SubidoEn = DateTime.UtcNow
-        };
-        _context.ComprobantesPago.Add(comprobante);
-        await _context.SaveChangesAsync();
-        
-        return Ok(new { message = "Comprobante subido exitosamente y pago en estado PENDIENTE." });
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPatch("{id:int}/approve")]
@@ -189,19 +106,4 @@ public class PaymentsController : ControllerBase
         var payment = await _paymentService.RejectAsync(id, aprobadorId, dto);
         return Ok(payment);
     }
-}
-
-public class ManualPaymentDto
-{
-    public int UsuarioId { get; set; }
-    public int? MembresiaId { get; set; }
-    public decimal MontoCOP { get; set; }
-}
-
-public class ManualPaymentWithReceiptDto
-{
-    public int UsuarioId { get; set; }
-    public int? MembresiaId { get; set; }
-    public decimal MontoCOP { get; set; }
-    public IFormFile Archivo { get; set; }
 }
