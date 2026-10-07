@@ -282,3 +282,96 @@
 ## Checkpoint: Escalabilidad
 - [x] La aplicación compila exitosamente.
 - [x] /api/health devuelve estado HTTP 200 (Healthy).
+
+---
+
+## Task 13: Exponer URL del Comprobante en DTOs
+
+**Description:** Modificar el PaymentDto para devolver la URL o ruta relativa del PDF subido, de modo que el frontend sepa dónde buscarlo.
+
+**Acceptance criteria:**
+- [x] Agregar propiedad ComprobanteUrl al PaymentDto.
+- [x] Asegurar que PaymentRepository.GetAllAsync incluya (.Include(p => p.Comprobante)) al consultar pagos.
+- [x] Mapear ComprobanteUrl = p.Comprobante?.RutaArchivo en PaymentService.
+
+**Verification:**
+- [ ] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Application/DTOs/Payments/PaymentDto.cs
+- ackend/Sportify.Application/Services/PaymentService.cs
+- ackend/Sportify.Infrastructure/Repositories/PaymentRepository.cs
+
+**Estimated scope:** Small: 3 files
+
+---
+
+## Task 14: Lógica de Renovación al Aprobar Pago
+
+**Description:** Al aprobar un pago, la membresía debe sumar los días del plan de forma inteligente.
+
+**Acceptance criteria:**
+- [ ] En ApproveAsync, si pago.MembresiaId tiene valor, obtener la membresía (con su Plan incluido).
+- [ ] Si FechaFin actual es mayor a DateTime.UtcNow, sumar los días a esa fecha.
+- [ ] Si ya había expirado, la nueva FechaInicio es hoy, y la FechaFin es hoy + días.
+- [x] Cambiar estado a ACTIVA.
+
+**Verification:**
+- [ ] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Application/Services/PaymentService.cs
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Task 15: Componente PdfViewerModal (Frontend)
+
+**Description:** Un modal reutilizable de React/Tailwind para incrustar el visor de PDF nativo.
+
+**Acceptance criteria:**
+- [x] Crear el componente que reciba isOpen, onClose, pdfUrl, y 	itle.
+- [x] El cuerpo del modal debe usar <iframe src={pdfUrl} className="w-full h-96" />.
+
+**Verification:**
+- [x] Vite compila sin errores.
+
+**Dependencies:** None
+
+**Files likely touched:**
+- rontend/src/components/common/PdfViewerModal.tsx
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Task 16: Interfaz de Gestión de Comprobantes (Frontend)
+
+**Description:** Agregar el botón de visualizar comprobante en la tabla y asegurar que el formulario soporta subida de archivos.
+
+**Acceptance criteria:**
+- [x] En AdminPaymentsPage.tsx y AccountantDashboard.tsx, si el pago tiene comprobanteUrl, mostrar botón "Ver".
+- [x] Al hacer clic, abrir el PdfViewerModal.
+- [x] El endpoint base debe apuntar al dominio correcto del servidor (o concatenarlo).
+
+**Verification:**
+- [x] Vite compila sin errores.
+
+**Dependencies:** Task 13, Task 15
+
+**Files likely touched:**
+- rontend/src/pages/admin/AdminPaymentsPage.tsx
+- rontend/src/pages/accountant/AccountantDashboard.tsx
+
+**Estimated scope:** Medium: 3 files
+
+---
+
+## Checkpoint: Fase 2 Completada
+- [x] Se puede visualizar el PDF haciendo clic en "Ver".
+- [x] Las fechas de renovación avanzan dinámicamente.

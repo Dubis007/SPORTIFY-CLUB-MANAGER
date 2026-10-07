@@ -20,6 +20,7 @@ export interface Payment {
   nombreAprobador?: string;
   comentarioRechazo?: string;
   tieneComprobante: boolean;
+  comprobanteUrl?: string;
 }
 
 export interface Membership {
