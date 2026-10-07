@@ -14,7 +14,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<SportifyDbContext>(options =>
+        services.AddDbContextPool<SportifyDbContext>(options =>
             options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!));
 
         // Repositories
@@ -37,3 +37,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

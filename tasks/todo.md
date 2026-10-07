@@ -44,8 +44,8 @@
 ---
 
 ## Checkpoint: Después de Tareas 1-2
-- [ ] La base de datos es persistente.
-- [ ] La aplicación compila y arranca sin tirar errores.
+- [x] La base de datos es persistente.
+- [x] La aplicación compila y arranca sin tirar errores.
 - [ ] Review with human before proceeding to Task 3.
 
 ---
@@ -144,3 +144,141 @@
 ## Checkpoint: Refactorización Completa
 - [x] No existen referencias a `SportifyDbContext` en la carpeta `Controllers`.
 - [x] Todo compila y los flujos del frontend funcionan correctamente.
+
+---
+
+## Task 7: Implementar Global Exception Handler
+
+**Description:** Evitar que la aplicación devuelva un Stack Trace al frontend cuando ocurre una excepción no controlada. Implementar IExceptionHandler.
+
+**Acceptance criteria:**
+- [x] Crear clase GlobalExceptionHandler implementando IExceptionHandler.
+- [x] Registrar en Program.cs (uilder.Services.AddExceptionHandler<GlobalExceptionHandler>() y pp.UseExceptionHandler()).
+- [x] Estandarizar la respuesta de error con ProblemDetails.
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+- [x] Forzar un error y verificar que la respuesta es un JSON limpio sin el stack trace.
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Api/Middlewares/GlobalExceptionHandler.cs
+- ackend/Sportify.Api/Program.cs
+
+**Estimated scope:** Small: 2 files
+
+---
+
+## Task 8: Configurar Rate Limiting para Autenticación
+
+**Description:** Prevenir ataques de fuerza bruta en los endpoints de Login.
+
+**Acceptance criteria:**
+- [x] Configurar Rate Limiting en Program.cs (AddRateLimiter).
+- [x] Crear una política "AuthRateLimit" (ej. 10 peticiones por minuto).
+- [x] Aplicar la política a UsersController.Login.
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Api/Program.cs
+- ackend/Sportify.Api/Controllers/UsersController.cs
+
+**Estimated scope:** Small: 2 files
+
+---
+
+## Task 9: Implementar Security Headers y revisar política CORS
+
+**Description:** Añadir cabeceras de seguridad HTTP (HSTS, X-Content-Type-Options) y endurecer CORS.
+
+**Acceptance criteria:**
+- [x] Configurar HSTS (si no está activo) para producción.
+- [x] Agregar middleware para inyectar X-Content-Type-Options: nosniff y X-Frame-Options: DENY.
+- [x] Confirmar que CORS está limitado al origin del Frontend (Vite).
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Api/Program.cs
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Checkpoint: Seguridad
+- [x] El frontend funciona correctamente sin bloqueos CORS indebidos.
+- [x] Los errores 500 no muestran stack traces al cliente.
+
+---
+
+## Task 10: Habilitar DbContext Pooling
+
+**Description:** Mejorar el rendimiento de la base de datos reusando instancias del DbContext bajo alta carga.
+
+**Acceptance criteria:**
+- [x] Cambiar AddDbContext a AddDbContextPool en DependencyInjection.cs de Infrastructure.
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Infrastructure/DependencyInjection.cs
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Task 11: Configurar Response Compression
+
+**Description:** Comprimir las respuestas JSON grandes (ej. listados de usuarios o reportes) para ahorrar ancho de banda.
+
+**Acceptance criteria:**
+- [x] Agregar uilder.Services.AddResponseCompression().
+- [x] Configurar proveedores Gzip y Brotli.
+- [x] Habilitar middleware pp.UseResponseCompression().
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Api/Program.cs
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Task 12: Implementar Health Checks
+
+**Description:** Proveer un endpoint para que el Load Balancer o Docker/Kubernetes sepa si la API está viva.
+
+**Acceptance criteria:**
+- [x] Agregar AddHealthChecks() y validación de base de datos (AddMySql o verificar EntityFramework).
+- [x] Mapear endpoint /api/health.
+
+**Verification:**
+- [x] Build succeeds: dotnet build
+
+**Dependencies:** None
+
+**Files likely touched:**
+- ackend/Sportify.Api/Program.cs
+
+**Estimated scope:** Small: 1 file
+
+---
+
+## Checkpoint: Escalabilidad
+- [x] La aplicación compila exitosamente.
+- [x] /api/health devuelve estado HTTP 200 (Healthy).

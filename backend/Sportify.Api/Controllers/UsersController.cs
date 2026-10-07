@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Sportify.Application.DTOs.Users;
 using Sportify.Application.Interfaces;
 
@@ -93,3 +94,4 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 }
+

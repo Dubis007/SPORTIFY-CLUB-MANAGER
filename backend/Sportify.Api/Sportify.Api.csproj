@@ -16,6 +16,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="1.2.39" />
   </ItemGroup>
