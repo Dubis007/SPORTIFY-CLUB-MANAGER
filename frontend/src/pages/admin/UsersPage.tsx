@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Shield, Check, X, UserX, UserCheck, Key, Trash2 } from 'lucide-react';
 import { useUsersViewModel } from '../../viewmodels/useUsersViewModel';
-import { User } from '../../models';
+import { User, UserRole } from '../../models';
 import { CreateUserDto, UpdateUserDto } from '../../services/users/userService';
 
 export default function UsersPage() {
@@ -14,7 +14,7 @@ export default function UsersPage() {
     apellido: '',
     correo: '',
     contrasena: '',
-    rolNombre: 'MIEMBRO',
+    rolNombre: UserRole.MIEMBRO as UserRole,
   });
 
   const handleOpenModal = (user?: User) => {
@@ -29,7 +29,7 @@ export default function UsersPage() {
       });
     } else {
       setEditingUser(null);
-      setFormData({ nombre: '', apellido: '', correo: '', contrasena: '', rolNombre: 'MIEMBRO' });
+      setFormData({ nombre: '', apellido: '', correo: '', contrasena: '', rolNombre: UserRole.MIEMBRO });
     }
     setIsModalOpen(true);
   };
@@ -139,9 +139,9 @@ export default function UsersPage() {
                     <td className="p-4 text-gray-600">{user.correo}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                        ${user.rol === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 
-                          user.rol === 'ENTRENADOR' ? 'bg-blue-100 text-blue-700' :
-                          user.rol === 'CONTADOR' ? 'bg-orange-100 text-orange-700' :
+                        ${user.rol === UserRole.ADMIN ? 'bg-purple-100 text-purple-700' : 
+                          user.rol === UserRole.ENTRENADOR ? 'bg-blue-100 text-blue-700' :
+                          user.rol === UserRole.CONTADOR ? 'bg-orange-100 text-orange-700' :
                           'bg-gray-100 text-gray-700'}`}>
                         <Shield size={12} />
                         {user.rol}
@@ -259,13 +259,13 @@ export default function UsersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select
                   value={formData.rolNombre}
-                  onChange={e => setFormData({...formData, rolNombre: e.target.value})}
+                  onChange={e => setFormData({...formData, rolNombre: e.target.value as UserRole})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none"
                 >
-                  <option value="ADMIN">Administrador</option>
-                  <option value="CONTADOR">Contador</option>
-                  <option value="ENTRENADOR">Entrenador</option>
-                  <option value="MIEMBRO">Miembro</option>
+                  <option value={UserRole.ADMIN}>Administrador</option>
+                  <option value={UserRole.CONTADOR}>Contador</option>
+                  <option value={UserRole.ENTRENADOR}>Entrenador</option>
+                  <option value={UserRole.MIEMBRO}>Miembro</option>
                 </select>
               </div>
 

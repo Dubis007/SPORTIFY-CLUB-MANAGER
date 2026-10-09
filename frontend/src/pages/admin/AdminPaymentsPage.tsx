@@ -3,9 +3,10 @@ import { DollarSign, Download, Check, X, Clock, AlertTriangle, PlusCircle, Credi
 import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
 import { Payment } from '../../models';
 import { apiClient } from '../../services/api/apiClient';
+import Pagination from '../../components/Pagination';
 
 export default function AdminPaymentsPage() {
-  const { payments, options, loading, error, approvePayment, rejectPayment, registerManualPayment, downloadReport } = useAccountantViewModel();
+  const { payments, summary, options, loading, error, page, pageSize, totalCount, totalPages, setPage, changePageSize, approvePayment, rejectPayment, registerManualPayment, downloadReport } = useAccountantViewModel();
   
   const [activeTab, setActiveTab] = useState('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
@@ -78,8 +79,8 @@ export default function AdminPaymentsPage() {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount);
   };
 
-  const pendingCount = payments.filter(p => p.estado === 'PENDIENTE').length;
-  const approvedTotal = payments.filter(p => p.estado === 'APROBADO').reduce((sum, p) => sum + p.montoCOP, 0);
+  const pendingCount = summary.pendientes;
+  const approvedTotal = summary.totalAprobadoCOP;
 
   if (loading && payments.length === 0) return <div className="p-8 text-center text-gray-500">Cargando datos financieros...</div>;
 
@@ -166,6 +167,15 @@ export default function AdminPaymentsPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={setPage}
+                onPageSizeChange={changePageSize}
+              />
             </div>
           </>
         )}

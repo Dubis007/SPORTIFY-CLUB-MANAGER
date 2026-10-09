@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, CalendarDays, DollarSign, Activity } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarDays, Activity } from 'lucide-react';
 import { usePlansViewModel } from '../../viewmodels/usePlansViewModel';
 
 export default function PlansPage() {

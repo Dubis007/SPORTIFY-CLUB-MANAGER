@@ -20,7 +20,7 @@ export default function TrainingsPage() {
   const [attendanceList, setAttendanceList] = useState<AttendanceMember[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<TrainingFormInputs>({
+  const { register, handleSubmit, reset, watch, setValue } = useForm<TrainingFormInputs>({
     resolver: zodResolver(trainingSchema)
   });
 

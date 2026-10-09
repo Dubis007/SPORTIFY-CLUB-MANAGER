@@ -3,6 +3,7 @@ import { Plus, CreditCard, Check, X, Clock, AlertTriangle } from 'lucide-react';
 import { useMembershipsViewModel } from '../../viewmodels/useMembershipsViewModel';
 import { useUsersViewModel } from '../../viewmodels/useUsersViewModel';
 import { CreateMembershipDto } from '../../services/api/membershipService';
+import { UserRole } from '../../models';
 
 export default function MembershipsPage() {
   const { memberships, plans, loading, error, createMembership, updateStatus } = useMembershipsViewModel();
@@ -171,7 +172,7 @@ export default function MembershipsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none"
                 >
                   <option value={0}>Selecciona un usuario...</option>
-                  {users.filter(u => u.activo && u.rol === 'MIEMBRO').map(u => (
+                  {users.filter(u => u.activo && u.rol === UserRole.MIEMBRO).map(u => (
                     <option key={u.id} value={u.id}>{u.nombre} {u.apellido} ({u.correo})</option>
                   ))}
                 </select>

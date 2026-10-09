@@ -1,19 +1,19 @@
 import { apiClient } from '../api/apiClient';
-import { User } from '../../models';
+import { User, UserRole } from '../../models';
 
 export interface CreateUserDto {
   nombre: string;
   apellido: string;
   correo: string;
   contrasena: string;
-  rolNombre: string;
+  rolNombre: UserRole;
 }
 
 export interface UpdateUserDto {
   nombre: string;
   apellido: string;
   correo: string;
-  rolNombre: string;
+  rolNombre: UserRole;
 }
 
 export const userService = {

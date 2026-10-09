@@ -32,7 +32,7 @@ export const useRegistrationsViewModel = () => {
 
   const createRegistration = async (data: Partial<Registration>) => {
     try {
-      const newRegistration = await registrationService.create(data);
+      await registrationService.create(data);
       // Actualizamos con fetchRegistrations para traer los nombres del Join
       fetchRegistrations();
       return true;

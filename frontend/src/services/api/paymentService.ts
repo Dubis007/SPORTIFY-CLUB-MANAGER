@@ -1,13 +1,18 @@
 import { apiClient } from './apiClient';
-import { Payment } from '../../models';
+import { Payment, PagedResult, PaymentSummary } from '../../models';
 
 export interface RejectPaymentDto {
   comentario: string;
 }
 
 export const paymentService = {
-  getAll: async (): Promise<Payment[]> => {
-    const response = await apiClient.get<Payment[]>('/api/payments');
+  getAll: async (page: number, pageSize: number): Promise<PagedResult<Payment>> => {
+    const response = await apiClient.get<PagedResult<Payment>>('/api/payments', { params: { page, pageSize } });
+    return response.data;
+  },
+
+  getSummary: async (): Promise<PaymentSummary> => {
+    const response = await apiClient.get<PaymentSummary>('/api/payments/summary');
     return response.data;
   },
 

@@ -1,9 +1,9 @@
 ﻿import { apiClient } from '../api/apiClient';
-import { Evaluation } from '../../models';
+import { Evaluation, PagedResult } from '../../models';
 
 export const evaluationService = {
-  getAll: async (): Promise<Evaluation[]> => {
-    const response = await apiClient.get('/api/evaluations');
+  getAll: async (page: number, pageSize: number): Promise<PagedResult<Evaluation>> => {
+    const response = await apiClient.get<PagedResult<Evaluation>>('/api/evaluations', { params: { page, pageSize } });
     return response.data;
   },
 

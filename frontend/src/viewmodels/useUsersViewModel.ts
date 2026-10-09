@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userService, CreateUserDto, UpdateUserDto } from '../services/users/userService';
-import { User } from '../models';
+import { User, UserRole } from '../models';
 
 export const useUsersViewModel = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -15,7 +15,7 @@ export const useUsersViewModel = () => {
       // El backend de /api/users retorna "roles" como array, pero nuestro modelo usa "rol" como string
       const mappedData = data.map((u: any) => ({
         ...u,
-        rol: u.roles && u.roles.length > 0 ? u.roles[0] : (u.rol || 'MIEMBRO')
+        rol: u.roles && u.roles.length > 0 ? u.roles[0] : (u.rol || UserRole.MIEMBRO)
       }));
       setUsers(mappedData);
     } catch (err: any) {
@@ -28,7 +28,7 @@ export const useUsersViewModel = () => {
   const createUser = async (data: CreateUserDto) => {
     try {
       const res = await userService.createUser(data);
-      const newUser = { ...res, rol: (res as any).roles?.[0] || 'MIEMBRO' };
+      const newUser = { ...res, rol: (res as any).roles?.[0] || UserRole.MIEMBRO };
       setUsers(prev => [...prev, newUser]);
       return true;
     } catch (err: any) {
@@ -40,7 +40,7 @@ export const useUsersViewModel = () => {
   const updateUser = async (id: number, data: UpdateUserDto) => {
     try {
       const res = await userService.updateUser(id, data);
-      const updatedUser = { ...res, rol: (res as any).roles?.[0] || 'MIEMBRO' };
+      const updatedUser = { ...res, rol: (res as any).roles?.[0] || UserRole.MIEMBRO };
       setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
       return true;
     } catch (err: any) {

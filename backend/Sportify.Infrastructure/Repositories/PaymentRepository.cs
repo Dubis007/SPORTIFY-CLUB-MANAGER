@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
+using Sportify.Domain.Enums;
 using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Infrastructure.Repositories;
@@ -14,15 +16,35 @@ public class PaymentRepository : IPaymentRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Pago>> GetAllAsync()
+    public async Task<(IReadOnlyList<Pago> Items, int Total)> GetPagedAsync(int skip, int take)
     {
         // El HasQueryFilter del DbContext ya excluye pagos con EliminadoEn != null
-        return await _context.Pagos
+        var query = _context.Pagos.AsNoTracking();
+
+        var total = await query.CountAsync();
+
+        // Orden estable (fecha + Id) para que Skip/Take no repita ni omita registros entre páginas
+        var items = await query
             .Include(p => p.Usuario)
             .Include(p => p.Comprobante)
             .Include(p => p.AprobadoPor)
-            .AsNoTracking()
+            .OrderByDescending(p => p.FechaPago)
+            .ThenByDescending(p => p.Id)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<PaymentSummaryDto> GetSummaryAsync()
+    {
+        var pendientes = await _context.Pagos.CountAsync(p => p.Estado == EstadoPago.PENDIENTE);
+        var totalAprobado = await _context.Pagos
+            .Where(p => p.Estado == EstadoPago.APROBADO)
+            .SumAsync(p => p.MontoCOP);
+
+        return new PaymentSummaryDto { Pendientes = pendientes, TotalAprobadoCOP = totalAprobado };
     }
 
     public async Task<Pago?> GetByIdAsync(int id)

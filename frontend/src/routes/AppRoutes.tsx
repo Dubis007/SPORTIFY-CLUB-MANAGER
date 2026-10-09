@@ -1,9 +1,9 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoute } from './RoleRoute';
 import { useAuth } from '../context/AuthContext';
+import { UserRole, ROLE_HOME_ROUTES } from '../models';
 import AdminLayout from '../layouts/AdminLayout';
 import CompetitionsPage from '../pages/admin/CompetitionsPage';
 import TrainingsPage from '../pages/admin/TrainingsPage';
@@ -34,12 +34,7 @@ export default function AppRoutes() {
 
   const getHomeRedirect = () => {
     if (!isAuthenticated || !user) return '/login';
-    switch (user.rol) {
-      case 'ADMIN': return '/admin/dashboard';
-      case 'CONTADOR': return '/accountant/dashboard';
-      case 'ENTRENADOR': return '/coach/dashboard';
-      default: return '/member/dashboard';
-    }
+    return ROLE_HOME_ROUTES[user.rol] ?? ROLE_HOME_ROUTES[UserRole.MIEMBRO];
   };
 
   return (
@@ -50,7 +45,7 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         {/* Rutas Admin */}
-        <Route element={<RoleRoute roles={['ADMIN']} />}>
+        <Route element={<RoleRoute roles={[UserRole.ADMIN]} />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
@@ -66,14 +61,14 @@ export default function AppRoutes() {
         </Route>
 
         {/* Rutas Contador */}
-        <Route element={<RoleRoute roles={['CONTADOR']} />}>
+        <Route element={<RoleRoute roles={[UserRole.CONTADOR]} />}>
           <Route element={<AccountantLayout />}>
             <Route path="/accountant/dashboard" element={<AccountantDashboard />} />
           </Route>
         </Route>
 
         {/* Rutas Entrenador */}
-        <Route element={<RoleRoute roles={['ENTRENADOR']} />}>
+        <Route element={<RoleRoute roles={[UserRole.ENTRENADOR]} />}>
           <Route element={<CoachLayout />}>
             <Route path="/coach/dashboard" element={<CoachDashboard />} />
             <Route path="/coach/trainings" element={<TrainingsPage />} />
@@ -84,7 +79,7 @@ export default function AppRoutes() {
         </Route>
 
         {/* Rutas Miembro */}
-        <Route element={<RoleRoute roles={['MIEMBRO']} />}>
+        <Route element={<RoleRoute roles={[UserRole.MIEMBRO]} />}>
           <Route element={<MemberLayout />}>
             <Route path="/member/dashboard" element={<MemberDashboard />} />
           </Route>

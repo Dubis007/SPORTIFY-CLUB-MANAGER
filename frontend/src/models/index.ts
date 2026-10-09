@@ -1,10 +1,14 @@
+import { UserRole } from './enums';
+
+export * from './enums';
+
 export interface User {
   id: number;
   nombre: string;
   apellido: string;
   correo: string;
   activo: boolean;
-  rol: string;
+  rol: UserRole;
   solicitaCambioClave?: boolean;
   creadoEn?: string;
 }
@@ -94,4 +98,45 @@ export interface Evaluation {
   evaluadoPorId: number;
   usuarioNombre?: string;
   competenciaNombre?: string;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PaymentSummary {
+  pendientes: number;
+  totalAprobadoCOP: number;
+}
+
+export interface IngresoMensual {
+  anio: number;
+  mes: number; // 1-12
+  totalCOP: number;
+}
+
+export interface UsuariosMensual {
+  anio: number;
+  mes: number; // 1-12
+  cantidad: number;
+}
+
+export interface MembresiasPorEstado {
+  estado: string;
+  cantidad: number;
+}
+
+export interface DashboardStats {
+  usuariosActivos: number;
+  membresiasActivas: number;
+  ingresosMesCOP: number;
+  pagosPendientes: number;
+  ingresosPorMes: IngresoMensual[];
+  membresiasPorEstado: MembresiasPorEstado[];
+  nuevosUsuariosPorMes: UsuariosMensual[];
+  generadoEn: string;
 }

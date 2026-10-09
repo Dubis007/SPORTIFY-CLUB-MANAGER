@@ -1,10 +1,12 @@
-﻿using Sportify.Domain.Entities;
+using Sportify.Application.DTOs.Payments;
+using Sportify.Domain.Entities;
 
 namespace Sportify.Application.Interfaces;
 
 public interface IPaymentRepository
 {
-    Task<IEnumerable<Pago>> GetAllAsync();
+    Task<(IReadOnlyList<Pago> Items, int Total)> GetPagedAsync(int skip, int take);
+    Task<PaymentSummaryDto> GetSummaryAsync();
     Task<Pago?> GetByIdAsync(int id);
     Task<Pago> CreateAsync(Pago pago);
     Task UpdateAsync(Pago pago);

@@ -6,6 +6,7 @@ export const useCoachViewModel = () => {
   const { user } = useAuth();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [evaluationsTotal, setEvaluationsTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,17 +16,18 @@ export const useCoachViewModel = () => {
     setLoading(true);
     setError(null);
     try {
-      const [allTrainings, allEvaluations] = await Promise.all([
+      const [allTrainings, recentEvaluations] = await Promise.all([
         coachService.getAllTrainings(),
-        coachService.getAllEvaluations()
+        // Filtrado por entrenador y paginado en servidor: solo las 5 más recientes + el total
+        coachService.getRecentEvaluations(user.id, 5)
       ]);
 
       // Filter by the logged-in coach
       const myTrainings = allTrainings.filter(t => t.entrenadorId === user.id);
-      const myEvaluations = allEvaluations.filter(e => e.evaluadoPorId === user.id);
 
       setTrainings(myTrainings);
-      setEvaluations(myEvaluations);
+      setEvaluations(recentEvaluations.items);
+      setEvaluationsTotal(recentEvaluations.totalCount);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar los datos del entrenador');
     } finally {
@@ -56,6 +58,7 @@ export const useCoachViewModel = () => {
   return {
     trainings,
     evaluations,
+    evaluationsTotal,
     loading,
     error,
     refresh: fetchDashboardData,

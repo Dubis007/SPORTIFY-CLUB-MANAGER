@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/auth/authService';
+import { UserRole, ROLE_HOME_ROUTES } from '../models';
 
 export function useLoginViewModel() {
   const [loading, setLoading] = useState(false);
@@ -16,11 +17,7 @@ export function useLoginViewModel() {
       const response = await authService.login(correo, contrasena);
       login(response.token, response.usuario);
       
-      const rol = response.usuario.rol;
-      if (rol === 'ADMIN') navigate('/admin/dashboard');
-      else if (rol === 'CONTADOR') navigate('/accountant/dashboard');
-      else if (rol === 'ENTRENADOR') navigate('/coach/dashboard');
-      else navigate('/member/dashboard');
+      navigate(ROLE_HOME_ROUTES[response.usuario.rol] ?? ROLE_HOME_ROUTES[UserRole.MIEMBRO]);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al iniciar sesión. Verifica tus credenciales.');
     } finally {

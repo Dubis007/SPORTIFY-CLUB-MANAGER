@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Sportify.Application.DTOs.Common;
 using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
@@ -26,11 +27,20 @@ public class PaymentsController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "ADMIN,CONTADOR")]
-    [ProducesResponseType(typeof(IEnumerable<PaymentDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll()
+    [ProducesResponseType(typeof(PagedResult<PaymentDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination)
     {
-        var payments = await _paymentService.GetAllAsync();
+        var payments = await _paymentService.GetPagedAsync(pagination);
         return Ok(payments);
+    }
+
+    [HttpGet("summary")]
+    [Authorize(Roles = "ADMIN,CONTADOR")]
+    [ProducesResponseType(typeof(PaymentSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSummary()
+    {
+        var summary = await _paymentService.GetSummaryAsync();
+        return Ok(summary);
     }
 
     [HttpGet("options")]

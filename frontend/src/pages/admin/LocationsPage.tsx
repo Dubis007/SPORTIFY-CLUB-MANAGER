@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Download, MapPin, Users, Phone, Building } from 'lucide-react';
+import { Plus, Edit2, Trash2, Download, MapPin, Phone, Building } from 'lucide-react';
 import { useLocationsViewModel } from '../../viewmodels/useLocationsViewModel';
 
 export default function LocationsPage() {

@@ -4,9 +4,10 @@ import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel'
 import { Payment } from '../../models';
 import { apiClient } from '../../services/api/apiClient';
 import MembershipsPage from '../admin/MembershipsPage';
+import Pagination from '../../components/Pagination';
 
 export default function AccountantDashboard() {
-  const { payments, profile, options, loading, error, approvePayment, rejectPayment, registerManualPayment, downloadReport, changePassword } = useAccountantViewModel();
+  const { payments, summary, profile, options, loading, error, page, pageSize, totalCount, totalPages, setPage, changePageSize, approvePayment, rejectPayment, registerManualPayment, downloadReport, changePassword } = useAccountantViewModel();
   
   const [activeTab, setActiveTab] = useState('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
@@ -108,8 +109,8 @@ export default function AccountantDashboard() {
     }).format(amount);
   };
 
-  const pendingCount = payments.filter(p => p.estado === 'PENDIENTE').length;
-  const approvedTotal = payments.filter(p => p.estado === 'APROBADO').reduce((sum, p) => sum + p.montoCOP, 0);
+  const pendingCount = summary.pendientes;
+  const approvedTotal = summary.totalAprobadoCOP;
 
   if (loading && payments.length === 0) {
     return <div className="p-8 text-center text-gray-500">Cargando datos...</div>;
@@ -246,6 +247,15 @@ export default function AccountantDashboard() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={setPage}
+                onPageSizeChange={changePageSize}
+              />
             </div>
           </>
         )}

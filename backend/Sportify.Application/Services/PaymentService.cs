@@ -1,3 +1,4 @@
+using Sportify.Application.DTOs.Common;
 using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
@@ -16,11 +17,20 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<PaymentDto>> GetAllAsync()
+    public async Task<PagedResult<PaymentDto>> GetPagedAsync(PaginationParams pagination)
     {
-        var pagos = await _paymentRepository.GetAllAsync();
-        return pagos.Select(MapToDto);
+        var (pagos, total) = await _paymentRepository.GetPagedAsync(pagination.Skip, pagination.PageSize);
+        return new PagedResult<PaymentDto>
+        {
+            Items = pagos.Select(MapToDto).ToList(),
+            Page = pagination.Page,
+            PageSize = pagination.PageSize,
+            TotalCount = total
+        };
     }
+
+    /// <inheritdoc/>
+    public Task<PaymentSummaryDto> GetSummaryAsync() => _paymentRepository.GetSummaryAsync();
 
     /// <inheritdoc/>
     public async Task<PaymentDto> CreateAsync(int usuarioId, CreatePaymentDto dto)

@@ -1,9 +1,8 @@
-import React from 'react';
 import { Calendar, ClipboardList, Clock, Star, Users, Download } from 'lucide-react';
 import { useCoachViewModel } from '../../viewmodels/useCoachViewModel';
 
 export default function CoachDashboard() {
-  const { trainings, evaluations, loading, error, downloadReport } = useCoachViewModel();
+  const { trainings, evaluations, evaluationsTotal, loading, error, downloadReport } = useCoachViewModel();
 
   if (loading) {
     return (
@@ -63,7 +62,7 @@ export default function CoachDashboard() {
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Evaluaciones Realizadas</p>
-            <h3 className="text-2xl font-bold text-gray-800">{evaluations.length}</h3>
+            <h3 className="text-2xl font-bold text-gray-800">{evaluationsTotal}</h3>
           </div>
         </div>
       </div>
@@ -116,7 +115,7 @@ export default function CoachDashboard() {
               <p className="p-6 text-center text-gray-500">Aún no has evaluado a ningún atleta.</p>
             ) : (
               <ul className="divide-y divide-gray-100">
-                {evaluations.slice(0, 5).map(evaluation => (
+                {evaluations.map(evaluation => (
                   <li key={evaluation.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-gray-800">Inscripción #{evaluation.inscripcionId}</h4>

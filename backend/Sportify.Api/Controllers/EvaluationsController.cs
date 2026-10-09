@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Sportify.Application.DTOs.Common;
 using Sportify.Domain.Entities;
 using Sportify.Infrastructure.Persistence;
 using System.Security.Claims;
@@ -20,13 +21,20 @@ public class EvaluationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination, [FromQuery] int? evaluadoPorId)
     {
-        var evals = await _context.EvaluacionesCompetencia
-            .Include(e => e.Inscripcion)
-                .ThenInclude(i => i.Usuario)
-            .Include(e => e.Inscripcion)
-                .ThenInclude(i => i.Competencia)
+        var query = _context.EvaluacionesCompetencia.AsNoTracking();
+        if (evaluadoPorId.HasValue)
+            query = query.Where(e => e.EvaluadoPorId == evaluadoPorId.Value);
+
+        var total = await query.CountAsync();
+
+        // Orden estable (fecha + Id) antes de Skip/Take; la proyección hace los joins necesarios
+        var evals = await query
+            .OrderByDescending(e => e.EvaluadoEn)
+            .ThenByDescending(e => e.Id)
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
             .Select(e => new {
                 e.Id,
                 e.InscripcionId,
@@ -38,10 +46,15 @@ public class EvaluationsController : ControllerBase
                 UsuarioNombre = e.Inscripcion.Usuario.Nombre + " " + e.Inscripcion.Usuario.Apellido,
                 CompetenciaNombre = e.Inscripcion.Competencia.Nombre
             })
-            .OrderByDescending(e => e.EvaluadoEn)
             .ToListAsync();
-            
-        return Ok(evals);
+
+        return Ok(new PagedResult<object>
+        {
+            Items = evals,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize,
+            TotalCount = total
+        });
     }
 
     [HttpGet("options")]

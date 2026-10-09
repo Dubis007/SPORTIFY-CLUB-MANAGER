@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { PagedResult } from '../../models';
 
 export interface Training {
   id: number;
@@ -27,8 +28,10 @@ export const coachService = {
     return response.data;
   },
 
-  getAllEvaluations: async (): Promise<Evaluation[]> => {
-    const response = await apiClient.get<Evaluation[]>('/api/evaluations');
+  getRecentEvaluations: async (evaluadoPorId: number, pageSize = 5): Promise<PagedResult<Evaluation>> => {
+    const response = await apiClient.get<PagedResult<Evaluation>>('/api/evaluations', {
+      params: { page: 1, pageSize, evaluadoPorId }
+    });
     return response.data;
   },
 

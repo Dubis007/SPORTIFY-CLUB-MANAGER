@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useEvaluationsViewModel } from '../../viewmodels/useEvaluationsViewModel';
 import { Evaluation } from '../../models';
+import Pagination from '../../components/Pagination';
 
 export default function EvaluationsPage() {
-  const { evaluations, options, loading, error, createEvaluation, updateEvaluation, deleteEvaluation } = useEvaluationsViewModel();
+  const { evaluations, options, loading, error, page, pageSize, totalCount, totalPages, setPage, changePageSize, createEvaluation, updateEvaluation, deleteEvaluation } = useEvaluationsViewModel();
   const [showModal, setShowModal] = useState(false);
   const [editingEvaluation, setEditingEvaluation] = useState<Evaluation | null>(null);
   
@@ -74,7 +75,7 @@ export default function EvaluationsPage() {
         </div>
       )}
 
-      {loading ? (
+      {loading && evaluations.length === 0 ? (
         <div className="text-center py-10 text-gray-500">Cargando...</div>
       ) : (
         <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
@@ -135,6 +136,15 @@ export default function EvaluationsPage() {
               )}
             </tbody>
           </table>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </div>
       )}
 
