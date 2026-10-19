@@ -1,9 +1,10 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { DollarSign, Download, Check, X, Clock, AlertTriangle, PlusCircle, CreditCard } from 'lucide-react';
 import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
 import { Payment } from '../../models';
 import { apiClient } from '../../services/api/apiClient';
 import Pagination from '../../components/Pagination';
+import PdfViewerModal from '../../components/common/PdfViewerModal';
 
 export default function AdminPaymentsPage() {
   const { payments, summary, options, loading, error, page, pageSize, totalCount, totalPages, setPage, changePageSize, approvePayment, rejectPayment, registerManualPayment, downloadReport } = useAccountantViewModel();
@@ -11,6 +12,8 @@ export default function AdminPaymentsPage() {
   const [activeTab, setActiveTab] = useState('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
   const [comentario, setComentario] = useState('');
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const [manualPayment, setManualPayment] = useState({
     usuarioId: '',
@@ -153,8 +156,19 @@ export default function AdminPaymentsPage() {
                         <td className="p-4 font-bold text-gray-800">{formatCurrency(payment.montoCOP)}</td>
                         <td className="p-4 text-gray-600">{new Date(payment.fechaPago).toLocaleDateString()}</td>
                         <td className="p-4 text-center">{getStatusBadge(payment.estado)}</td>
-                        <td className="p-4 text-center space-x-2">
-                          <button onClick={() => handleDownloadReceipt(payment.id)} className="text-blue-600 hover:text-blue-800 text-sm font-semibold underline">Ver Anexo</button>
+                          <td className="p-4 text-center space-x-2">
+                            <button onClick={() => handleDownloadReceipt(payment.id)} className="text-blue-600 hover:text-blue-800 text-sm font-semibold underline">Ver Anexo</button>
+                            {payment.tieneComprobante && payment.comprobanteUrl && (
+                              <button 
+                                onClick={() => {
+                                  setSelectedPdfUrl(`http://localhost:5000/${payment.comprobanteUrl!.replace(/^\/+/, '')}`);
+                                  setIsPdfModalOpen(true);
+                                }} 
+                                className="text-sportify-primary hover:text-red-700 text-sm font-semibold underline ml-2"
+                              >
+                                Ver Comprobante
+                              </button>
+                            )}
                           {payment.estado === 'PENDIENTE' && (
                             <>
                               <button onClick={() => handleApprove(payment.id)} className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-sm font-medium">Aprobar</button>
@@ -224,6 +238,12 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
       )}
+
+      <PdfViewerModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        pdfUrl={selectedPdfUrl}
+      />
     </div>
   );
 }

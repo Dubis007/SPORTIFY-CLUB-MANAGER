@@ -5,6 +5,7 @@ import { Payment } from '../../models';
 import { apiClient } from '../../services/api/apiClient';
 import MembershipsPage from '../admin/MembershipsPage';
 import Pagination from '../../components/Pagination';
+import PdfViewerModal from '../../components/common/PdfViewerModal';
 
 export default function AccountantDashboard() {
   const { payments, summary, profile, options, loading, error, page, pageSize, totalCount, totalPages, setPage, changePageSize, approvePayment, rejectPayment, registerManualPayment, downloadReport, changePassword } = useAccountantViewModel();
@@ -12,6 +13,8 @@ export default function AccountantDashboard() {
   const [activeTab, setActiveTab] = useState('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
   const [comentario, setComentario] = useState('');
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   
   // Profile State
   const [pwdData, setPwdData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -224,6 +227,17 @@ export default function AccountantDashboard() {
                           </td>
                           <td className="p-4 text-center space-x-2">
                             <button onClick={() => handleDownloadReceipt(payment.id)} className="text-blue-600 hover:text-blue-800 text-sm font-semibold underline">Ver Anexo</button>
+                            {payment.tieneComprobante && payment.comprobanteUrl && (
+                              <button 
+                                onClick={() => {
+                                  setSelectedPdfUrl(`http://localhost:5000/${payment.comprobanteUrl!.replace(/^\/+/, '')}`);
+                                  setIsPdfModalOpen(true);
+                                }} 
+                                className="text-sportify-primary hover:text-red-700 text-sm font-semibold underline ml-2"
+                              >
+                                Ver Comprobante
+                              </button>
+                            )}
                             {payment.estado === 'PENDIENTE' && (
                               <>
                                 <button
@@ -409,6 +423,12 @@ export default function AccountantDashboard() {
           </div>
         </div>
       )}
+
+      <PdfViewerModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        pdfUrl={selectedPdfUrl}
+      />
     </div>
   );
 }

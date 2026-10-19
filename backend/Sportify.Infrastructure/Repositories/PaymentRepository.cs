@@ -28,6 +28,8 @@ public class PaymentRepository : IPaymentRepository
             .Include(p => p.Usuario)
             .Include(p => p.Comprobante)
             .Include(p => p.AprobadoPor)
+            .Include(p => p.Membresia)
+                .ThenInclude(m => m!.PlanMembresia)
             .OrderByDescending(p => p.FechaPago)
             .ThenByDescending(p => p.Id)
             .Skip(skip)
@@ -54,7 +56,7 @@ public class PaymentRepository : IPaymentRepository
             .Include(p => p.Comprobante)
             .Include(p => p.AprobadoPor)
             .Include(p => p.Membresia)
-                .ThenInclude(m => m != null ? m.PlanMembresia : null)
+                .ThenInclude(m => m.PlanMembresia)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
@@ -107,3 +109,4 @@ public class PaymentRepository : IPaymentRepository
         await _context.SaveChangesAsync();
     }
 }
+

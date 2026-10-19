@@ -144,6 +144,18 @@ public class PaymentService : IPaymentService
         // Si el pago tiene membresía asociada, activa la membresía
         if (pago.MembresiaId.HasValue && pago.Membresia is not null)
         {
+            if (pago.Membresia.PlanMembresia is not null)
+            {
+                if (pago.Membresia.FechaFin > DateTime.UtcNow)
+                {
+                    pago.Membresia.FechaFin = pago.Membresia.FechaFin.AddDays(pago.Membresia.PlanMembresia.DuracionDias);
+                }
+                else
+                {
+                    pago.Membresia.FechaInicio = DateTime.UtcNow;
+                    pago.Membresia.FechaFin = DateTime.UtcNow.AddDays(pago.Membresia.PlanMembresia.DuracionDias);
+                }
+            }
             pago.Membresia.Estado = EstadoMembresia.ACTIVA;
         }
 
@@ -209,7 +221,9 @@ public class PaymentService : IPaymentService
             FechaAprobacion = p.FechaAprobacion,
             NombreAprobador = nombreAprobador,
             ComentarioRechazo = p.ComentarioRechazo,
-            TieneComprobante = p.Comprobante != null
+            TieneComprobante = p.Comprobante != null,
+            ComprobanteUrl = p.Comprobante?.RutaArchivo
         };
     }
 }
+

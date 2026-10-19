@@ -1,18 +1,53 @@
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
-using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 using Sportify.Application;
 using Sportify.Infrastructure;
-using System.Text;
-using Sportify.Api.Middleware;
+using Sportify.Api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar base de datos y servicios
+// --- ESCALABILIDAD Y RENDIMIENTO ---
+
+// 1. Response Compression (Brotli y Gzip)
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+// 2. Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<Sportify.Infrastructure.Persistence.SportifyDbContext>("Database");
+
+// --- SEGURIDAD Y HARDENING ---
+
+// 3. Global Exception Handler moderno
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// 4. Rate Limiting (Proteccion contra fuerza bruta)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("AuthRateLimit", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 10;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+});
+
+// Configurar base de datos y servicios (DbContext Pooling ya configurado en AddInfrastructure)
 builder.Services.AddInfrastructure(builder.Configuration);
-// Add QuestPDF Community License
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddApplication();
 
@@ -23,6 +58,7 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!";
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
@@ -43,16 +79,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// CORS
+// 5. CORS estricto
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:5173", "https://localhost:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
 });
 
 var app = builder.Build();
 
-// Inicializacion Automatica de Base de Datos y Seeders Explicitos
+// Seeders y Migraciones (Mantenemos como estaba)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -60,7 +100,6 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<Sportify.Infrastructure.Persistence.SportifyDbContext>();
         
-        // ASEGURAR QUE LA BASE DE DATOS EXISTA ANTES DE MIGRAR PARA EVITAR BUG DE MySql.EntityFrameworkCore
         try {
             var connStr = context.Database.GetDbConnection().ConnectionString;
             var builder2 = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = connStr };
@@ -72,10 +111,8 @@ using (var scope = app.Services.CreateScope())
             cmd.ExecuteNonQuery();
         } catch { }
 
-        // APLICAR MIGRACIONES PENDIENTES AUTOMATICAMENTE
         context.Database.Migrate();
 
-        // INYECCION DE DATOS MANUAL A PRUEBA DE FALLOS
         var passwordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
 
         if (!context.Roles.Any())
@@ -108,13 +145,11 @@ using (var scope = app.Services.CreateScope())
             context.SaveChanges();
         }
 
-
-
         if (!context.Sedes.Any())
         {
             context.Sedes.AddRange(
-                new Sportify.Domain.Entities.Sede { Id = 1, Nombre = "Sede Principal Norte", Direccion = "Calle 100", Ciudad = "Bogotá" },
-                new Sportify.Domain.Entities.Sede { Id = 2, Nombre = "Sede Sur", Direccion = "Av Sur", Ciudad = "Medellín" }
+                new Sportify.Domain.Entities.Sede { Id = 1, Nombre = "Sede Principal Norte", Direccion = "Calle 100", Ciudad = "Bogota" },
+                new Sportify.Domain.Entities.Sede { Id = 2, Nombre = "Sede Sur", Direccion = "Av Sur", Ciudad = "Medellin" }
             );
             context.SaveChanges();
         }
@@ -122,7 +157,7 @@ using (var scope = app.Services.CreateScope())
         if (!context.PlanesMembresia.Any())
         {
             context.PlanesMembresia.AddRange(
-                new Sportify.Domain.Entities.PlanMembresia { Id = 1, Nombre = "Plan Básico", PrecioCOP = 50000m, DuracionDias = 30 },
+                new Sportify.Domain.Entities.PlanMembresia { Id = 1, Nombre = "Plan Basico", PrecioCOP = 50000m, DuracionDias = 30 },
                 new Sportify.Domain.Entities.PlanMembresia { Id = 2, Nombre = "Plan Premium", PrecioCOP = 120000m, DuracionDias = 30 }
             );
             context.SaveChanges();
@@ -142,7 +177,7 @@ using (var scope = app.Services.CreateScope())
 
         if (!context.Competencias.Any())
         {
-            context.Competencias.Add(new Sportify.Domain.Entities.Competencia { Id = 1, Nombre = "Torneo Relámpago", Descripcion = "Torneo de fin de mes", FechaInicio = DateTime.UtcNow.AddDays(5), FechaFin = DateTime.UtcNow.AddDays(6), Ubicacion = "Sede Principal Norte", CreadoEn = DateTime.UtcNow });
+            context.Competencias.Add(new Sportify.Domain.Entities.Competencia { Id = 1, Nombre = "Torneo Relampago", Descripcion = "Torneo de fin de mes", FechaInicio = DateTime.UtcNow.AddDays(5), FechaFin = DateTime.UtcNow.AddDays(6), Ubicacion = "Sede Principal Norte", CreadoEn = DateTime.UtcNow });
             context.SaveChanges();
             context.InscripcionesCompetencia.Add(new Sportify.Domain.Entities.InscripcionCompetencia { Id = 1, UsuarioId = 4, CompetenciaId = 1, Estado = Sportify.Domain.Enums.EstadoInscripcion.CONFIRMADA, FechaInscripcion = DateTime.UtcNow });
             context.SaveChanges();
@@ -161,25 +196,40 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Security Headers Middleware
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    await next();
+});
 
-// Configure the HTTP request pipeline.
+// Registrar Global Exception Handler (.NET 8+)
+app.UseExceptionHandler();
+
+// Habilitar compression (Debe ir antes de archivos estaticos)
+app.UseResponseCompression();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
-// app.UseHttpsRedirection();
-
-// Importante para leer comprobantes y archivos de wwwroot
 app.UseStaticFiles();
 
-app.UseCors("AllowAll");
+// Cambiamos al CORS mas seguro
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter(); // Habilitar middleware de Rate Limiting
+
+// Mapear Health Checks endpoint
+app.MapHealthChecks("/api/health");
 
 app.MapControllers();
 
 app.Run();
+
