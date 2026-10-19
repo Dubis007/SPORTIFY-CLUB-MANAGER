@@ -23,6 +23,8 @@ Detalle y bitácora en `docs/ciclo-vida/`.
 ### Corregido
 - `PaymentServiceTests` no compilaba tras agregar `IFileStorageService` a `PaymentService`.
 - 5 variables `catch (err)` sin usar en el frontend.
+- Healthcheck de MySQL en `docker-compose.yml`: usa `-h 127.0.0.1` (TCP) para que la API no arranque mientras la BD se inicializa.
+- Migración `InitialCreate`: el valor por defecto de `Usuarios.CreadoEn` pasa a `(UTC_TIMESTAMP())`; MySQL 8 rechazaba `UTC_TIMESTAMP()` sin paréntesis y no creaba la tabla.
 
 ## [2026-10-08] Suite de pruebas unitarias core
 

@@ -619,7 +619,7 @@ namespace Sportify.Infrastructure.Migrations
                     b.Property<DateTime>("CreadoEn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("UTC_TIMESTAMP()");
+                        .HasDefaultValueSql("(UTC_TIMESTAMP())");
 
                     b.Property<string>("Nombre")
                         .IsRequired()

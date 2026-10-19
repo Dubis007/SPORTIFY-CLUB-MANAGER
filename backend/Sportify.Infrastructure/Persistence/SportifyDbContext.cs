@@ -37,7 +37,7 @@ public class SportifyDbContext : DbContext
             entity.HasIndex(u => u.Correo).IsUnique();
             entity.Property(u => u.ContrasenaHash).IsRequired();
             entity.Property(u => u.Activo).HasDefaultValue(true);
-            entity.Property(u => u.CreadoEn).HasDefaultValueSql("UTC_TIMESTAMP()");
+            entity.Property(u => u.CreadoEn).HasDefaultValueSql("(UTC_TIMESTAMP())");
         });
 
         // ─── Rol ──────────────────────────────────────────────────────────────

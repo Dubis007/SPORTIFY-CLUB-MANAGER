@@ -56,4 +56,5 @@ Los errores no controlados quedan registrados por `GlobalExceptionHandler` (`bac
 | Volver a la versión anterior (rollback) | Render: **Events** → despliegue anterior → **Rollback** · Local: `docker compose down` y `docker run ghcr.io/dubis007/sportify-api:<versión anterior>` |
 | Respaldar la BD local | `.\scripts\backup-db.ps1` → `backups/sportify_db_<fecha>.sql` |
 | Restaurar la BD local | `Get-Content backups\<archivo>.sql \| docker compose exec -T db mysql -uroot -p<clave> sportify_db` |
+| Evidencia del respaldo (2026-10-19) | `backups/sportify_db_20261019_115804.sql`: 20 KB con las 15 sentencias `CREATE TABLE` y los datos semilla |
 | Respaldar la BD en la nube | Aiven realiza respaldos automáticos diarios (pestaña **Backups**) |

@@ -58,3 +58,11 @@ El workflow **CI** se ejecuta en cada `push`, `pull_request` o manualmente (`wor
 | `docker` | (si los anteriores pasan) copia `.env.example` a `.env` y ejecuta `docker compose build` para validar los Dockerfiles |
 
 **Cómo ver la evidencia:** GitHub → pestaña **Actions** → workflow *CI* → ejecución → descargar artefactos `backend-test-results` y `frontend-coverage`.
+
+**Primera ejecución (2026-10-19):** [run 39280917366](https://github.com/Dubis007/SPORTIFY-CLUB-MANAGER/actions/runs/39280917366) sobre el commit `401eab0`, resultado **success** en los 3 jobs:
+
+| Job | Resultado |
+|---|---|
+| Backend (.NET) - build y pruebas | ✅ success (restore, build, 3 pruebas xUnit, artefactos publicados) |
+| Frontend (React) - lint, pruebas y build | ✅ success (ESLint, 7 pruebas Vitest con cobertura, build) |
+| Docker - validar imágenes | ✅ success (`docker compose build`) |

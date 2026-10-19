@@ -63,6 +63,29 @@ curl http://localhost:8080/api/health   # -> Healthy
 # Frontend: http://localhost:8081  (admin@sportify.com / Admin123!)
 ```
 
+### Ejecución real (2026-10-19, Docker 29.9.1)
+
+El primer `docker compose up -d --build` construyó las 3 imágenes y levantó los contenedores, y `/api/health` respondió `Healthy`. **Pero la base de datos quedó vacía (0 tablas).** Los logs de la API (`docker compose logs api`) mostraron dos fallos que no se veían al ejecutar el proyecto fuera de Docker:
+
+| # | Síntoma en el log | Causa | Corrección |
+|---|---|---|---|
+| 1 | `Unable to connect to any of the specified MySQL hosts` | En el primer arranque MySQL se inicializa con un servidor temporal que **solo escucha por socket**. El healthcheck `mysqladmin ping -h localhost` usa el socket, así que marcó la BD como *healthy* antes de tiempo y la API intentó conectar por TCP cuando aún no había red. | Healthcheck con `-h 127.0.0.1` (fuerza TCP) en `docker-compose.yml`. |
+| 2 | `Failed executing DbCommand … CREATE TABLE Usuarios` → `Table 'sportify_db.Usuarios' doesn't exist` | MySQL 8 solo acepta una función como valor por defecto si va **entre paréntesis**. La migración generaba `DEFAULT UTC_TIMESTAMP()`. | `HasDefaultValueSql("(UTC_TIMESTAMP())")` en `SportifyDbContext.cs`, en la migración `InitialCreate` y en el snapshot. Las BD que ya tenían la migración aplicada no se afectan. |
+
+Además se vio que `/api/health` decía `Healthy` aunque no hubiera tablas, porque solo comprueba que la API conecta con la BD. Por eso la verificación incluye consultar las tablas.
+
+**Verificación después de corregir** (desde cero con `docker compose down -v` y `docker compose up -d --build`):
+
+```text
+docker compose ps        -> sportify-db, sportify-api, sportify-web: Up (healthy)
+/api/health              -> Healthy (HTTP 200)
+http://localhost:8081/   -> HTTP 200
+Tablas en sportify_db    -> 15
+Usuarios semilla         -> admin, contador, entrenador, miembro @sportify.com
+Errores "fail:" en logs  -> 0
+POST /api/auth/login     -> 200 con token JWT y Access-Control-Allow-Origin: http://localhost:8081
+```
+
 ## 1.4 ESLint: calidad del código del frontend
 
 **Situación encontrada:** el proyecto tenía ESLint 9 instalado y el script `npm run lint`, pero **no tenía archivo de configuración**, así que el comando fallaba siempre.
