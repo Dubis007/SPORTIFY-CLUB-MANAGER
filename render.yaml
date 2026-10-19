@@ -1,0 +1,39 @@
+# Render Blueprint: define la infraestructura en la nube como código.
+# Render > New > Blueprint > seleccionar este repositorio. Los valores con sync:false se piden en el panel.
+# autoDeploy está desactivado: el despliegue lo dispara release.yml (Deploy Hooks) al publicar un tag.
+services:
+  - type: web
+    name: sportify-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: PORT
+        value: "8080"
+      # Aiven MySQL: Server=<host>;Port=<puerto>;Database=sportify_db;Uid=avnadmin;Pwd=<clave>;SslMode=Required;
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: JwtSettings__Secret
+        generateValue: true
+      # URL pública del frontend, p. ej. https://sportify-web.onrender.com
+      - key: Cors__AllowedOrigins__0
+        sync: false
+
+  - type: web
+    name: sportify-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeploy: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # URL pública de la API, p. ej. https://sportify-api.onrender.com
+      - key: VITE_API_URL
+        sync: false

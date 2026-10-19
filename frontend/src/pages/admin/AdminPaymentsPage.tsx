@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DollarSign, Download, Check, X, Clock, AlertTriangle, PlusCircle, CreditCard } from 'lucide-react';
 import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
 import { Payment } from '../../models';
-import { apiClient } from '../../services/api/apiClient';
+import { apiClient, API_URL } from '../../services/api/apiClient';
 import Pagination from '../../components/Pagination';
 import PdfViewerModal from '../../components/common/PdfViewerModal';
 
@@ -65,7 +65,7 @@ export default function AdminPaymentsPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert('No se pudo descargar el comprobante.');
     }
   };
@@ -161,7 +161,7 @@ export default function AdminPaymentsPage() {
                             {payment.tieneComprobante && payment.comprobanteUrl && (
                               <button 
                                 onClick={() => {
-                                  setSelectedPdfUrl(`http://localhost:5000/${payment.comprobanteUrl!.replace(/^\/+/, '')}`);
+                                  setSelectedPdfUrl(`${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`);
                                   setIsPdfModalOpen(true);
                                 }} 
                                 className="text-sportify-primary hover:text-red-700 text-sm font-semibold underline ml-2"

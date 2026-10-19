@@ -54,7 +54,7 @@ export const useLocationsViewModel = () => {
   const downloadReport = async () => {
     try {
       await locationService.downloadReport();
-    } catch (err: any) {
+    } catch {
       setError('Error al descargar el reporte');
     }
   };

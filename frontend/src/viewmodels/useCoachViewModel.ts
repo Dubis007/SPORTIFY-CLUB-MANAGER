@@ -50,7 +50,7 @@ export const useCoachViewModel = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
+    } catch {
       setError('Error al descargar el reporte');
     }
   };
