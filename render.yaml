@@ -34,6 +34,9 @@ services:
         source: /*
         destination: /index.html
     envVars:
+      # Misma versión de Node que el CI
+      - key: NODE_VERSION
+        value: "22"
       # URL pública de la API, p. ej. https://sportify-api.onrender.com
       - key: VITE_API_URL
         sync: false
