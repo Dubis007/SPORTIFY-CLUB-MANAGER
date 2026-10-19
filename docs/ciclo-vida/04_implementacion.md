@@ -48,4 +48,34 @@ Desde ese momento, al subir un tag (`git push origin v1.0.1`), el job `deploy` d
 
 **Evidencia:** Render → servicio → pestaña **Events** (despliegue *Live*), `https://sportify-api.onrender.com/api/health` → `Healthy`, inicio de sesión en `https://sportify-web.onrender.com` con `admin@sportify.com`.
 
+## 4.4 Despliegue real (2026-10-19)
+
+| Recurso | Valor |
+|---|---|
+| Base de datos | Aiven for MySQL, plan Free, servicio `sportify-db` (SSL obligatorio) |
+| API | https://sportify-api-ps0y.onrender.com |
+| Frontend | https://sportify-web-p1fi.onrender.com |
+| Rama desplegada | `Ciclo_Vida_DevOps` |
+
+**Problema encontrado:** como los nombres `sportify-api` y `sportify-web` ya estaban ocupados en Render, este agregó sufijos a las URLs (`-ps0y`, `-p1fi`). Las variables se habían llenado con las URLs sin sufijo, y la verificación lo detectó:
+- El JavaScript del frontend llamaba a `https://sportify-api.onrender.com`, que no es nuestra API.
+- La API no devolvía `Access-Control-Allow-Origin` para el frontend, así que el navegador bloqueaba el login.
+
+**Corrección:** se cambió `VITE_API_URL` en `sportify-web` (con *rebuild*, porque Vite inserta la URL al compilar) y `Cors__AllowedOrigins__0` en `sportify-api` (con redeploy). También se actualizó la variable `VITE_API_URL` de GitHub Actions.
+
+**Verificación final:**
+
+```text
+GET  /api/health                                  -> Healthy (HTTP 200; ~40 s si la API estaba dormida)
+OPTIONS /api/auth/login  Origin: sportify-web-p1fi -> 204, access-control-allow-origin: https://sportify-web-p1fi.onrender.com
+POST /api/auth/login (admin@sportify.com)         -> 200 con token JWT  => Aiven tiene tablas y datos semilla
+GET  /api/dashboard/stats con Bearer token        -> 200
+OPTIONS con Origin: https://evil.example.com      -> sin cabecera CORS (rechazado)
+Bundle JS del frontend                            -> contiene https://sportify-api-ps0y.onrender.com
+```
+
+Secretos cargados en GitHub: `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB` (Secrets) y `VITE_API_URL` (Variables).
+
+**Limitaciones conocidas del plan gratuito:** la API se duerme tras 15 minutos sin tráfico, y el disco no es persistente, así que los comprobantes de pago subidos (`wwwroot/comprobantes`) se pierden en cada redeploy. Para producción habría que usar un disco persistente de Render (de pago) o un almacenamiento externo (S3 o Cloudinary).
+
 > Nota del plan gratuito: la API se "duerme" tras 15 minutos sin tráfico y la primera petición tarda ~1 minuto en despertar. El monitor de UptimeRobot (fase 5) la mantiene activa.
