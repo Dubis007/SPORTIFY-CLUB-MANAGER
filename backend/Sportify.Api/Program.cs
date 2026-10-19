@@ -111,7 +111,14 @@ using (var scope = app.Services.CreateScope())
             cmd.ExecuteNonQuery();
         } catch { }
 
-        context.Database.Migrate();
+        try
+        {
+            context.Database.Migrate();
+        }
+        catch
+        {
+            context.Database.EnsureCreated();
+        }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
 
@@ -200,7 +207,7 @@ using (var scope = app.Services.CreateScope())
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Content-Security-Policy", "frame-ancestors 'self' http://localhost:5173 https://localhost:5173");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     await next();
 });

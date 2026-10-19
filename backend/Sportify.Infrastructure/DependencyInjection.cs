@@ -15,7 +15,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContextPool<SportifyDbContext>(options =>
-            options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!));
+            options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!)
+                   .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
