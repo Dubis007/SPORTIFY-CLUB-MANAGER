@@ -1,11 +1,11 @@
-using Sportify.Domain.Entities;
+using System.Threading.Tasks;
 
 namespace Sportify.Application.Interfaces;
 
 public interface IReportService
 {
-    byte[] GeneratePaymentsReport(IEnumerable<Pago> pagos);
-    byte[] GenerateMembersReport(IEnumerable<Usuario> usuarios);
-    byte[] GenerateLocationsReport(IEnumerable<Sede> sedes);
-    byte[] GeneratePerformanceReport(IEnumerable<Sportify.Application.DTOs.Reports.PerformanceReportItemDto> items);
+    Task<byte[]> GeneratePaymentsReportAsync();
+    Task<byte[]> GenerateMembersReportAsync();
+    Task<byte[]> GenerateLocationsReportAsync();
+    Task<byte[]> GeneratePerformanceReportAsync();
 }

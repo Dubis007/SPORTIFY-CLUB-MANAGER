@@ -11,4 +11,8 @@ public interface IPaymentRepository
     Task<Pago> CreateAsync(Pago pago);
     Task UpdateAsync(Pago pago);
     Task<Membresia?> GetMembresiaByIdAsync(int membresiaId);
+    Task<IEnumerable<Usuario>> GetMembersForOptionsAsync();
+    Task<IEnumerable<Membresia>> GetMembershipsForOptionsAsync();
+    Task CreateComprobanteAsync(ComprobantePago comprobante);
+    Task UpdateMembresiaAsync(Membresia membresia);
 }

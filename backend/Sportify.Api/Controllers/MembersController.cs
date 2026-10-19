@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Sportify.Domain.Entities;
-using Sportify.Infrastructure.Persistence;
 using System.Security.Claims;
-using BCrypt.Net;
+using System.Threading.Tasks;
+using Sportify.Application.Interfaces;
 
 namespace Sportify.Api.Controllers;
 
@@ -13,11 +11,11 @@ namespace Sportify.Api.Controllers;
 [Authorize(Roles = "MIEMBRO")]
 public class MembersController : ControllerBase
 {
-    private readonly SportifyDbContext _context;
+    private readonly IMemberProfileService _memberProfileService;
 
-    public MembersController(SportifyDbContext context)
+    public MembersController(IMemberProfileService memberProfileService)
     {
-        _context = context;
+        _memberProfileService = memberProfileService;
     }
 
     private int GetUserId()
@@ -29,114 +27,38 @@ public class MembersController : ControllerBase
     public async Task<IActionResult> GetMyProfile()
     {
         var userId = GetUserId();
-        var user = await _context.Usuarios
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.Id, u.Nombre, u.Apellido, u.Correo, u.Activo })
-            .FirstOrDefaultAsync();
+        var profile = await _memberProfileService.GetProfileAsync(userId);
             
-        if (user == null) return NotFound();
-        return Ok(user);
+        if (profile == null) return NotFound();
+        return Ok(profile);
     }
 
     [HttpPost("me/change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
     {
         var userId = GetUserId();
-        var user = await _context.Usuarios.FindAsync(userId);
-        if (user == null) return NotFound();
+        var success = await _memberProfileService.ChangePasswordAsync(userId, req.CurrentPassword, req.NewPassword);
 
-        if (!BCrypt.Net.BCrypt.Verify(req.CurrentPassword, user.ContrasenaHash))
-            return BadRequest(new { message = "La contraseña actual es incorrecta." });
+        if (!success)
+            return BadRequest(new { message = "La contrasea actual es incorrecta o el usuario no existe." });
 
-        user.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Contraseña actualizada exitosamente." });
+        return Ok(new { message = "Contrasea actualizada exitosamente." });
     }
 
     [HttpGet("me/payments")]
     public async Task<IActionResult> GetMyPayments()
     {
         var userId = GetUserId();
-        
-        var memberships = await _context.Membresias
-            .Include(m => m.PlanMembresia)
-            .Where(m => m.UsuarioId == userId)
-            .OrderByDescending(m => m.FechaInicio)
-            .Select(m => new {
-                m.Id,
-                Plan = m.PlanMembresia.Nombre,
-                m.Estado,
-                m.FechaInicio,
-                m.FechaFin
-            })
-            .ToListAsync();
-
-        var payments = await _context.Pagos
-            .Include(p => p.Membresia)
-                .ThenInclude(m => m.PlanMembresia)
-            .Where(p => p.UsuarioId == userId)
-            .OrderByDescending(p => p.FechaPago)
-            .Select(p => new {
-                p.Id,
-                p.MontoCOP,
-                p.Estado,
-                p.FechaPago,
-                Plan = p.Membresia.PlanMembresia.Nombre
-            })
-            .ToListAsync();
-
-        return Ok(new { Memberships = memberships, Payments = payments });
+        var paymentsDto = await _memberProfileService.GetPaymentsAsync(userId);
+        return Ok(paymentsDto);
     }
 
     [HttpGet("me/activities")]
     public async Task<IActionResult> GetMyActivities()
     {
         var userId = GetUserId();
-        var now = DateTime.UtcNow;
-
-        // Entrenamientos asistidos o programados.
-        // Wait, members don't explicitly register for trainings, they just attend?
-        // Actually, if a member is active, they can attend any training. 
-        // We will just show trainings they HAVE attended (Asistencias), 
-        // and MAYBE upcoming trainings for the club?
-        var upcomingTrainings = await _context.Entrenamientos
-            .Where(e => e.FechaHora >= now && e.EliminadoEn == null)
-            .OrderBy(e => e.FechaHora)
-            .Select(e => new { e.Id, e.Titulo, e.FechaHora, e.FechaFin, Tipo = "ENTRENAMIENTO" })
-            .ToListAsync();
-
-        var attendances = await _context.Asistencias
-            .Include(a => a.Entrenamiento)
-            .Where(a => a.UsuarioId == userId && a.Presente)
-            .OrderByDescending(a => a.FechaRegistro)
-            .Select(a => new { 
-                a.Entrenamiento.Titulo, 
-                a.Entrenamiento.FechaHora, 
-                a.Observaciones,
-                Tipo = "ASISTENCIA_ENTRENAMIENTO"
-            })
-            .ToListAsync();
-
-        // Competencias inscritas
-        var competitions = await _context.InscripcionesCompetencia
-            .Include(i => i.Competencia)
-            .Where(i => i.UsuarioId == userId)
-            .OrderByDescending(i => i.Competencia.FechaInicio)
-            .Select(i => new {
-                i.CompetenciaId,
-                i.Competencia.Nombre,
-                i.Competencia.FechaInicio,
-                i.Competencia.Ubicacion,
-                EstadoInscripcion = i.Estado.ToString(),
-                Tipo = "COMPETENCIA"
-            })
-            .ToListAsync();
-
-        return Ok(new { 
-            UpcomingTrainings = upcomingTrainings, 
-            Attendances = attendances,
-            Competitions = competitions
-        });
+        var activitiesDto = await _memberProfileService.GetActivitiesAsync(userId);
+        return Ok(activitiesDto);
     }
 }
 

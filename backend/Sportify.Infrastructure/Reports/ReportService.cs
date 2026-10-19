@@ -1,18 +1,34 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
+using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Infrastructure.Reports;
 
 public class ReportService : IReportService
 {
-    public byte[] GeneratePaymentsReport(IEnumerable<Pago> pagos)
-    {
-        QuestPDF.Settings.License = LicenseType.Community;
+    private readonly SportifyDbContext _context;
 
-        var pagosList = pagos.ToList();
+    public ReportService(SportifyDbContext context)
+    {
+        _context = context;
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
+
+    public async Task<byte[]> GeneratePaymentsReportAsync()
+    {
+        var pagos = await _context.Pagos
+            .Include(p => p.Usuario)
+            .Include(p => p.AprobadoPor)
+            .OrderByDescending(p => p.FechaPago)
+            .ToListAsync();
 
         var document = Document.Create(container =>
         {
@@ -22,75 +38,54 @@ public class ReportService : IReportService
                 page.Margin(1, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(10));
 
-                // Header
                 page.Header().Column(col =>
                 {
-                    col.Item().AlignCenter().Text("SPORTIFY CLUB MANAGER - Reporte de Pagos")
-                        .SemiBold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                    col.Item().AlignCenter().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}")
-                        .FontSize(9).FontColor(Colors.Grey.Darken1);
+                    col.Item().AlignCenter().Text("SPORTIFY CLUB MANAGER - Reporte de Pagos").SemiBold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                    col.Item().AlignCenter().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
                     col.Item().PaddingTop(4).Height(1).Background(Colors.Blue.Darken2);
                 });
 
-                // Content
                 page.Content().PaddingVertical(8).Table(table =>
                 {
-                    // Definir columnas
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(40);   // ID
-                        columns.RelativeColumn(2);    // Usuario
-                        columns.RelativeColumn(1.5f); // Monto
-                        columns.RelativeColumn(1.5f); // Estado
-                        columns.RelativeColumn(2);    // Fecha Pago
-                        columns.RelativeColumn(2);    // Fecha Aprobacion
+                        columns.ConstantColumn(40);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(1.5f);
+                        columns.RelativeColumn(1.5f);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(2);
                     });
 
-                    // Encabezado de tabla
                     static IContainer HeaderCell(IContainer container) =>
-                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
-                                 .Background(Colors.Blue.Darken2)
-                                 .Border(1).BorderColor(Colors.Blue.Darken3)
-                                 .Padding(5).AlignCenter();
+                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White)).Background(Colors.Blue.Darken2).Border(1).BorderColor(Colors.Blue.Darken3).PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
+
+                    static IContainer DataCell(IContainer container, string backgroundColor) =>
+                        container.Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).PaddingHorizontal(5);
 
                     table.Header(header =>
                     {
-                        header.Cell().Element(HeaderCell).Text("ID");
+                        header.Cell().Element(HeaderCell).Text("ID Pago");
                         header.Cell().Element(HeaderCell).Text("Usuario");
-                        header.Cell().Element(HeaderCell).Text("Monto");
+                        header.Cell().Element(HeaderCell).Text("Monto (COP)");
                         header.Cell().Element(HeaderCell).Text("Estado");
                         header.Cell().Element(HeaderCell).Text("Fecha Pago");
                         header.Cell().Element(HeaderCell).Text("Fecha Aprobacion");
                     });
 
-                    // Filas
                     var rowIndex = 0;
-                    foreach (var pago in pagosList)
+                    foreach (var pago in pagos)
                     {
-                        var bgColor = rowIndex % 2 == 0 ? Colors.White : Colors.Grey.Lighten3;
-                        rowIndex++;
-
-                        static IContainer DataCell(IContainer c, string color) =>
-                            c.Background(color).Border(1).BorderColor(Colors.Grey.Lighten2)
-                             .Padding(4).AlignCenter();
-
-                        var usuarioNombre = pago.Usuario != null
-                            ? $"{pago.Usuario.Nombre} {pago.Usuario.Apellido}"
-                            : $"ID: {pago.UsuarioId}";
-
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.Id.ToString());
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuarioNombre);
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text($"${pago.MontoCOP:N2}");
+                        var bgColor = rowIndex++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten4;
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.Id.ToString()).Bold();
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text($"{pago.Usuario?.Nombre} {pago.Usuario?.Apellido}");
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.MontoCOP.ToString("C0"));
                         table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.Estado.ToString());
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.FechaPago.ToString("dd/MM/yyyy"));
-                        table.Cell().Element(c => DataCell(c, bgColor))
-                             .Text(pago.FechaAprobacion.HasValue
-                                 ? pago.FechaAprobacion.Value.ToString("dd/MM/yyyy")
-                                 : "-");
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.FechaPago.ToString("dd/MM/yyyy HH:mm"));
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(pago.FechaAprobacion?.ToString("dd/MM/yyyy HH:mm") ?? "N/A");
                     }
                 });
 
-                // Footer
                 page.Footer().AlignRight().Text(text =>
                 {
                     text.Span("Pagina ").FontSize(9);
@@ -104,80 +99,66 @@ public class ReportService : IReportService
         return document.GeneratePdf();
     }
 
-    public byte[] GenerateMembersReport(IEnumerable<Usuario> usuarios)
+    public async Task<byte[]> GenerateMembersReportAsync()
     {
-        QuestPDF.Settings.License = LicenseType.Community;
-
-        var usuariosList = usuarios.ToList();
+        var usuarios = await _context.Usuarios
+            .Include(u => u.UsuarioRoles)
+                .ThenInclude(ur => ur.Rol)
+            .Where(u => u.Activo)
+            .OrderBy(u => u.Apellido)
+            .ToListAsync();
 
         var document = Document.Create(container =>
         {
             container.Page(page =>
             {
-                page.Size(PageSizes.A4.Landscape());
+                page.Size(PageSizes.A4);
                 page.Margin(1, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(10));
 
-                // Header
                 page.Header().Column(col =>
                 {
-                    col.Item().AlignCenter().Text("SPORTIFY CLUB MANAGER - Reporte de Miembros")
-                        .SemiBold().FontSize(16).FontColor(Colors.Green.Darken2);
-                    col.Item().AlignCenter().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}")
-                        .FontSize(9).FontColor(Colors.Grey.Darken1);
+                    col.Item().AlignCenter().Text("SPORTIFY CLUB MANAGER - Reporte de Miembros Activos").SemiBold().FontSize(16).FontColor(Colors.Green.Darken2);
+                    col.Item().AlignCenter().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
                     col.Item().PaddingTop(4).Height(1).Background(Colors.Green.Darken2);
                 });
 
-                // Content
                 page.Content().PaddingVertical(8).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(40);   // ID
-                        columns.RelativeColumn(2);    // Nombre
-                        columns.RelativeColumn(2);    // Apellido
-                        columns.RelativeColumn(3);    // Correo
-                        columns.RelativeColumn(1);    // Activo
-                        columns.RelativeColumn(2);    // Fecha Registro
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(1.5f);
+                        columns.RelativeColumn(2);
                     });
 
                     static IContainer HeaderCell(IContainer container) =>
-                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
-                                 .Background(Colors.Green.Darken2)
-                                 .Border(1).BorderColor(Colors.Green.Darken3)
-                                 .Padding(5).AlignCenter();
+                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White)).Background(Colors.Green.Darken2).Border(1).BorderColor(Colors.Green.Darken3).PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
+
+                    static IContainer DataCell(IContainer container, string backgroundColor) =>
+                        container.Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).PaddingHorizontal(5);
 
                     table.Header(header =>
                     {
-                        header.Cell().Element(HeaderCell).Text("ID");
-                        header.Cell().Element(HeaderCell).Text("Nombre");
-                        header.Cell().Element(HeaderCell).Text("Apellido");
+                        header.Cell().Element(HeaderCell).Text("Nombre y Apellido");
                         header.Cell().Element(HeaderCell).Text("Correo");
-                        header.Cell().Element(HeaderCell).Text("Activo");
+                        header.Cell().Element(HeaderCell).Text("Roles");
                         header.Cell().Element(HeaderCell).Text("Fecha Registro");
                     });
 
                     var rowIndex = 0;
-                    foreach (var usuario in usuariosList)
+                    foreach (var user in usuarios)
                     {
-                        var bgColor = rowIndex % 2 == 0 ? Colors.White : Colors.Grey.Lighten3;
-                        rowIndex++;
-
-                        static IContainer DataCell(IContainer c, string color) =>
-                            c.Background(color).Border(1).BorderColor(Colors.Grey.Lighten2)
-                             .Padding(4).AlignCenter();
-
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuario.Id.ToString());
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuario.Nombre);
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuario.Apellido);
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuario.Correo);
-                        table.Cell().Element(c => DataCell(c, bgColor)).Text(usuario.Activo ? "Si" : "No");
-                        table.Cell().Element(c => DataCell(c, bgColor))
-                             .Text(usuario.CreadoEn.ToString("dd/MM/yyyy"));
+                        var bgColor = rowIndex++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten4;
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text($"{user.Nombre} {user.Apellido}").Bold();
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(user.Correo);
+                        var roles = string.Join(", ", user.UsuarioRoles.Select(ur => ur.Rol.Nombre));
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(roles);
+                        table.Cell().Element(c => DataCell(c, bgColor)).Text(user.CreadoEn.ToString("dd/MM/yyyy"));
                     }
                 });
 
-                // Footer
                 page.Footer().AlignRight().Text(text =>
                 {
                     text.Span("Pagina ").FontSize(9);
@@ -191,10 +172,11 @@ public class ReportService : IReportService
         return document.GeneratePdf();
     }
 
-    public byte[] GenerateLocationsReport(IEnumerable<Sede> sedes)
+    public async Task<byte[]> GenerateLocationsReportAsync()
     {
-        QuestPDF.Settings.License = LicenseType.Community;
-        var sedesList = sedes.ToList();
+        var sedes = await _context.Sedes
+            .OrderBy(s => s.Nombre)
+            .ToListAsync();
 
         var document = Document.Create(container =>
         {
@@ -217,23 +199,18 @@ public class ReportService : IReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn(3); // Nombre
-                        columns.RelativeColumn(3); // Ciudad/Direccion
-                        columns.RelativeColumn(2); // Telefono
-                        columns.RelativeColumn(1); // Activo
-                        columns.RelativeColumn(2); // Fecha
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(1);
+                        columns.RelativeColumn(2);
                     });
 
                     static IContainer HeaderCell(IContainer container) =>
-                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
-                                 .Background(Colors.Blue.Darken2)
-                                 .Border(1).BorderColor(Colors.Blue.Darken3)
-                                 .PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
+                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White)).Background(Colors.Blue.Darken2).Border(1).BorderColor(Colors.Blue.Darken3).PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
 
                     static IContainer DataCell(IContainer container, string backgroundColor) =>
-                        container.Background(backgroundColor)
-                                 .Border(1).BorderColor(Colors.Grey.Lighten2)
-                                 .PaddingVertical(5).PaddingHorizontal(5);
+                        container.Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).PaddingHorizontal(5);
 
                     table.Header(header =>
                     {
@@ -245,7 +222,7 @@ public class ReportService : IReportService
                     });
 
                     var rowIndex = 0;
-                    foreach (var sede in sedesList)
+                    foreach (var sede in sedes)
                     {
                         var bgColor = rowIndex++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten4;
                         table.Cell().Element(c => DataCell(c, bgColor)).Text(sede.Nombre).Bold();
@@ -269,8 +246,36 @@ public class ReportService : IReportService
         return document.GeneratePdf();
     }
 
-    public byte[] GeneratePerformanceReport(IEnumerable<Sportify.Application.DTOs.Reports.PerformanceReportItemDto> items)
+    public async Task<byte[]> GeneratePerformanceReportAsync()
     {
+        var evaluaciones = await _context.EvaluacionesCompetencia
+            .Include(e => e.Inscripcion)
+                .ThenInclude(i => i.Competencia)
+            .Include(e => e.Inscripcion)
+                .ThenInclude(i => i.Usuario)
+            .OrderByDescending(e => e.EvaluadoEn)
+            .ToListAsync();
+
+        var items = new List<Sportify.Application.DTOs.Reports.PerformanceReportItemDto>();
+
+        foreach (var eval in evaluaciones)
+        {
+            var ultimaAsistencia = await _context.Asistencias
+                .Where(a => a.UsuarioId == eval.Inscripcion.UsuarioId && a.Presente)
+                .OrderByDescending(a => a.FechaRegistro)
+                .Select(a => (DateTime?)a.FechaRegistro)
+                .FirstOrDefaultAsync();
+
+            items.Add(new Sportify.Application.DTOs.Reports.PerformanceReportItemDto
+            {
+                Atleta = $"{eval.Inscripcion.Usuario.Nombre} {eval.Inscripcion.Usuario.Apellido}",
+                FechaUltimaAsistencia = ultimaAsistencia,
+                Competencia = eval.Inscripcion.Competencia.Nombre,
+                FechaCompetencia = eval.Inscripcion.Competencia.FechaInicio,
+                Observaciones = eval.Comentarios ?? "Sin observaciones"
+            });
+        }
+
         var document = Document.Create(container =>
         {
             container.Page(page =>
@@ -284,7 +289,7 @@ public class ReportService : IReportService
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        col.Item().Text("Reporte de Asistencia y DesempeÃ±o en Competencias").FontSize(20).SemiBold().FontColor(Colors.Red.Darken2);
+                        col.Item().Text("Reporte de Asistencia y Desempeño en Competencias").FontSize(20).SemiBold().FontColor(Colors.Red.Darken2);
                         col.Item().Text($"Fecha de Generacion: {DateTime.Now:dd/MM/yyyy HH:mm}");
                     });
                 });
@@ -293,28 +298,23 @@ public class ReportService : IReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn(3); // Nombre
-                        columns.RelativeColumn(2); // Fecha Asistencia
-                        columns.RelativeColumn(3); // Competencia
-                        columns.RelativeColumn(2); // Fecha Competencia
-                        columns.RelativeColumn(4); // Observaciones
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(4);
                     });
 
                     static IContainer HeaderCell(IContainer container) =>
-                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
-                                 .Background(Colors.Red.Darken2)
-                                 .Border(1).BorderColor(Colors.Red.Darken3)
-                                 .PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
+                        container.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White)).Background(Colors.Red.Darken2).Border(1).BorderColor(Colors.Red.Darken3).PaddingVertical(5).PaddingHorizontal(5).AlignCenter();
 
                     static IContainer DataCell(IContainer container, string backgroundColor) =>
-                        container.Background(backgroundColor)
-                                 .Border(1).BorderColor(Colors.Grey.Lighten2)
-                                 .PaddingVertical(5).PaddingHorizontal(5);
+                        container.Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).PaddingHorizontal(5);
 
                     table.Header(header =>
                     {
                         header.Cell().Element(HeaderCell).Text("Nombre Atleta");
-                        header.Cell().Element(HeaderCell).Text("Ãšltima Asistencia");
+                        header.Cell().Element(HeaderCell).Text("Última Asistencia");
                         header.Cell().Element(HeaderCell).Text("Competencia");
                         header.Cell().Element(HeaderCell).Text("Fecha Competencia");
                         header.Cell().Element(HeaderCell).Text("Observaciones");

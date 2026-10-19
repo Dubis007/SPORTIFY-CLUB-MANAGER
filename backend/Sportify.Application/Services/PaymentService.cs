@@ -10,10 +10,12 @@ namespace Sportify.Application.Services;
 public class PaymentService : IPaymentService
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public PaymentService(IPaymentRepository paymentRepository)
+    public PaymentService(IPaymentRepository paymentRepository, IFileStorageService fileStorageService)
     {
         _paymentRepository = paymentRepository;
+        _fileStorageService = fileStorageService;
     }
 
     /// <inheritdoc/>
@@ -27,6 +29,83 @@ public class PaymentService : IPaymentService
             PageSize = pagination.PageSize,
             TotalCount = total
         };
+    }
+
+    public async Task<object> GetOptionsAsync()
+    {
+        var members = await _paymentRepository.GetMembersForOptionsAsync();
+        var membersObj = members.Select(u => new { u.Id, u.Nombre, u.Apellido });
+
+        var memberships = await _paymentRepository.GetMembershipsForOptionsAsync();
+        var membershipsObj = memberships.Select(m => new { 
+            m.Id, 
+            m.UsuarioId, 
+            m.Estado, 
+            Plan = m.PlanMembresia?.Nombre,
+            m.FechaInicio,
+            m.FechaFin
+        });
+
+        return new { Members = membersObj, Memberships = membershipsObj };
+    }
+
+    public async Task<PaymentDto> ManualRegisterAsync(int aprobadorId, ManualPaymentDto dto)
+    {
+        var pago = new Pago
+        {
+            UsuarioId = dto.UsuarioId,
+            MembresiaId = dto.MembresiaId,
+            MontoCOP = dto.MontoCOP,
+            Estado = EstadoPago.APROBADO,
+            FechaPago = DateTime.UtcNow,
+            FechaAprobacion = DateTime.UtcNow,
+            AprobadoPorId = aprobadorId
+        };
+
+        await _paymentRepository.CreateAsync(pago);
+
+        if (dto.MembresiaId.HasValue) 
+        {
+            var membresia = await _paymentRepository.GetMembresiaByIdAsync(dto.MembresiaId.Value);
+            if (membresia != null && membresia.Estado != EstadoMembresia.ACTIVA)
+            {
+                membresia.Estado = EstadoMembresia.ACTIVA;
+                await _paymentRepository.UpdateMembresiaAsync(membresia);
+            }
+        }
+        
+        return MapToDto(pago);
+    }
+
+    public async Task<object> ManualWithReceiptAsync(ManualPaymentWithReceiptDto dto)
+    {
+        if (dto.Archivo == null || dto.Archivo.Length == 0)
+            throw new ArgumentException("Se requiere un archivo PDF/Imagen válido.", nameof(dto.Archivo));
+
+        var relativePath = await _fileStorageService.SaveFileAsync(dto.Archivo, "receipts");
+
+        var pago = new Pago
+        {
+            UsuarioId = dto.UsuarioId,
+            MembresiaId = dto.MembresiaId,
+            MontoCOP = dto.MontoCOP,
+            Estado = EstadoPago.PENDIENTE,
+            FechaPago = DateTime.UtcNow
+        };
+        await _paymentRepository.CreateAsync(pago);
+
+        var comprobante = new ComprobantePago
+        {
+            PagoId = pago.Id,
+            RutaArchivo = relativePath,
+            NombreArchivo = dto.Archivo.FileName,
+            TipoMime = dto.Archivo.ContentType,
+            TamanoBytes = dto.Archivo.Length,
+            SubidoEn = DateTime.UtcNow
+        };
+        await _paymentRepository.CreateComprobanteAsync(comprobante);
+
+        return new { message = "Comprobante subido exitosamente y pago en estado PENDIENTE." };
     }
 
     /// <inheritdoc/>

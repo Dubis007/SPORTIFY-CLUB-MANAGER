@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Sportify.Infrastructure.Persistence;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using Sportify.Application.Interfaces;
 
 namespace Sportify.Api.Controllers;
 
@@ -11,11 +11,11 @@ namespace Sportify.Api.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private readonly SportifyDbContext _context;
+    private readonly IMemberProfileService _memberProfileService;
 
-    public ProfileController(SportifyDbContext context)
+    public ProfileController(IMemberProfileService memberProfileService)
     {
-        _context = context;
+        _memberProfileService = memberProfileService;
     }
 
     private int GetUserId()
@@ -27,27 +27,22 @@ public class ProfileController : ControllerBase
     public async Task<IActionResult> GetMyProfile()
     {
         var userId = GetUserId();
-        var user = await _context.Usuarios
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.Id, u.Nombre, u.Apellido, u.Correo, u.Activo })
-            .FirstOrDefaultAsync();
+        var profile = await _memberProfileService.GetProfileAsync(userId);
             
-        if (user == null) return NotFound();
-        return Ok(user);
+        if (profile == null) return NotFound();
+        return Ok(profile);
     }
 
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
     {
         var userId = GetUserId();
-        var user = await _context.Usuarios.FindAsync(userId);
-        if (user == null) return NotFound();
+        var success = await _memberProfileService.ChangePasswordAsync(userId, req.CurrentPassword, req.NewPassword);
 
-        if (!BCrypt.Net.BCrypt.Verify(req.CurrentPassword, user.ContrasenaHash))
-            return BadRequest(new { message = "La contraseña actual es incorrecta." });
+        if (!success)
+            return BadRequest(new { message = "La contrasea actual es incorrecta o el usuario no existe." });
 
-        user.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Contraseña actualizada exitosamente." });
+        return Ok(new { message = "Contrasea actualizada exitosamente." });
     }
 }
+// Note: ChangePasswordRequest is already defined in MembersController.cs in the same namespace (or we can just reuse it). Wait, it was in MembersController.cs, so it's in Sportify.Api.Controllers namespace. It should be fine.

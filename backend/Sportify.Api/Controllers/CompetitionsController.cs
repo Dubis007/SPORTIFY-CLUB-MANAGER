@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
-using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Api.Controllers;
 
@@ -11,55 +10,42 @@ namespace Sportify.Api.Controllers;
 [Authorize(Roles = "ADMIN,ENTRENADOR")]
 public class CompetitionsController : ControllerBase
 {
-    private readonly SportifyDbContext _context;
+    private readonly ICompetitionService _competitionService;
 
-    public CompetitionsController(SportifyDbContext context)
+    public CompetitionsController(ICompetitionService competitionService)
     {
-        _context = context;
+        _competitionService = competitionService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var competitions = await _context.Competencias
-            .Where(c => c.EliminadoEn == null)
-            .ToListAsync();
+        var competitions = await _competitionService.GetAllAsync();
         return Ok(competitions);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Competencia dto)
     {
-        dto.CreadoEn = DateTime.UtcNow;
-        _context.Competencias.Add(dto);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetAll), new { id = dto.Id }, dto);
+        var created = await _competitionService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] Competencia dto)
     {
-        var existing = await _context.Competencias.FindAsync(id);
-        if (existing == null || existing.EliminadoEn != null) return NotFound();
+        var updated = await _competitionService.UpdateAsync(id, dto);
+        if (updated == null) return NotFound();
 
-        existing.Nombre = dto.Nombre;
-        existing.Descripcion = dto.Descripcion;
-        existing.FechaInicio = dto.FechaInicio;
-        existing.FechaFin = dto.FechaFin;
-        existing.Ubicacion = dto.Ubicacion;
-
-        await _context.SaveChangesAsync();
-        return Ok(existing);
+        return Ok(updated);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var existing = await _context.Competencias.FindAsync(id);
-        if (existing == null || existing.EliminadoEn != null) return NotFound();
+        var result = await _competitionService.DeleteAsync(id);
+        if (!result) return NotFound();
 
-        existing.EliminadoEn = DateTime.UtcNow; // Soft delete
-        await _context.SaveChangesAsync();
         return NoContent();
     }
 }

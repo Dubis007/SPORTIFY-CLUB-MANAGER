@@ -60,10 +60,20 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<Sportify.Infrastructure.Persistence.SportifyDbContext>();
         
-        // BORRAR LA BASE DE DATOS COMPLETAMENTE PARA EVITAR CONFLICTOS
-        context.Database.EnsureDeleted();
-        // RECREARLA DESDE CERO CON EL ESQUEMA PERFECTO
-        context.Database.EnsureCreated();
+        // ASEGURAR QUE LA BASE DE DATOS EXISTA ANTES DE MIGRAR PARA EVITAR BUG DE MySql.EntityFrameworkCore
+        try {
+            var connStr = context.Database.GetDbConnection().ConnectionString;
+            var builder2 = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = connStr };
+            builder2["Database"] = "";
+            using var connection = new MySql.Data.MySqlClient.MySqlConnection(builder2.ConnectionString);
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE DATABASE IF NOT EXISTS sportify_db;";
+            cmd.ExecuteNonQuery();
+        } catch { }
+
+        // APLICAR MIGRACIONES PENDIENTES AUTOMATICAMENTE
+        context.Database.Migrate();
 
         // INYECCION DE DATOS MANUAL A PRUEBA DE FALLOS
         var passwordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
@@ -98,34 +108,7 @@ using (var scope = app.Services.CreateScope())
             context.SaveChanges();
         }
 
-        // FUERZA BRUTA: Actualizar todas las contraseñas existentes a Admin123! en caso de que la BD antigua haya sobrevivido
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD COLUMN SolicitaCambioClave TINYINT(1) DEFAULT 0;");
-        } catch { /* Ignore if it already exists */ }
 
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Entrenamientos ADD COLUMN Estado VARCHAR(50) DEFAULT 'PENDIENTE';");
-        } catch { /* Ignore if it already exists */ }
-
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Entrenamientos ADD COLUMN FechaFin DATETIME;");
-            context.Database.ExecuteSqlRaw("UPDATE Entrenamientos SET FechaFin = DATE_ADD(FechaHora, INTERVAL 2 HOUR) WHERE FechaFin IS NULL;");
-        } catch { /* Ignore if it already exists */ }
-
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE EvaluacionesCompetencia ADD COLUMN Desempeno VARCHAR(50);");
-        } catch { /* Ignore if it already exists */ }
-
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Sedes ADD COLUMN Telefono VARCHAR(50);");
-        } catch { /* Ignore if it already exists */ }
-
-        try {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD COLUMN SedeId INT;");
-            context.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD CONSTRAINT FK_Usuarios_Sedes_SedeId FOREIGN KEY (SedeId) REFERENCES Sedes(Id);");
-        } catch { /* Ignore if it already exists */ }
-        
-        context.Database.ExecuteSqlRaw("UPDATE Usuarios SET ContrasenaHash = {0}", passwordHash);
 
         if (!context.Sedes.Any())
         {

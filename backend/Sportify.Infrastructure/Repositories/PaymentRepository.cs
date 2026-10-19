@@ -77,4 +77,33 @@ public class PaymentRepository : IPaymentRepository
             .Include(m => m.PlanMembresia)
             .FirstOrDefaultAsync(m => m.Id == membresiaId);
     }
+
+    public async Task<IEnumerable<Usuario>> GetMembersForOptionsAsync()
+    {
+        return await _context.Usuarios
+            .Include(u => u.UsuarioRoles)
+            .ThenInclude(ur => ur.Rol)
+            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO"))
+            .OrderBy(u => u.Nombre)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Membresia>> GetMembershipsForOptionsAsync()
+    {
+        return await _context.Membresias
+            .Include(m => m.PlanMembresia)
+            .ToListAsync();
+    }
+
+    public async Task CreateComprobanteAsync(ComprobantePago comprobante)
+    {
+        _context.ComprobantesPago.Add(comprobante);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateMembresiaAsync(Membresia membresia)
+    {
+        _context.Membresias.Update(membresia);
+        await _context.SaveChangesAsync();
+    }
 }

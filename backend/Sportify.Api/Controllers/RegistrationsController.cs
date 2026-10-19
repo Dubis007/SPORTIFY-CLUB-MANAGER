@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
-using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Api.Controllers;
 
@@ -11,90 +10,51 @@ namespace Sportify.Api.Controllers;
 [Authorize(Roles = "ADMIN,ENTRENADOR")]
 public class RegistrationsController : ControllerBase
 {
-    private readonly SportifyDbContext _context;
+    private readonly IRegistrationService _registrationService;
 
-    public RegistrationsController(SportifyDbContext context)
+    public RegistrationsController(IRegistrationService registrationService)
     {
-        _context = context;
+        _registrationService = registrationService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var regs = await _context.InscripcionesCompetencia
-            .Include(i => i.Competencia)
-            .Include(i => i.Usuario)
-            .Select(i => new {
-                i.Id,
-                i.CompetenciaId,
-                i.UsuarioId,
-                i.Estado,
-                i.FechaInscripcion,
-                UsuarioNombre = i.Usuario.Nombre + " " + i.Usuario.Apellido,
-                CompetenciaNombre = i.Competencia.Nombre
-            })
-            .ToListAsync();
-            
+        var regs = await _registrationService.GetAllAsync();
         return Ok(regs);
     }
 
     [HttpGet("options")]
     public async Task<IActionResult> GetOptions()
     {
-        var competitions = await _context.Competencias
-            .Where(c => c.EliminadoEn == null)
-            .Select(c => new { c.Id, c.Nombre, c.FechaInicio })
-            .OrderBy(c => c.FechaInicio)
-            .ToListAsync();
-
-        var members = await _context.Usuarios
-            .Include(u => u.UsuarioRoles)
-            .ThenInclude(ur => ur.Rol)
-            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO"))
-            .Select(u => new { u.Id, u.Nombre, u.Apellido })
-            .OrderBy(u => u.Nombre)
-            .ToListAsync();
-
-        return Ok(new {
-            Competitions = competitions,
-            Members = members
-        });
+        var options = await _registrationService.GetOptionsAsync();
+        return Ok(options);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] InscripcionCompetencia dto)
     {
-        // Verificar si ya existe
-        var exists = await _context.InscripcionesCompetencia
-            .AnyAsync(i => i.UsuarioId == dto.UsuarioId && i.CompetenciaId == dto.CompetenciaId);
-            
-        if (exists) return BadRequest(new { message = "El usuario ya se encuentra inscrito en esta competencia." });
+        var created = await _registrationService.CreateAsync(dto);
+        if (created == null) return BadRequest(new { message = "El usuario ya se encuentra inscrito en esta competencia." });
 
-        dto.FechaInscripcion = DateTime.UtcNow;
-        _context.InscripcionesCompetencia.Add(dto);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetAll), new { id = dto.Id }, dto);
+        return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] InscripcionCompetencia dto)
     {
-        var existing = await _context.InscripcionesCompetencia.FindAsync(id);
-        if (existing == null) return NotFound();
+        var updated = await _registrationService.UpdateAsync(id, dto);
+        if (updated == null) return NotFound();
 
-        existing.Estado = dto.Estado;
-        await _context.SaveChangesAsync();
-        return Ok(existing);
+        return Ok(updated);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var existing = await _context.InscripcionesCompetencia.FindAsync(id);
-        if (existing == null) return NotFound();
+        var result = await _registrationService.DeleteAsync(id);
+        if (!result) return NotFound();
 
-        _context.InscripcionesCompetencia.Remove(existing);
-        await _context.SaveChangesAsync();
         return NoContent();
     }
 }
