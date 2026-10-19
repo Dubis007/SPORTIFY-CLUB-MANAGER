@@ -41,3 +41,20 @@ git push origin v1.0.0
 - GitHub → **Releases** → `Sportify v1.0.0`.
 - GitHub → perfil/organización → **Packages** → `sportify-api` y `sportify-web` con la etiqueta `1.0.0`.
 - Cualquiera puede descargar la versión: `docker pull ghcr.io/dubis007/sportify-api:1.0.0`.
+
+## 3.4 Liberación real: v1.0.0 (2026-10-19)
+
+`git tag -a v1.0.0 -m "Sportify v1.0.0"` · `git push origin v1.0.0` sobre el commit `fe15e4a`. Ejecución: [Release run 39329172944](https://github.com/Dubis007/SPORTIFY-CLUB-MANAGER/actions/runs/39329172944).
+
+| Job | Intento 1 | Intento 2 |
+|---|---|---|
+| Pruebas antes de liberar | ✅ | ✅ |
+| Publicar imágenes y Release | ✅ | ✅ |
+| Desplegar en Render | ❌ `curl` código 3 (URL mal formada) | ✅ |
+
+**Problema encontrado:** un secret de Deploy Hook se había pegado con caracteres de más (espacio, salto de línea o texto extra). Se volvieron a copiar los hooks con el botón de copiar de Render, se actualizaron los secrets y se usó **Re-run failed jobs**: solo se repitió el despliegue, sin volver a publicar el Release.
+
+**Evidencia:**
+- [GitHub Release `Sportify v1.0.0`](https://github.com/Dubis007/SPORTIFY-CLUB-MANAGER/releases/tag/v1.0.0), con notas generadas automáticamente.
+- Imágenes públicas en GHCR con las etiquetas `1.0.0` y `latest`: `ghcr.io/dubis007/sportify-api` y `ghcr.io/dubis007/sportify-web` (comprobado con un token anónimo: `tags: ["1.0.0","latest"]`).
+- Después del redeploy: `/api/health` → `Healthy` y el CORS del frontend correcto.
