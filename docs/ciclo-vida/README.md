@@ -10,18 +10,19 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
 
 ## Herramientas por fase
 
-| Herramienta | Construcción | Test | Liberación | Implementación | Operación |
-|---|:-:|:-:|:-:|:-:|:-:|
-| **Docker + Docker Compose** | ✔ | | ✔ | ✔ | ✔ |
-| **GitHub Actions** | ✔ | ✔ | ✔ | ✔ | |
-| ESLint | ✔ | | | | |
-| xUnit + Moq + Coverlet (backend) | | ✔ | | | |
-| Vitest + Testing Library (frontend) | | ✔ | | | |
-| GitHub Releases + SemVer + GitHub Container Registry | | | ✔ | | |
-| Render (Blueprint) + Aiven MySQL | | | | ✔ | ✔ |
-| Health Checks ASP.NET Core + UptimeRobot | | | | | ✔ |
+| Herramienta | Construcción | Test | Liberación | Implementación | Operación | Monitoreo |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| **Docker + Docker Compose** | ✔ | | ✔ | ✔ | ✔ | ✔ |
+| **GitHub Actions** | ✔ | ✔ | ✔ | ✔ | | |
+| ESLint | ✔ | | | | | |
+| xUnit + Moq + Coverlet (backend) | | ✔ | | | | |
+| Vitest + Testing Library (frontend) | | ✔ | | | | |
+| GitHub Releases + SemVer + GitHub Container Registry | | | ✔ | | | |
+| **Render (Blueprint)** + Aiven MySQL | | | | ✔ | ✔ | ✔ |
+| `scripts/backup-db.ps1` + respaldos de Aiven | | | | | ✔ | |
+| Health Checks ASP.NET Core + UptimeRobot | | | | | | ✔ |
 
-**Docker** y **GitHub Actions** son las herramientas centrales: entre las dos cubren las cinco fases.
+**Docker**, **GitHub Actions** y **Render** son las herramientas centrales. Entre las tres cubren las seis fases: Docker está en todas menos en test, GitHub Actions automatiza las cuatro primeras y Render sirve para implementación, operación y monitoreo.
 
 ## Flujo completo
 
@@ -44,7 +45,14 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
  Render (render.yaml) + Aiven MySQL ────── IMPLEMENTACIÓN
      │
      ▼
- /api/health ← Render health check, Docker HEALTHCHECK, UptimeRobot ── OPERACIÓN
+ restart automático · rollback · respaldos ─ OPERACIÓN (actúa)
+     ▲
+     │ alertas / hallazgos
+ /api/health ← Docker HEALTHCHECK, Render, UptimeRobot
+ logs y métricas de Render ─────────────── MONITOREO (observa)
+     │ retroalimentación (issues)
+     ▼
+ Desarrollador (nuevo ciclo)
 ```
 
 ## Documentos por fase
@@ -53,13 +61,14 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
 2. [Test](02_test.md): xUnit/Coverlet, Vitest/Testing Library, CI con GitHub Actions.
 3. [Liberación](03_liberacion.md): versionado SemVer, GitHub Releases, GitHub Container Registry.
 4. [Implementación](04_implementacion.md): Render Blueprint, Aiven MySQL, Deploy Hooks.
-5. [Operación](05_operacion.md): health checks, logs, monitoreo, respaldo y rollback.
+5. [Operación](05_operacion.md): recuperación automática, despliegues seguros, keep-alive, respaldo y rollback.
+6. [Monitoreo](06_monitoreo.md): health checks, UptimeRobot, logs, métricas y retroalimentación.
 
 ## Archivos agregados o modificados
 
 | Archivo | Fase |
 |---|---|
-| `backend/Dockerfile`, `backend/.dockerignore` | Construcción |
+| `backend/Dockerfile`, `backend/.dockerignore` | Construcción / Monitoreo (`HEALTHCHECK`) |
 | `frontend/Dockerfile`, `frontend/nginx.conf`, `frontend/.dockerignore` | Construcción |
 | `docker-compose.yml`, `.env.example`, `.gitignore` | Construcción / Implementación |
 | `frontend/eslint.config.js` | Construcción |
@@ -69,5 +78,5 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
 | `backend/Sportify.Tests/Services/PaymentServiceTests.cs` | Test |
 | `.github/workflows/ci.yml` | Construcción / Test |
 | `.github/workflows/release.yml` | Liberación / Implementación |
-| `render.yaml` | Implementación / Operación |
+| `render.yaml` | Implementación / Operación / Monitoreo |
 | `scripts/backup-db.ps1` | Operación |

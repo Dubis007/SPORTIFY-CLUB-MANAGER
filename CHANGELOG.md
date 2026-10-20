@@ -13,7 +13,8 @@ Detalle y bitácora en `docs/ciclo-vida/`.
 - **CI:** `.github/workflows/ci.yml` (build, lint, pruebas con cobertura y validación de imágenes Docker en cada push).
 - **Liberación:** `.github/workflows/release.yml`: con un tag `vX.Y.Z` publica imágenes en GHCR, crea el GitHub Release y dispara el despliegue.
 - **Implementación:** `render.yaml` (Blueprint de Render: API Docker + static site).
-- **Operación:** `scripts/backup-db.ps1`; el endpoint `/api/health` se usa en Docker, Render y UptimeRobot.
+- **Operación:** `scripts/backup-db.ps1`, reinicio automático y rollback.
+- **Monitoreo:** el endpoint `/api/health` se usa en Docker, Render y UptimeRobot; logs y métricas de Render.
 
 ### Cambiado
 - La URL de la API del frontend se lee de `VITE_API_URL` (por defecto `http://localhost:5000`), también para ver comprobantes PDF.

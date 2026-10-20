@@ -1,69 +1,27 @@
 # Fase 5 — Operación
 
-**Objetivo:** saber si el sistema está funcionando, enterarse rápido cuando falla y poder recuperarlo.
+**Objetivo:** mantener el sistema funcionando en producción y poder recuperarlo cuando falla.
 
-**Herramientas:** Health Checks de ASP.NET Core (ya existían), `HEALTHCHECK` y `restart` de Docker, panel de logs/métricas de Render, UptimeRobot (monitoreo gratuito) y `scripts/backup-db.ps1`.
+> **Operación vs. Monitoreo.** La operación **actúa** sobre el sistema: lo ejecuta, lo reinicia, lo respalda y lo devuelve a una versión anterior. El monitoreo ([fase 6](06_monitoreo.md)) **observa** el sistema: mide, registra y alerta. El monitoreo detecta el problema y la operación lo corrige.
+
+**Herramientas:** política `restart` de Docker, reinicio automático, *health check gate* y rollback de Render, `scripts/backup-db.ps1` y respaldos automáticos de Aiven.
 
 ---
 
-## 5.1 Health check: un único punto de verdad
-
-El backend ya registraba un health check que además comprueba la conexión a la base de datos (`backend/Sportify.Api/Program.cs`):
-
-```csharp
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<SportifyDbContext>("Database");
-...
-app.MapHealthChecks("/api/health");
-```
-
-Se reutilizó el mismo endpoint en tres lugares:
-
-| Dónde | Para qué |
-|---|---|
-| `HEALTHCHECK` en `backend/Dockerfile` | Docker marca el contenedor como `healthy`/`unhealthy` (`docker compose ps`) |
-| `healthCheckPath` en `render.yaml` | Render no envía tráfico a una versión nueva hasta que responda `Healthy`; si falla, mantiene la anterior |
-| Monitor de UptimeRobot | Alerta por correo cuando la API cae |
-
-## 5.2 Recuperación automática
+## 5.1 Recuperación automática
 
 - **Local:** `restart: unless-stopped` en `docker-compose.yml` reinicia cualquier contenedor que se detenga.
 - **Render:** reinicia el servicio si el proceso termina.
 
-## 5.3 Monitoreo con UptimeRobot (gratis)
+## 5.2 Despliegues seguros (*health check gate*)
 
-1. Crear cuenta en https://uptimerobot.com.
-2. **Add New Monitor** → tipo **HTTP(s)** → URL `https://sportify-api-ps0y.onrender.com/api/health` → intervalo 5 min.
-3. Agregar el correo de alerta.
-4. (Opcional) crear una **Status Page** pública para mostrar la disponibilidad.
+`render.yaml` define `healthCheckPath: /api/health`. Render no envía tráfico a una versión nueva hasta que el endpoint responda `Healthy`; si no responde, mantiene la versión anterior en servicio. El endpoint es la misma señal que usa el monitoreo ([6.1](06_monitoreo.md#61-health-check-un-único-punto-de-verdad)); aquí se usa para **decidir** si la versión nueva entra en servicio.
 
-Efecto adicional: la consulta cada 5 minutos evita que el plan gratuito de Render duerma la API.
+## 5.3 Mantener la API disponible (keep-alive)
 
-### Evidencia (2026-10-19)
+El plan gratuito de Render duerme el servicio después de 15 minutos sin tráfico, y la primera petición posterior sufre un arranque en frío de **34 s** (medido el 2026-10-19). El monitor de UptimeRobot ([6.2](06_monitoreo.md#62-monitoreo-de-disponibilidad-con-uptimerobot)) consulta la API cada 5 minutos, así que esta nunca se duerme: tras ≈3 h sin tráfico propio respondió en **1,06 s**. El monitor es una herramienta de monitoreo, pero este efecto suyo pertenece a la operación.
 
-- Monitor **Sportify API** creado (HTTP(s), cada 5 min) y en estado **Up**.
-- Antes del monitor, con la API dormida, la primera petición tardó **34 s** (arranque en frío de Render).
-- Con el monitor activo, tras ≈3 h sin tráfico propio:
-
-```text
-$ curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://sportify-api-ps0y.onrender.com/api/health
-200 1.061744s
-200 0.461378s
-200 0.319070s
-```
-
-La API responde en ~1 s desde la primera petición: el monitor la mantiene despierta. Captura sugerida para el informe: panel del monitor con el historial de *uptime* y tiempos de respuesta.
-
-## 5.4 Logs
-
-| Entorno | Comando / lugar |
-|---|---|
-| Local | `docker compose logs -f api` (o `db`, `web`) |
-| Render | Servicio → pestaña **Logs** (en vivo, con búsqueda) y **Metrics** (CPU, memoria, peticiones) |
-
-Los errores no controlados quedan registrados por `GlobalExceptionHandler` (`backend/Sportify.Api/Middlewares/GlobalExceptionHandler.cs`).
-
-## 5.5 Procedimientos de operación
+## 5.4 Procedimientos de operación
 
 | Situación | Acción |
 |---|---|
