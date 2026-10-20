@@ -49,7 +49,32 @@ $ curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://sportify-api-ps0
 
 Captura sugerida para el informe: panel del monitor con el historial de *uptime* y los tiempos de respuesta.
 
-## 6.3 Logs
+### Incidente real detectado (2026-10-20)
+
+El monitor pasó a **Down** el 20-oct a las 14:09 (GMT-5) con causa `502 Bad Gateway`; a las 15:44 llevaba 1 h 34 min caído y la disponibilidad de 7 días bajó a 92,647 % (2 incidentes; el anterior, del 19-oct, duró 5 min). Comprobación manual: `/api/health` sin respuesta en 60–120 s, mientras el frontend estático respondía 200. Capturas: `img/uptimerobot-monitor.png` e `img/uptimerobot-respuesta-incidentes.png`.
+
+> Nota: en ese periodo la gráfica de tiempo de respuesta (≈305 ms) mide la respuesta 502 del proxy de Render, no el rendimiento de la API.
+
+## 6.3 Demo con tráfico artificial (`scripts/demo-trafico.mjs`)
+
+Script de Node sin dependencias que simula usuarios concurrentes contra la API y resume su rendimiento. Se ejecuta con `node` (no le afecta la política de ejecución de scripts de PowerShell):
+
+```powershell
+node scripts/demo-trafico.mjs                                   # 10 usuarios, 60 s, /api/health en Render
+node scripts/demo-trafico.mjs <url> <usuarios> <segundos>       # personalizado
+```
+
+Cada usuario virtual hace una petición, espera 250 ms y repite (carga ligera). Cada 5 s muestra el progreso y al final: peticiones totales, req/s, % de éxito, códigos de respuesta y tiempos mín/promedio/p50/p95/máx.
+
+**Guion de la demo (después de la presentación `UptimeRobot_Sportify.pptx`):**
+1. Abrir el panel de UptimeRobot en el monitor *sportify-api* (estado y gráfica de tiempo de respuesta).
+2. Ejecutar `node scripts/demo-trafico.mjs` y comentar el progreso.
+3. Leer el resumen: % de éxito, promedio y p95.
+4. Volver a UptimeRobot: el chequeo siguiente (cada 5 min) sigue en **Up** y su tiempo aparece en la gráfica.
+
+Prueba del script (2026-10-20): contra el frontend, 10 usuarios × 10 s → 290 peticiones, 100 % 200, promedio 90 ms, p95 91 ms; contra la API caída → todas las peticiones como `timeout`/`sin respuesta`, sin bloquear el script.
+
+## 6.4 Logs
 
 | Entorno | Comando / lugar |
 |---|---|
@@ -58,11 +83,11 @@ Captura sugerida para el informe: panel del monitor con el historial de *uptime*
 
 Los errores no controlados quedan registrados por `GlobalExceptionHandler` (`backend/Sportify.Api/Middlewares/GlobalExceptionHandler.cs`).
 
-## 6.4 Métricas
+## 6.5 Métricas
 
 En Render, la pestaña **Metrics** de cada servicio muestra CPU, memoria y peticiones por minuto. Así se ve si el plan gratuito se queda corto (por ejemplo, si la memoria está cerca del límite).
 
-## 6.5 De la observación a la acción
+## 6.6 De la observación a la acción
 
 El monitoreo no corrige nada por sí mismo: detecta y avisa. La corrección la hace la [fase de Operación](05_operacion.md) o, si el problema exige cambiar el código, un nuevo ciclo de desarrollo.
 
