@@ -34,5 +34,6 @@ Registro cronológico de cada acción realizada. Estado: ✅ hecho y verificado 
 | 28 | 2026-10-19 | Implementación | Corregir URLs con sufijo de Render: frontend llamaba a otra API y CORS bloqueaba el login | Render: `VITE_API_URL` (rebuild) y `Cors__AllowedOrigins__0`; GitHub: variable `VITE_API_URL` | ✅ preflight 204 con `access-control-allow-origin` del web; origen ajeno rechazado |
 | 29 | 2026-10-19 | Liberación / Implementación | Corregir secrets de Deploy Hook mal pegados (`curl` código 3) y relanzar solo el despliegue | GitHub Secrets · *Re-run failed jobs* | ✅ job *Desplegar en Render* success; health y CORS OK tras el redeploy |
 | 30 | 2026-10-19 | Operación / Monitoreo | Separar Operación y Monitoreo en dos fases (el entregable pide 6): la operación actúa y el monitoreo observa | `05_operacion.md`, nuevo `06_monitoreo.md`, `README.md` (columna Monitoreo y diagrama) | ✅ |
+| 31 | 2026-10-19 | Todas | Documento Word para el informe académico: por fase, herramienta, cómo se implementó y función | `docs/ciclo-vida/Sportify_Ciclo_de_Vida_DevOps.docx` (generado con docx-js, validado y revisado en Word) | ✅ 9 páginas, 19 herramientas en 6 fases |
 
 > Al completar cada paso pendiente, cambiar ⏳ por ✅, poner la fecha y agregar la evidencia (captura o enlace a la ejecución de GitHub Actions / Render) en el documento de la fase.
