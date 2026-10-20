@@ -66,3 +66,28 @@ El workflow **CI** se ejecuta en cada `push`, `pull_request` o manualmente (`wor
 | Backend (.NET) - build y pruebas | ✅ success (restore, build, 3 pruebas xUnit, artefactos publicados) |
 | Frontend (React) - lint, pruebas y build | ✅ success (ESLint, 7 pruebas Vitest con cobertura, build) |
 | Docker - validar imágenes | ✅ success (`docker compose build`) |
+
+## 2.4 Demostración visual: Vitest UI
+
+**Qué es:** `@vitest/ui` es la interfaz web oficial de Vitest. Muestra en el navegador el árbol de pruebas en verde/rojo, el código de cada prueba, el error con su detalle, el tiempo de ejecución y (con `--coverage`) el reporte de cobertura. En modo *watch* vuelve a ejecutar las pruebas al guardar un archivo.
+
+**Instalación** (misma versión que Vitest):
+```powershell
+cd frontend
+npm install -D @vitest/ui@3.2.7
+```
+Script en `package.json`: `"test:ui": "vitest --ui --watch --coverage --open"`.
+
+**Ejecución:** `npm run test:ui` abre `http://localhost:51204/__vitest__/` (para cerrarla, `Ctrl+C` en la terminal).
+
+**Guion de demostración (≈2 min):**
+1. Ejecutar `npm run test:ui`: aparecen los 2 archivos y las 7 pruebas en verde.
+2. Abrir `Pagination.test.tsx` en la UI y explicar qué valida cada prueba.
+3. Provocar un fallo: en `src/components/Pagination.test.tsx` cambiar `'11–20 de 25 registros'` por `'11–20 de 99 registros'` y guardar. La UI marca en rojo *muestra el rango de registros de la página actual* con el error `Unable to find an element with the text: 11–20 de 99 registros`.
+4. Revertir el cambio y guardar: la prueba vuelve a verde.
+5. Abrir la pestaña **Coverage** para mostrar el porcentaje cubierto por archivo (`schemas.ts` 100 %).
+6. Complemento: mostrar en GitHub → **Actions** la ejecución del CI que corre las mismas pruebas en cada push.
+
+**Alternativa sin la UI:** `npm run test:coverage` y abrir `frontend/coverage/index.html` en el navegador.
+
+**Verificación (2026-10-20):** UI respondió HTTP 200 en el puerto 51204; al cambiar el texto la prueba falló (`1 failed | 2 passed`) y al revertirlo volvió a `3 passed`. `npm run test` (7 passed), `npm run lint` (0 errores) y `npm run build` siguen OK.
