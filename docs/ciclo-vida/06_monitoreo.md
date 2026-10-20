@@ -53,6 +53,8 @@ Captura sugerida para el informe: panel del monitor con el historial de *uptime*
 
 El monitor pasó a **Down** el 20-oct a las 14:09 (GMT-5) con causa `502 Bad Gateway`; a las 15:44 llevaba 1 h 34 min caído y la disponibilidad de 7 días bajó a 92,647 % (2 incidentes; el anterior, del 19-oct, duró 5 min). Comprobación manual: `/api/health` sin respuesta en 60–120 s, mientras el frontend estático respondía 200. Capturas: `img/uptimerobot-monitor.png` e `img/uptimerobot-respuesta-incidentes.png`.
 
+**Recuperación:** el incidente quedó *Resolved* a las 16:46 tras **2 h 37 min**; la disponibilidad de 7 días quedó en 88,478 % (2 incidentes, 2 h 42 min caído en total). Verificación: `/api/health` → `200 Healthy` en 0,78 s. Capturas: `img/uptimerobot-monitor-up.png` e `img/uptimerobot-incidentes-resueltos.png`.
+
 > Nota: en ese periodo la gráfica de tiempo de respuesta (≈305 ms) mide la respuesta 502 del proxy de Render, no el rendimiento de la API.
 
 ## 6.3 Demo con tráfico artificial (`scripts/demo-trafico.mjs`)
@@ -72,7 +74,7 @@ Cada usuario virtual hace una petición, espera 250 ms y repite (carga ligera). 
 3. Leer el resumen: % de éxito, promedio y p95.
 4. Volver a UptimeRobot: el chequeo siguiente (cada 5 min) sigue en **Up** y su tiempo aparece en la gráfica.
 
-Prueba del script (2026-10-20): contra el frontend, 10 usuarios × 10 s → 290 peticiones, 100 % 200, promedio 90 ms, p95 91 ms; contra la API caída → todas las peticiones como `timeout`/`sin respuesta`, sin bloquear el script.
+Prueba contra la API real (2026-10-20, tras la recuperación): 10 usuarios × 60 s → **1081 respuestas 200 (100 %)**, 18 req/s, mín 244 ms · promedio 298 ms · p50 263 ms · p95 419 ms · máx 2890 ms (el máximo corresponde a las primeras peticiones). Pruebas previas: contra el frontend, 10 usuarios × 10 s → 290 peticiones, 100 % 200, promedio 90 ms, p95 91 ms; contra la API caída → todas las peticiones como `timeout`/`sin respuesta`, sin bloquear el script.
 
 ## 6.4 Logs
 

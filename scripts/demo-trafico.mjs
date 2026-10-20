@@ -11,6 +11,7 @@ const PAUSA_MS = 250; // pausa entre peticiones de cada usuario: mantiene la car
 const tiempos = [];
 const codigos = {};
 let enCurso = true;
+let canceladas = 0; // peticiones en curso cortadas al acabar el tiempo (no cuentan como fallo)
 const fin = new AbortController(); // corta las peticiones pendientes al acabar el tiempo
 
 function registrar(codigo, ms) {
@@ -28,7 +29,7 @@ async function usuarioVirtual() {
       registrar(res.status, performance.now() - inicio);
     } catch (err) {
       if (!enCurso) {
-        registrar('sin respuesta al terminar', null);
+        canceladas++;
         break;
       }
       registrar(err.name === 'TimeoutError' ? 'timeout' : 'error de red', null);
@@ -75,7 +76,8 @@ const exitos = Object.entries(codigos)
 console.log(`\n===== Resumen =====`);
 console.log(`Peticiones totales : ${total()} en ${duracion.toFixed(1)} s (${(total() / duracion).toFixed(1)} req/s)`);
 console.log(`Exitosas (2xx)     : ${exitos} (${total() ? ((exitos / total()) * 100).toFixed(1) : 0} %)`);
-console.log(`Respuestas         : ${Object.entries(codigos).map(([c, n]) => `${c} × ${n}`).join(' · ')}`);
+console.log(`Respuestas         : ${Object.entries(codigos).map(([c, n]) => `${c} × ${n}`).join(' · ') || 'ninguna'}`);
+if (canceladas) console.log(`En curso al final  : ${canceladas} (canceladas, no cuentan como error)`);
 if (ordenados.length) {
   const promedio = ordenados.reduce((a, b) => a + b, 0) / ordenados.length;
   console.log(`Tiempo de respuesta: mín ${ms(ordenados[0])} · promedio ${ms(promedio)} · ` +
