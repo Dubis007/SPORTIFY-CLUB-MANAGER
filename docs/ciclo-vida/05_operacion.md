@@ -33,11 +33,26 @@ Se reutilizó el mismo endpoint en tres lugares:
 ## 5.3 Monitoreo con UptimeRobot (gratis)
 
 1. Crear cuenta en https://uptimerobot.com.
-2. **Add New Monitor** → tipo **HTTP(s)** → URL `https://sportify-api.onrender.com/api/health` → intervalo 5 min.
+2. **Add New Monitor** → tipo **HTTP(s)** → URL `https://sportify-api-ps0y.onrender.com/api/health` → intervalo 5 min.
 3. Agregar el correo de alerta.
 4. (Opcional) crear una **Status Page** pública para mostrar la disponibilidad.
 
 Efecto adicional: la consulta cada 5 minutos evita que el plan gratuito de Render duerma la API.
+
+### Evidencia (2026-10-19)
+
+- Monitor **Sportify API** creado (HTTP(s), cada 5 min) y en estado **Up**.
+- Antes del monitor, con la API dormida, la primera petición tardó **34 s** (arranque en frío de Render).
+- Con el monitor activo, tras ≈3 h sin tráfico propio:
+
+```text
+$ curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://sportify-api-ps0y.onrender.com/api/health
+200 1.061744s
+200 0.461378s
+200 0.319070s
+```
+
+La API responde en ~1 s desde la primera petición: el monitor la mantiene despierta. Captura sugerida para el informe: panel del monitor con el historial de *uptime* y tiempos de respuesta.
 
 ## 5.4 Logs
 
