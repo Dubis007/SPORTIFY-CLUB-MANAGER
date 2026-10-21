@@ -1,56 +1,38 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import {
+  CreditCard,
+  Activity,
+  User,
+} from 'lucide-react';
+import EnterpriseErpLayout, { type ErpNavItem } from '../EnterpriseErpLayout';
+
+const MEMBER_NAV_ITEMS: ErpNavItem[] = [
+  {
+    label: 'Membresías y Pagos',
+    to: '/member/dashboard?tab=membresias',
+    icon: CreditCard,
+    section: 'PORTAL DEL ATLETA',
+  },
+  {
+    label: 'Mis Actividades y Torneos',
+    to: '/member/dashboard?tab=actividades',
+    icon: Activity,
+    section: 'PORTAL DEL ATLETA',
+  },
+  {
+    label: 'Mi Perfil Personal',
+    to: '/member/dashboard?tab=perfil',
+    icon: User,
+    section: 'CUENTA',
+  },
+];
 
 export default function MemberLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="min-h-screen bg-sportify-light flex flex-col">
-      {/* Navbar Superior */}
-      <nav className="bg-white shadow-sm border-b-4 border-sportify-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <i className="bi bi-person-badge text-orange-600 text-2xl mr-2"></i>
-              <span className="font-bold text-sportify-dark text-xl tracking-tight">SPORTIFY MIEMBRO</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 font-medium">
-                <i className="bi bi-person-circle mr-1"></i> {user?.nombre || 'Miembro'}
-              </span>
-              <button 
-                onClick={handleLogout}
-                className="text-sportify-primary hover:text-red-800 text-sm font-semibold transition-colors"
-              >
-                <i className="bi bi-box-arrow-right mr-1"></i> Salir
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="flex-1 flex max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Sidebar Menú Lateral */}
-        <aside className="w-64 flex-shrink-0 pr-8 hidden md:block">
-          <nav className="space-y-2">
-            <Link to="/member/dashboard" className="flex items-center px-4 py-3 bg-white text-sportify-dark rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-semibold border-l-4 border-transparent hover:border-sportify-primary">
-              <i className="bi bi-house-door mr-3 text-lg text-gray-400"></i>
-              Mi Panel
-            </Link>
-          </nav>
-        </aside>
-
-        {/* Contenido Principal */}
-        <main className="flex-1 bg-white rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <EnterpriseErpLayout
+      roleTitle="Portal del Miembro"
+      roleSubtitle="Estado de Membresía, Comprobantes y Agenda Deportiva"
+      roleAccentLabel="MIEMBRO"
+      navItems={MEMBER_NAV_ITEMS}
+    />
   );
 }

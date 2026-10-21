@@ -26,24 +26,25 @@ export default function Pagination({
   const to = Math.min(page * pageSize, totalCount);
 
   const buttonClass =
-    'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-200 bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t bg-white text-sm text-gray-600">
-      <div className="flex items-center gap-2">
-        <span>Mostrar</span>
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-800 bg-slate-900/95 text-xs text-slate-400">
+      <div className="flex items-center gap-2.5">
+        <span>Filas por página:</span>
         <select
           value={pageSize}
           disabled={loading}
           onChange={e => onPageSizeChange(Number(e.target.value))}
-          className="border rounded-lg px-2 py-1 outline-none focus:border-sportify-primary"
+          aria-label="Filas por página"
+          className="border border-slate-700 bg-slate-950 text-slate-200 rounded-lg px-2.5 py-1 outline-none focus:border-blue-500"
         >
           {pageSizeOptions.map(size => (
             <option key={size} value={size}>{size}</option>
           ))}
         </select>
-        <span>
-          {from}–{to} de {totalCount} registros
+        <span className="text-slate-400 font-medium">
+          Mostrando <strong className="text-slate-200">{from}–{to}</strong> de <strong className="text-slate-200">{totalCount}</strong> registros
         </span>
       </div>
 
@@ -54,9 +55,9 @@ export default function Pagination({
           disabled={loading || page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          <ChevronLeft size={16} /> Anterior
+          <ChevronLeft size={14} /> Anterior
         </button>
-        <span className="px-2 font-medium text-gray-700">
+        <span className="px-2.5 font-semibold text-slate-300">
           Página {page} de {lastPage}
         </span>
         <button
@@ -65,7 +66,7 @@ export default function Pagination({
           disabled={loading || page >= lastPage}
           onClick={() => onPageChange(page + 1)}
         >
-          Siguiente <ChevronRight size={16} />
+          Siguiente <ChevronRight size={14} />
         </button>
       </div>
     </div>

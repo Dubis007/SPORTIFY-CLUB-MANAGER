@@ -3,29 +3,180 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white;
+  }
+
+  /* Estilizado sobrio de barras de desplazamiento para tablas y paneles ERP */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-800 rounded-full hover:bg-slate-700;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 
-           disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-500 
+           focus:outline-none focus:ring-2 focus:ring-blue-500/40
+           disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm;
   }
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 
+    @apply bg-slate-800 text-slate-200 border border-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-700 
            transition-colors;
   }
   .btn-danger {
-    @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 
+    @apply bg-rose-600/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-rose-500 
            transition-colors;
   }
   .input-field {
-    @apply w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none 
-           focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply w-full bg-slate-950/90 border border-slate-800 text-slate-100 placeholder-slate-500 rounded-lg px-3.5 py-2.5
+           focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+    @apply bg-slate-900/90 rounded-xl shadow-lg border border-slate-800/80 p-6;
   }
+  .erp-table-container {
+    @apply bg-slate-900/90 rounded-xl border border-slate-800/80 shadow-lg overflow-hidden;
+  }
+}
+
+/* Normalización Enterprise Dark ERP para superficies heredadas y controles nativos */
+.erp-main-canvas .bg-white {
+  background-color: rgb(15 23 42 / 0.92) !important;
+  border-color: rgb(30 41 59 / 0.85) !important;
+  color: rgb(241 245 249) !important;
+}
+
+.erp-main-canvas .bg-gray-50,
+.erp-main-canvas .bg-gray-100,
+.erp-main-canvas .bg-sportify-light {
+  background-color: rgb(2 6 23 / 0.65) !important;
+  border-color: rgb(30 41 59 / 0.8) !important;
+}
+
+.erp-main-canvas .hover\:bg-gray-50:hover,
+.erp-main-canvas .hover\:bg-gray-100:hover {
+  background-color: rgb(30 41 59 / 0.55) !important;
+}
+
+.erp-main-canvas .text-gray-900,
+.erp-main-canvas .text-gray-800,
+.erp-main-canvas .text-gray-700 {
+  color: rgb(241 245 249) !important;
+}
+
+.erp-main-canvas .text-gray-600,
+.erp-main-canvas .text-gray-500,
+.erp-main-canvas .text-gray-400 {
+  color: rgb(148 163 184) !important;
+}
+
+.erp-main-canvas .border,
+.erp-main-canvas .border-b,
+.erp-main-canvas .border-t,
+.erp-main-canvas .border-l,
+.erp-main-canvas .border-r,
+.erp-main-canvas .border-gray-100,
+.erp-main-canvas .border-gray-200,
+.erp-main-canvas .border-gray-300 {
+  border-color: rgb(30 41 59 / 0.85) !important;
+}
+
+.erp-main-canvas .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.erp-main-canvas .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(30 41 59 / 0.75) !important;
+}
+
+.erp-main-canvas input:not([type="checkbox"]):not([type="radio"]),
+.erp-main-canvas select,
+.erp-main-canvas textarea {
+  background-color: rgb(2 6 23 / 0.9) !important;
+  border-color: rgb(51 65 85 / 0.85) !important;
+  color: rgb(241 245 249) !important;
+}
+
+.erp-main-canvas input:focus,
+.erp-main-canvas select:focus,
+.erp-main-canvas textarea:focus {
+  border-color: rgb(37 99 235) !important;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 0.25) !important;
+}
+
+/* Acentos semánticos sobrios para estados (Esmeralda, Ámbar, Coral, Azul) */
+.erp-main-canvas .bg-green-100,
+.erp-main-canvas .bg-green-50 {
+  background-color: rgb(16 185 129 / 0.14) !important;
+  color: rgb(52 211 153) !important;
+  border: 1px solid rgb(16 185 129 / 0.28) !important;
+}
+.erp-main-canvas .text-green-800,
+.erp-main-canvas .text-green-700,
+.erp-main-canvas .text-green-600 {
+  color: rgb(52 211 153) !important;
+}
+
+.erp-main-canvas .bg-yellow-100,
+.erp-main-canvas .bg-yellow-50,
+.erp-main-canvas .bg-orange-100 {
+  background-color: rgb(245 158 11 / 0.14) !important;
+  color: rgb(251 191 36) !important;
+  border: 1px solid rgb(245 158 11 / 0.28) !important;
+}
+.erp-main-canvas .text-yellow-800,
+.erp-main-canvas .text-yellow-700,
+.erp-main-canvas .text-yellow-600,
+.erp-main-canvas .text-orange-800,
+.erp-main-canvas .text-orange-700 {
+  color: rgb(251 191 36) !important;
+}
+
+.erp-main-canvas .bg-red-100,
+.erp-main-canvas .bg-red-50 {
+  background-color: rgb(244 63 94 / 0.14) !important;
+  color: rgb(251 113 133) !important;
+  border: 1px solid rgb(244 63 94 / 0.28) !important;
+}
+.erp-main-canvas .text-red-800,
+.erp-main-canvas .text-red-700,
+.erp-main-canvas .text-red-600 {
+  color: rgb(251 113 133) !important;
+}
+
+.erp-main-canvas .bg-blue-100,
+.erp-main-canvas .bg-blue-50 {
+  background-color: rgb(37 99 235 / 0.16) !important;
+  color: rgb(96 165 250) !important;
+  border: 1px solid rgb(37 99 235 / 0.3) !important;
+}
+.erp-main-canvas .text-blue-800,
+.erp-main-canvas .text-blue-700,
+.erp-main-canvas .text-blue-600 {
+  color: rgb(96 165 250) !important;
+}
+
+.erp-main-canvas .bg-purple-100,
+.erp-main-canvas .bg-purple-50 {
+  background-color: rgb(139 92 246 / 0.16) !important;
+  color: rgb(196 181 253) !important;
+  border: 1px solid rgb(139 92 246 / 0.3) !important;
+}
+.erp-main-canvas .text-purple-800,
+.erp-main-canvas .text-purple-700,
+.erp-main-canvas .text-purple-600 {
+  color: rgb(196 181 253) !important;
+}
+
+/* Botones de acción primaria redirigidos de rojo a azul institucional */
+.erp-main-canvas .hover\:bg-red-700:hover {
+  background-color: rgb(29 78 216) !important;
 }

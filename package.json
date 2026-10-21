@@ -1,0 +1,17 @@
+{
+  "name": "sportify-club-manager-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orquestador nativo (Cero Docker) para Sportify Club Manager: Backend .NET Core, Microservicios TS/Zod (5101, 5102) y Frontend React/Vite (5173)",
+  "scripts": {
+    "ms:install": "npm --prefix backend/microservice install",
+    "ms1:start": "npm --prefix backend/microservice run start:ms1",
+    "ms2:start": "npm --prefix backend/microservice run start:ms2",
+    "ms:start": "npm --prefix backend/microservice run start:all",
+    "ms:typecheck": "npm --prefix backend/microservice run typecheck",
+    "api:start": "dotnet run --project backend/Sportify.Api/Sportify.Api.csproj --urls http://localhost:5000",
+    "api:build": "dotnet build backend/Sportify.Api/Sportify.Api.csproj",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:typecheck": "npm --prefix frontend exec tsc -- --noEmit"
+  }
+}

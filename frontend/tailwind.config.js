@@ -8,15 +8,15 @@ export default {
     extend: {
       colors: {
         sportify: {
-          primary: '#dc2626',   // Rojo vibrante
-          secondary: '#facc15', // Amarillo vibrante
-          dark: '#000000',      // Negro
-          light: '#f8f9fa',     // Gris claro / Blanco (estilo Bootstrap)
-          gray: '#e9ecef',      // Gris para bordes
+          primary: '#2563eb',   // Azul institucional profundo (Enterprise ERP)
+          secondary: '#1e3a8a', // Azul marino corporativo
+          dark: '#f8fafc',      // Texto principal claro sobre fondos slate-950/900
+          light: '#020617',     // Fondo base slate-950
+          gray: '#1e293b',      // Bordes sutiles slate-800
         }
       },
       fontFamily: {
-        sans: ['Montserrat', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
       }
     },
   },

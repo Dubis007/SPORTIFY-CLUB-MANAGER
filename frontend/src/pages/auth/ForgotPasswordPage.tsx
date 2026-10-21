@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Mail, CheckCircle2, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { authService } from '../../services/auth/authService';
 
+const forgotPasswordSchema = z.object({
+  correo: z
+    .string()
+    .min(1, 'El correo electrónico es obligatorio')
+    .email('Ingresa un correo electrónico institucional válido'),
+});
+
+type ForgotPasswordInputs = z.infer<typeof forgotPasswordSchema>;
+
 export default function ForgotPasswordPage() {
-  const [correo, setCorreo] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordInputs>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const onSubmit = async (data: ForgotPasswordInputs) => {
     setError('');
     setLoading(true);
 
     try {
-      await authService.forgotPassword(correo);
+      await authService.forgotPassword(data.correo);
       setSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Hubo un error al procesar tu solicitud.');
@@ -24,79 +43,87 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Recuperar Contraseña
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          ¿Recordaste tu contraseña?{' '}
-          <Link to="/login" className="font-medium text-sportify-primary hover:text-red-700">
-            Inicia sesión aquí
-          </Link>
-        </p>
-      </div>
+        <div className="bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="p-8 border-b border-slate-800 bg-slate-950/50 text-center">
+            <h1 className="text-xl font-bold text-slate-100">Recuperación de Credenciales</h1>
+            <p className="mt-1 text-xs text-slate-400">
+              Solicita autorización al administrador del club para restablecer tu clave
+            </p>
+          </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {success ? (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <i className="bi bi-check-lg text-green-600 text-xl"></i>
+          <div className="p-8">
+            {success ? (
+              <div className="text-center space-y-4">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                  <CheckCircle2 size={24} />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">Solicitud registrada en auditoría</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Hemos notificado al panel de administración de Sportify ERP que requieres restablecer tu clave de acceso.
+                </p>
+                <Link
+                  to="/login"
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+                >
+                  <ArrowLeft size={16} /> Volver al Portal de Acceso
+                </Link>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Solicitud enviada al admin</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Hemos notificado al administrador del sistema que deseas restablecer tu contraseña. 
-                Por favor, comunícate con administración para que te proporcionen una nueva clave temporal.
-              </p>
-              <Link
-                to="/login"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sportify-primary hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sportify-primary"
-              >
-                Volver al Login
-              </Link>
-            </div>
-          ) : (
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Correo electrónico
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="bi bi-envelope text-gray-400"></i>
+            ) : (
+              <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+                <div>
+                  <label htmlFor="correo" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                    Correo electrónico registrado
+                  </label>
+                  <div
+                    className={`flex items-center bg-slate-950 border ${
+                      errors.correo ? 'border-rose-500/80' : 'border-slate-800'
+                    } rounded-xl overflow-hidden focus-within:border-blue-500`}
+                  >
+                    <span className="pl-3.5 pr-2 text-slate-500">
+                      <Mail size={16} />
+                    </span>
+                    <input
+                      id="correo"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="usuario@sportify.com"
+                      className="w-full px-2.5 py-2.5 bg-transparent text-sm text-slate-100 outline-none placeholder-slate-600"
+                      {...register('correo')}
+                    />
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={correo}
-                    onChange={(e) => setCorreo(e.target.value)}
-                    className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sportify-primary focus:border-sportify-primary sm:text-sm"
-                    placeholder="tu@correo.com"
-                  />
+                  {errors.correo && (
+                    <p className="text-xs text-rose-400 mt-1.5 font-medium">{errors.correo.message}</p>
+                  )}
                 </div>
-              </div>
 
-              {error && (
-                <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md border border-red-100">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="text-rose-300 text-xs bg-rose-500/10 p-3 rounded-xl border border-rose-500/30 flex items-center gap-2">
+                    <ShieldAlert size={16} className="shrink-0 text-rose-400" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
-              <div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sportify-primary hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sportify-primary disabled:opacity-50"
+                  className="w-full flex justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? 'Enviando solicitud...' : 'Solicitar cambio de contraseña'}
+                  {loading ? 'Enviando solicitud...' : 'Solicitar restablecimiento'}
                 </button>
-              </div>
-            </form>
-          )}
+
+                <div className="text-center pt-2">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-200"
+                  >
+                    <ArrowLeft size={14} /> Regresar al inicio de sesión
+                  </Link>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
