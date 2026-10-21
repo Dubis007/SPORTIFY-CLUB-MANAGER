@@ -1,0 +1,24 @@
+{
+  "name": "sportify-microservices",
+  "version": "1.0.0",
+  "description": "Suite de microservicios nativos desacoplados para Sportify Club Manager (Cero Docker)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start:ms1": "tsx microservicio1/endpoint.ts",
+    "start:ms2": "tsx microservicio2/endpoint.ts",
+    "dev:ms1": "tsx watch microservicio1/endpoint.ts",
+    "dev:ms2": "tsx watch microservicio2/endpoint.ts",
+    "start:all": "concurrently -n \"MS1-AUTH,MS2-REPORTS\" -c \"blue,emerald\" \"npm run start:ms1\" \"npm run start:ms2\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

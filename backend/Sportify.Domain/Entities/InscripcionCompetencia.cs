@@ -1,4 +1,4 @@
-﻿using Sportify.Domain.Enums;
+using Sportify.Domain.Enums;
 
 namespace Sportify.Domain.Entities;
 
@@ -11,7 +11,7 @@ public class InscripcionCompetencia
     public DateTime FechaInscripcion { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public virtual Competencia? Competencia { get; set; }
-    public virtual Usuario? Usuario { get; set; }
+    public virtual Competencia Competencia { get; set; } = null!;
+    public virtual Usuario Usuario { get; set; } = null!;
     public virtual EvaluacionCompetencia? Evaluacion { get; set; }
 }
