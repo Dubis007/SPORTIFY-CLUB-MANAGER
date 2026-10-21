@@ -33,9 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
         services.AddScoped<IMembershipService, Sportify.Infrastructure.Services.MembershipService>();
 
         return services;
     }
 }
-

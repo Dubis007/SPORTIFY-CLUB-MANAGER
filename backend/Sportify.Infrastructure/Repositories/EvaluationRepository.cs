@@ -23,9 +23,9 @@ public class EvaluationRepository : IEvaluationRepository
         var total = await query.CountAsync();
 
         var items = await query
-            .Include(e => e.Inscripcion)
+            .Include(e => e.Inscripcion!)
                 .ThenInclude(i => i.Usuario)
-            .Include(e => e.Inscripcion)
+            .Include(e => e.Inscripcion!)
                 .ThenInclude(i => i.Competencia)
             .OrderByDescending(e => e.EvaluadoEn)
             .ThenByDescending(e => e.Id)
@@ -39,9 +39,9 @@ public class EvaluationRepository : IEvaluationRepository
     public async Task<List<EvaluacionCompetencia>> GetAllWithIncludesAsync()
     {
         return await _context.EvaluacionesCompetencia
-            .Include(e => e.Inscripcion)
+            .Include(e => e.Inscripcion!)
                 .ThenInclude(i => i.Usuario)
-            .Include(e => e.Inscripcion)
+            .Include(e => e.Inscripcion!)
                 .ThenInclude(i => i.Competencia)
             .ToListAsync();
     }

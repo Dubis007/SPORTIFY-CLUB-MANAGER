@@ -128,6 +128,7 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(c => c.Id);
             entity.Property(c => c.NombreArchivo).IsRequired().HasMaxLength(500);
+            entity.HasQueryFilter(c => c.Pago.EliminadoEn == null);
 
             // Relacion 1-1 con Pago
             entity.HasOne(c => c.Pago)
@@ -169,6 +170,7 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(a => a.Id);
             entity.HasIndex(a => new { a.UsuarioId, a.EntrenamientoId }).IsUnique();
+            entity.HasQueryFilter(a => a.Entrenamiento.EliminadoEn == null);
 
             entity.HasOne(a => a.Usuario)
                   .WithMany(u => u.Asistencias)
@@ -196,6 +198,7 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(i => i.Id);
             entity.HasIndex(i => new { i.UsuarioId, i.CompetenciaId }).IsUnique();
+            entity.HasQueryFilter(i => i.Competencia != null && i.Competencia.EliminadoEn == null);
 
             entity.Property(i => i.Estado)
                   .HasConversion<string>()

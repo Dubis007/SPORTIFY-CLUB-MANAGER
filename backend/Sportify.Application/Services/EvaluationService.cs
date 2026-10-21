@@ -24,8 +24,8 @@ public class EvaluationService : IEvaluationService
             e.Comentarios,
             e.EvaluadoEn,
             e.EvaluadoPorId,
-            UsuarioNombre = e.Inscripcion.Usuario.Nombre + " " + e.Inscripcion.Usuario.Apellido,
-            CompetenciaNombre = e.Inscripcion.Competencia.Nombre
+            UsuarioNombre = ((e.Inscripcion?.Usuario?.Nombre ?? "") + " " + (e.Inscripcion?.Usuario?.Apellido ?? "")).Trim(),
+            CompetenciaNombre = e.Inscripcion?.Competencia?.Nombre ?? ""
         }).ToList();
 
         return new PagedResult<object>
@@ -48,8 +48,8 @@ public class EvaluationService : IEvaluationService
             e.Comentarios,
             e.EvaluadoEn,
             e.EvaluadoPorId,
-            UsuarioNombre = e.Inscripcion.Usuario.Nombre + " " + e.Inscripcion.Usuario.Apellido,
-            CompetenciaNombre = e.Inscripcion.Competencia.Nombre
+            UsuarioNombre = ((e.Inscripcion?.Usuario?.Nombre ?? "") + " " + (e.Inscripcion?.Usuario?.Apellido ?? "")).Trim(),
+            CompetenciaNombre = e.Inscripcion?.Competencia?.Nombre ?? ""
         }).OrderByDescending(e => e.EvaluadoEn).ToList();
     }
 
@@ -58,9 +58,9 @@ public class EvaluationService : IEvaluationService
         var inscripciones = await _repository.GetInscripcionesOptionsAsync();
         return inscripciones.Select(i => new {
             i.Id,
-            UsuarioNombre = i.Usuario.Nombre + " " + i.Usuario.Apellido,
-            CompetenciaNombre = i.Competencia.Nombre,
-            i.Competencia.FechaInicio
+            UsuarioNombre = ((i.Usuario?.Nombre ?? "") + " " + (i.Usuario?.Apellido ?? "")).Trim(),
+            CompetenciaNombre = i.Competencia?.Nombre ?? "",
+            FechaInicio = i.Competencia?.FechaInicio ?? DateTime.MinValue
         }).OrderByDescending(i => i.FechaInicio).ToList();
     }
 
@@ -84,7 +84,7 @@ public class EvaluationService : IEvaluationService
         existing.Puntaje = dto.Puntaje;
         existing.Desempeno = dto.Desempeno;
         existing.Comentarios = dto.Comentarios;
-        
+
         await _repository.UpdateAsync(existing);
         return existing;
     }

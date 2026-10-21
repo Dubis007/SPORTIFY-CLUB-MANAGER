@@ -1,7 +1,7 @@
-namespace Sportify.Application.Interfaces;
-
 using Sportify.Application.DTOs.Common;
 using Sportify.Domain.Entities;
+
+namespace Sportify.Application.Interfaces;
 
 public interface IEvaluationService
 {

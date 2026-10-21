@@ -42,7 +42,7 @@ public class MemberProfileRepository : IMemberProfileRepository
     {
         return await _context.Pagos
             .Include(p => p.Membresia)
-                .ThenInclude(m => m.PlanMembresia)
+                .ThenInclude(m => m!.PlanMembresia)
             .Where(p => p.UsuarioId == userId)
             .OrderByDescending(p => p.FechaPago)
             .ToListAsync();

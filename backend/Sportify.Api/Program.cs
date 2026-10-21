@@ -1,7 +1,9 @@
 using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +12,9 @@ using Scalar.AspNetCore;
 using Sportify.Application;
 using Sportify.Infrastructure;
 using Sportify.Api.Middlewares;
+
+// Garantizar existencia de directorios estáticos antes de inicializar WebApplicationBuilder (previene DirectoryNotFoundException en despliegue limpio)
+Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "comprobantes", "receipts"));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +28,8 @@ builder.Services.AddResponseCompression(options =>
     options.Providers.Add<GzipCompressionProvider>();
 });
 
-// 2. Health Checks
+// 2. Health Checks + HttpClient para comunicación interservicios (MS1 :5101 y MS2 :5102)
+builder.Services.AddHttpClient();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<Sportify.Infrastructure.Persistence.SportifyDbContext>("Database");
 
@@ -39,10 +45,10 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddFixedWindowLimiter("AuthRateLimit", limiterOptions =>
     {
-        limiterOptions.PermitLimit = 10;
+        limiterOptions.PermitLimit = 30;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0;
+        limiterOptions.QueueLimit = 2;
     });
 });
 
@@ -79,12 +85,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// 5. CORS estricto
+// 5. CORS estricto: admite el Frontend (Vite) y llamadas interservicios (MS1 :5101 y MS2 :5102)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:5173", "https://localhost:5173")
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost:5101",
+                "http://localhost:5102"
+            )
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -92,15 +103,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seeders y Migraciones (Mantenemos como estaba)
+// Seeders y Migraciones
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<Sportify.Infrastructure.Persistence.SportifyDbContext>();
-        
-        try {
+
+        try
+        {
             var connStr = context.Database.GetDbConnection().ConnectionString;
             var builder2 = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = connStr };
             builder2["Database"] = "";
@@ -109,7 +121,8 @@ using (var scope = app.Services.CreateScope())
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "CREATE DATABASE IF NOT EXISTS sportify_db;";
             cmd.ExecuteNonQuery();
-        } catch { }
+        }
+        catch { }
 
         try
         {
@@ -142,7 +155,7 @@ using (var scope = app.Services.CreateScope())
                 new Sportify.Domain.Entities.Usuario { Id = 4, Nombre = "Mario", Apellido = "Miembro", Correo = "miembro@sportify.com", ContrasenaHash = passwordHash }
             );
             context.SaveChanges();
-            
+
             context.UsuarioRoles.AddRange(
                 new Sportify.Domain.Entities.UsuarioRol { UsuarioId = 1, RolId = 1 },
                 new Sportify.Domain.Entities.UsuarioRol { UsuarioId = 2, RolId = 2 },
@@ -226,17 +239,66 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
-// Cambiamos al CORS mas seguro
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter(); // Habilitar middleware de Rate Limiting
+app.UseRateLimiter();
 
-// Mapear Health Checks endpoint
-app.MapHealthChecks("/api/health");
+// Mapear Health Checks consistente en /api/health con salida JSON estructurada
+app.MapHealthChecks("/api/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json; charset=utf-8";
+        var payload = new
+        {
+            status = report.Status.ToString(),
+            service = "Sportify.Api (.NET Core)",
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                durationMs = e.Value.Duration.TotalMilliseconds
+            })
+        };
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+    }
+});
+
+// Endpoint puente interservicios hacia microservicio1 (:5101) y microservicio2 (:5102)
+app.MapGet("/api/microservices/status", async (IHttpClientFactory httpClientFactory) =>
+{
+    var client = httpClientFactory.CreateClient();
+    client.Timeout = TimeSpan.FromSeconds(2);
+
+    var ms1Online = false;
+    var ms2Online = false;
+
+    try
+    {
+        var res1 = await client.GetAsync("http://localhost:5101/health");
+        ms1Online = res1.IsSuccessStatusCode;
+    }
+    catch { }
+
+    try
+    {
+        var res2 = await client.GetAsync("http://localhost:5102/health");
+        ms2Online = res2.IsSuccessStatusCode;
+    }
+    catch { }
+
+    return Results.Ok(new
+    {
+        coreApi = "Healthy",
+        microservicio1Auth = new { port = 5101, online = ms1Online },
+        microservicio2Reports = new { port = 5102, online = ms2Online },
+        checkedAt = DateTime.UtcNow
+    });
+});
 
 app.MapControllers();
 
 app.Run();
-

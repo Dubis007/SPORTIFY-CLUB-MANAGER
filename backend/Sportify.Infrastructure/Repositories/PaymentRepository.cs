@@ -18,12 +18,10 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<(IReadOnlyList<Pago> Items, int Total)> GetPagedAsync(int skip, int take)
     {
-        // El HasQueryFilter del DbContext ya excluye pagos con EliminadoEn != null
         var query = _context.Pagos.AsNoTracking();
 
         var total = await query.CountAsync();
 
-        // Orden estable (fecha + Id) para que Skip/Take no repita ni omita registros entre páginas
         var items = await query
             .Include(p => p.Usuario)
             .Include(p => p.Comprobante)
@@ -56,7 +54,7 @@ public class PaymentRepository : IPaymentRepository
             .Include(p => p.Comprobante)
             .Include(p => p.AprobadoPor)
             .Include(p => p.Membresia)
-                .ThenInclude(m => m.PlanMembresia)
+                .ThenInclude(m => m!.PlanMembresia)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
@@ -85,7 +83,7 @@ public class PaymentRepository : IPaymentRepository
         return await _context.Usuarios
             .Include(u => u.UsuarioRoles)
             .ThenInclude(ur => ur.Rol)
-            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO"))
+            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol != null && ur.Rol.Nombre == "MIEMBRO"))
             .OrderBy(u => u.Nombre)
             .ToListAsync();
     }
@@ -109,4 +107,3 @@ public class PaymentRepository : IPaymentRepository
         await _context.SaveChangesAsync();
     }
 }
-

@@ -37,10 +37,10 @@ public class PaymentService : IPaymentService
         var membersObj = members.Select(u => new { u.Id, u.Nombre, u.Apellido });
 
         var memberships = await _paymentRepository.GetMembershipsForOptionsAsync();
-        var membershipsObj = memberships.Select(m => new { 
-            m.Id, 
-            m.UsuarioId, 
-            m.Estado, 
+        var membershipsObj = memberships.Select(m => new {
+            m.Id,
+            m.UsuarioId,
+            m.Estado,
             Plan = m.PlanMembresia?.Nombre,
             m.FechaInicio,
             m.FechaFin
@@ -64,7 +64,7 @@ public class PaymentService : IPaymentService
 
         await _paymentRepository.CreateAsync(pago);
 
-        if (dto.MembresiaId.HasValue) 
+        if (dto.MembresiaId.HasValue)
         {
             var membresia = await _paymentRepository.GetMembresiaByIdAsync(dto.MembresiaId.Value);
             if (membresia != null && membresia.Estado != EstadoMembresia.ACTIVA)
@@ -73,7 +73,7 @@ public class PaymentService : IPaymentService
                 await _paymentRepository.UpdateMembresiaAsync(membresia);
             }
         }
-        
+
         return MapToDto(pago);
     }
 
@@ -82,7 +82,8 @@ public class PaymentService : IPaymentService
         if (dto.Archivo == null || dto.Archivo.Length == 0)
             throw new ArgumentException("Se requiere un archivo PDF/Imagen válido.", nameof(dto.Archivo));
 
-        var relativePath = await _fileStorageService.SaveFileAsync(dto.Archivo, "receipts");
+        var fileName = await _fileStorageService.SaveFileAsync(dto.Archivo, "receipts");
+        var relativePath = Path.Combine("receipts", fileName).Replace("\\", "/");
 
         var pago = new Pago
         {
@@ -141,7 +142,6 @@ public class PaymentService : IPaymentService
         pago.FechaAprobacion = DateTime.UtcNow;
         pago.AprobadoPorId = aprobadorId;
 
-        // Si el pago tiene membresía asociada, activa la membresía
         if (pago.MembresiaId.HasValue && pago.Membresia is not null)
         {
             if (pago.Membresia.PlanMembresia is not null)
@@ -186,7 +186,6 @@ public class PaymentService : IPaymentService
         return MapToDto(pago);
     }
 
-    /// <summary>Elimina lógicamente un pago estableciendo EliminadoEn.</summary>
     public async Task DeleteAsync(int pagoId)
     {
         var pago = await _paymentRepository.GetByIdAsync(pagoId)
@@ -195,10 +194,6 @@ public class PaymentService : IPaymentService
         pago.EliminadoEn = DateTime.UtcNow;
         await _paymentRepository.UpdateAsync(pago);
     }
-
-    // ──────────────────────────────────────────────
-    // Métodos auxiliares
-    // ──────────────────────────────────────────────
 
     private static PaymentDto MapToDto(Pago p)
     {
@@ -226,4 +221,3 @@ public class PaymentService : IPaymentService
         };
     }
 }
-

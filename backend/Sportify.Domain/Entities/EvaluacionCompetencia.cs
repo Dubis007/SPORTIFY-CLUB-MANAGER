@@ -1,4 +1,4 @@
-﻿namespace Sportify.Domain.Entities;
+namespace Sportify.Domain.Entities;
 
 public class EvaluacionCompetencia
 {
@@ -12,6 +12,6 @@ public class EvaluacionCompetencia
     public int EvaluadoPorId { get; set; } // FK a Usuario
 
     // Navigation properties
-    public virtual InscripcionCompetencia? Inscripcion { get; set; }
+    public virtual InscripcionCompetencia Inscripcion { get; set; } = null!;
     public virtual Usuario? EvaluadoPor { get; set; }
 }
