@@ -1,0 +1,55 @@
+# Sportify Club Manager: entorno completo (BD + API + frontend)
+# Uso: copiar .env.example a .env y ejecutar `docker compose up -d --build`
+services:
+  db:
+    image: mysql:8.4
+    container_name: sportify-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: sportify_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      # 127.0.0.1 fuerza TCP: durante la inicialización MySQL solo escucha por socket,
+      # así la API no arranca antes de que la BD acepte conexiones de red
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    image: sportify-api:local
+    container_name: sportify-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=sportify_db;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD};"
+      JwtSettings__Secret: ${JWT_SECRET}
+      Cors__AllowedOrigins__0: http://localhost:8081
+    ports:
+      - "8080:8080"
+    volumes:
+      - comprobantes:/app/wwwroot/comprobantes
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080
+    image: sportify-web:local
+    container_name: sportify-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+
+volumes:
+  db_data:
+  comprobantes:

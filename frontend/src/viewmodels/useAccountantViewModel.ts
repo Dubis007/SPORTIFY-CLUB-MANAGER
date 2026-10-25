@@ -102,7 +102,7 @@ export const useAccountantViewModel = () => {
   const downloadReport = async () => {
     try {
       await paymentService.downloadPaymentsReport();
-    } catch (err: any) {
+    } catch {
       setError('Error al generar el reporte PDF');
     }
   };

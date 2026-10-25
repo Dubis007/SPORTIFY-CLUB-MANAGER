@@ -44,7 +44,7 @@ export default function Pagination({
           ))}
         </select>
         <span className="text-slate-400 font-medium">
-          Mostrando <strong className="text-slate-200">{from}–{to}</strong> de <strong className="text-slate-200">{totalCount}</strong> registros
+          {from}–{to} de {totalCount} registros
         </span>
       </div>
 

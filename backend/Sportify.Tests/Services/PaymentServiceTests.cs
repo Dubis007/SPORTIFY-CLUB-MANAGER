@@ -11,11 +11,12 @@ namespace Sportify.Tests.Services;
 public class PaymentServiceTests
 {
     private readonly Mock<IPaymentRepository> _repositoryMock = new();
+    private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly PaymentService _service;
 
     public PaymentServiceTests()
     {
-        _service = new PaymentService(_repositoryMock.Object);
+        _service = new PaymentService(_repositoryMock.Object, _fileStorageMock.Object);
     }
 
     [Fact]

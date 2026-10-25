@@ -43,6 +43,17 @@ ehthumbs.db
 Thumbs.db
 
 publish/
+
+# Secretos locales de docker compose
+.env
+
+# Respaldos de base de datos (scripts/backup-db.ps1)
+backups/
+
+# Reportes de cobertura
+coverage/
+TestResults/
+
 node_modules/
 dist/
 build/

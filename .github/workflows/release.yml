@@ -1,0 +1,102 @@
+# Liberación: al subir un tag vX.Y.Z se prueban, construyen y publican las imágenes Docker,
+# se crea el GitHub Release y se dispara el despliegue en Render
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write   # crear el GitHub Release
+  packages: write   # publicar imágenes en GitHub Container Registry
+
+jobs:
+  test:
+    name: Pruebas antes de liberar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet test backend/Sportify.slnx -c Release
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm run test
+        working-directory: frontend
+
+  publish:
+    name: Publicar imágenes y Release
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Calcular versión y nombre de imágenes
+        id: meta
+        run: |
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Iniciar sesión en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir y publicar imagen de la API
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/sportify-api:${{ steps.meta.outputs.version }}
+            ghcr.io/${{ steps.meta.outputs.owner }}/sportify-api:latest
+
+      - name: Construir y publicar imagen del frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL || 'http://localhost:8080' }}
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/sportify-web:${{ steps.meta.outputs.version }}
+            ghcr.io/${{ steps.meta.outputs.owner }}/sportify-web:latest
+
+      - name: Crear GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Sportify ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            Imágenes Docker de esta versión:
+            - `ghcr.io/${{ steps.meta.outputs.owner }}/sportify-api:${{ steps.meta.outputs.version }}`
+            - `ghcr.io/${{ steps.meta.outputs.owner }}/sportify-web:${{ steps.meta.outputs.version }}`
+
+            Detalle de cambios en [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md).
+
+  deploy:
+    name: Desplegar en Render
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - name: Disparar Deploy Hooks de Render
+        env:
+          API_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+          WEB_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
+        run: |
+          if [ -z "$API_HOOK" ] || [ -z "$WEB_HOOK" ]; then
+            echo "::warning::Faltan los secretos RENDER_DEPLOY_HOOK_API / RENDER_DEPLOY_HOOK_WEB; se omite el despliegue."
+            exit 0
+          fi
+          curl -fsS -X POST "$API_HOOK"
+          curl -fsS -X POST "$WEB_HOOK"

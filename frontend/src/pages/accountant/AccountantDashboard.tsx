@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
 import { Payment } from '../../models';
-import { apiClient } from '../../services/api/apiClient';
+import { apiClient, API_URL } from '../../services/api/apiClient';
 import {
   microserviceClient,
   type AnalyticalAggregateResponse,
@@ -382,7 +382,7 @@ export default function AccountantDashboard() {
                               type="button"
                               onClick={() => {
                                 setSelectedPdfUrl(
-                                  `http://localhost:5000/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
+                                  `${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
                                 );
                                 setIsPdfModalOpen(true);
                               }}

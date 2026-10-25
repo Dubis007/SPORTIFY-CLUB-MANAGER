@@ -104,7 +104,7 @@ namespace Sportify.Infrastructure.Migrations
                     Activo = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
                     SolicitaCambioClave = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     SedeId = table.Column<int>(type: "int", nullable: true),
-                    CreadoEn = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "UTC_TIMESTAMP()"),
+                    CreadoEn = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "(UTC_TIMESTAMP())"),
                     ActualizadoEn = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>

@@ -3,6 +3,30 @@
 Todos los cambios relevantes del proyecto Sportify Club Manager se documentan en este archivo.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Las entradas más recientes van arriba.
 
+## [2026-10-19] Herramientas del ciclo de vida (construcción, test, liberación, implementación, operación)
+
+Detalle y bitácora en `docs/ciclo-vida/`.
+
+### Añadido
+- **Construcción:** `backend/Dockerfile` y `frontend/Dockerfile` multi-stage, `frontend/nginx.conf`, `docker-compose.yml` (MySQL 8.4 + API + web) y `.env.example`. Configuración de ESLint 9 en `frontend/eslint.config.js`.
+- **Test:** Vitest + Testing Library en el frontend (`npm run test`, `npm run test:coverage`) con 7 pruebas de `schemas.ts` y `Pagination`. Cobertura del backend con Coverlet.
+- **CI:** `.github/workflows/ci.yml` (build, lint, pruebas con cobertura y validación de imágenes Docker en cada push).
+- **Liberación:** `.github/workflows/release.yml`: con un tag `vX.Y.Z` publica imágenes en GHCR, crea el GitHub Release y dispara el despliegue.
+- **Implementación:** `render.yaml` (Blueprint de Render: API Docker + static site).
+- **Operación:** `scripts/backup-db.ps1`, reinicio automático y rollback.
+- **Monitoreo:** el endpoint `/api/health` se usa en Docker, Render y UptimeRobot; logs y métricas de Render.
+
+### Cambiado
+- La URL de la API del frontend se lee de `VITE_API_URL` (por defecto `http://localhost:5000`), también para ver comprobantes PDF.
+- Los orígenes CORS/CSP del backend se leen de `Cors:AllowedOrigins` (por defecto `localhost:5173`).
+- `npm run lint` usa la sintaxis de ESLint 9; `any` explícito pasa a advertencia (deuda técnica).
+
+### Corregido
+- `PaymentServiceTests` no compilaba tras agregar `IFileStorageService` a `PaymentService`.
+- 5 variables `catch (err)` sin usar en el frontend.
+- Healthcheck de MySQL en `docker-compose.yml`: usa `-h 127.0.0.1` (TCP) para que la API no arranque mientras la BD se inicializa.
+- Migración `InitialCreate`: el valor por defecto de `Usuarios.CreadoEn` pasa a `(UTC_TIMESTAMP())`; MySQL 8 rechazaba `UTC_TIMESTAMP()` sin paréntesis y no creaba la tabla.
+
 ## [2026-10-08] Suite de pruebas unitarias core
 
 ### Añadido

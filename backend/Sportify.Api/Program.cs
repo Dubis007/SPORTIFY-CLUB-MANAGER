@@ -85,17 +85,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// 5. CORS estricto: admite el Frontend (Vite) y llamadas interservicios (MS1 :5101 y MS2 :5102)
+// 5. CORS estricto: admite el Frontend (Vite), Docker/Render y llamadas interservicios (MS1 :5101 y MS2 :5102)
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? [
+        "http://localhost:5173",
+        "https://localhost:5173",
+        "http://localhost:5101",
+        "http://localhost:5102"
+    ];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "https://localhost:5173",
-                "http://localhost:5101",
-                "http://localhost:5102"
-            )
+            .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -220,7 +223,7 @@ using (var scope = app.Services.CreateScope())
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("Content-Security-Policy", "frame-ancestors 'self' http://localhost:5173 https://localhost:5173");
+    context.Response.Headers.Append("Content-Security-Policy", $"frame-ancestors 'self' {string.Join(' ', allowedOrigins)}");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     await next();
 });

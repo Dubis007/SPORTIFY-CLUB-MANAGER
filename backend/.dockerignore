@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/*.user
+.vs/
+Sportify.Tests/
+*.pdf
+Sportify.Api/wwwroot/comprobantes/
