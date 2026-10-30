@@ -9,6 +9,7 @@ import {
   Building2,
   Tags,
   DollarSign,
+  CalendarDays,
 } from 'lucide-react';
 import EnterpriseErpLayout, { type ErpNavItem } from '../EnterpriseErpLayout';
 
@@ -48,6 +49,12 @@ const ADMIN_NAV_ITEMS: ErpNavItem[] = [
     to: '/admin/locations',
     icon: Building2,
     section: 'ADMINISTRACIÓN DE CLUB',
+  },
+  {
+    label: 'Calendario Deportivo',
+    to: '/admin/calendar',
+    icon: CalendarDays,
+    section: 'OPERACIÓN DEPORTIVA',
   },
   {
     label: 'Entrenamientos',

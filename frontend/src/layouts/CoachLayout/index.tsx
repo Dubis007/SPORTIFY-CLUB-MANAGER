@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   Star,
   User,
+  CalendarDays,
 } from 'lucide-react';
 import EnterpriseErpLayout, { type ErpNavItem } from '../EnterpriseErpLayout';
 
@@ -13,6 +14,12 @@ const COACH_NAV_ITEMS: ErpNavItem[] = [
     to: '/coach/dashboard',
     icon: LayoutDashboard,
     section: 'DIRECCIÓN TÉCNICA',
+  },
+  {
+    label: 'Calendario Deportivo',
+    to: '/coach/calendar',
+    icon: CalendarDays,
+    section: 'OPERACIÓN DEPORTIVA',
   },
   {
     label: 'Entrenamientos y Asistencia',

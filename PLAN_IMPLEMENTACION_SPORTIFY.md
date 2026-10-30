@@ -288,7 +288,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: Pruebas de integración/servicio en `Sportify.Tests` y formulario público en `Vitest`.
   - **Commit propuesto**: `feat(admisiones): incorpora formulario público de preinscripción y bandeja de aprobación`
 
-- [ ] [EJECUTABLE] **TAREA-P2-05A** — *Prioridad 2 | Calendario Mensual y de Lista Unificado de Entrenamientos y Competencias*
+- [x] **TAREA-P2-05A** — *Prioridad 2 | Calendario Mensual y de Lista Unificado de Entrenamientos y Competencias*
   - **Requerimientos y brechas**: Núcleo aprobado y sin bloqueo de `VID1-RF-005` y `VID2-RF-008`, `VID1-RNF-005` (exportación a Google Calendar), `VID2-RNF-005` (estados vacíos amigables), `VID1-RNF-002` / `VID2-RNF-001` (diseño responsivo), `GRP-RF-07`, `GAP-006` (Regla: `VID1-RN-005`; Criterios: `CA-005` parcial sin WhatsApp, `VID2-CA-008`).
   - **Descripción**: Construir el módulo unificado de Calendario (`CalendarPage.tsx` + `useCalendarViewModel.ts`) accesible para `ADMIN`, `ENTRENADOR` y `MIEMBRO`, integrando en una cuadrícula mensual interactiva y vista de lista todos los `Entrenamientos` (azul institucional) y `Competencias` (rojo/coral), con panel de eventos del día seleccionado y de todo el mes, modal de detalle del evento, enlace directo `"Añadir a Google Calendar"` y estados vacíos amigables cuando un día o mes no registra eventos (`VID2-RNF-005`). *(El despacho de recordatorios por WhatsApp queda separado y bloqueado por `DEC-001`)*.
   - **Estado actual comprobado**: `TrainingsPage.tsx` y `CompetitionsPage.tsx` existen como tablas CRUD separadas; no existe vista ni ruta de Calendario unificado.
@@ -600,13 +600,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-10-29 20:36 | `TAREA-P1-01A`: Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` | Completado | `9fb5e192` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK | Eliminado acoplamiento directo a `SportifyDbContext` y normalizado UTF-8 en reportes. |
 | 2026-10-29 20:41 | `TAREA-P1-01B`: Contratos DTO tipados en `Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations` y `Evaluations` | Completado | `5bd4148d` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK, `frontend typecheck` 0 err | 0 controladores en `Sportify.Api` referencian entidades de dominio o infraestructura. |
 | 2026-10-29 20:44 | `TAREA-P1-01C`: Implementación de `useAdminPaymentsViewModel.ts`, filtros, skeletons y pruebas Vitest | Completado | `864363e6` | `frontend typecheck` 0 err, `vitest run` 3/3 suites (10/10 tests) OK | `AdminPaymentsPage.tsx` desacoplada de `useAccountantViewModel.ts` y de llamadas `apiClient` directas. |
-| 2026-10-29 20:48 | `TAREA-P1-03A`: Generación de colilla PDF individual de 2 páginas con QuestPDF y previsualización modal | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 5/5 OK, `frontend typecheck` 0 err, `vitest` 10/10 OK | Endpoint `GET /api/reports/payments/{id}/voucher-pdf` con control de titularidad y visor en Admin/Contaduría. |
+| 2026-10-29 20:48 | `TAREA-P1-03A`: Generación de colilla PDF individual de 2 páginas con QuestPDF y previsualización modal | Completado | `7482d591` | `dotnet build` 0 err/0 warn, `dotnet test` 5/5 OK, `frontend typecheck` 0 err, `vitest` 10/10 OK | Endpoint `GET /api/reports/payments/{id}/voucher-pdf` con control de titularidad y visor en Admin/Contaduría. |
+| 2026-10-29 20:52 | `TAREA-P2-05A`: Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar | Completado | Registrado en este commit | `frontend typecheck` 0 err, `vitest run` 4/4 suites (12/12 tests) OK | Vistas `/admin/calendar`, `/coach/calendar` y `/member/calendar` con estados vacíos amigables (`VID2-RNF-005`). |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P1-03A`
-- **Última tarea completada**: `TAREA-P1-03A` (colilla PDF oficial de pago individual con QuestPDF)
-- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (5/5 aprobadas), `frontend typecheck` (0 errores), `vitest run` (10/10 aprobadas)
-- **Archivos relevantes modificados**: `ReportDataDtos.cs`, `IReportRepository.cs`, `ReportRepository.cs`, `IPdfReportRenderer.cs`, `QuestPdfReportRenderer.cs`, `IReportService.cs`, `ReportService.cs`, `ReportsController.cs`, `PaymentVoucherPdfTests.cs`, `paymentService.ts`, `useAdminPaymentsViewModel.ts`, `useAccountantViewModel.ts`, `AdminPaymentsPage.tsx`, `AccountantDashboard.tsx`
+- **Última tarea iniciada**: `TAREA-P2-05A`
+- **Última tarea completada**: `TAREA-P2-05A` (calendario mensual y de lista unificado de entrenamientos y competencias)
+- **Últimas pruebas ejecutadas**: `frontend typecheck` (0 errores), `vitest run` (4 suites, 12/12 aprobadas incluyendo `CalendarPage.test.tsx`)
+- **Archivos relevantes modificados**: `useCalendarViewModel.ts`, `CalendarPage.tsx`, `CalendarPage.test.tsx`, `AppRoutes.tsx`, `AdminLayout/index.tsx`, `CoachLayout/index.tsx`, `MemberLayout/index.tsx`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P2-05A` (*Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar*).
+- **Siguiente tarea ejecutable**: `TAREA-P2-06A` (*Analítica financiera de 12 meses, alertas accionables, protección contra división `0/0` y sincronización en vivo con `microservicio2`*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.

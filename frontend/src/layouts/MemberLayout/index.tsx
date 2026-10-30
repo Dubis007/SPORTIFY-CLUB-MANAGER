@@ -2,6 +2,7 @@ import {
   CreditCard,
   Activity,
   User,
+  CalendarDays,
 } from 'lucide-react';
 import EnterpriseErpLayout, { type ErpNavItem } from '../EnterpriseErpLayout';
 
@@ -16,6 +17,12 @@ const MEMBER_NAV_ITEMS: ErpNavItem[] = [
     label: 'Mis Actividades y Torneos',
     to: '/member/dashboard?tab=actividades',
     icon: Activity,
+    section: 'PORTAL DEL ATLETA',
+  },
+  {
+    label: 'Calendario Deportivo',
+    to: '/member/calendar',
+    icon: CalendarDays,
     section: 'PORTAL DEL ATLETA',
   },
   {

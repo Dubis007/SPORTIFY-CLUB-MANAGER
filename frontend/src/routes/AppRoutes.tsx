@@ -15,9 +15,9 @@ import MembershipsPage from '../pages/admin/MembershipsPage';
 import LocationsPage from '../pages/admin/LocationsPage';
 import PlansPage from '../pages/admin/PlansPage';
 import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage';
+import CalendarPage from '../pages/common/CalendarPage';
 
 import AccountantDashboard from '../pages/accountant/AccountantDashboard';
-
 import AccountantLayout from '../layouts/AccountantLayout';
 
 import CoachDashboard from '../pages/coach/CoachDashboard';
@@ -50,6 +50,7 @@ export default function AppRoutes() {
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/memberships" element={<MembershipsPage />} />
+            <Route path="/admin/calendar" element={<CalendarPage />} />
             <Route path="/admin/competitions" element={<CompetitionsPage />} />
             <Route path="/admin/trainings" element={<TrainingsPage />} />
             <Route path="/admin/registrations" element={<RegistrationsPage />} />
@@ -71,6 +72,7 @@ export default function AppRoutes() {
         <Route element={<RoleRoute roles={[UserRole.ENTRENADOR]} />}>
           <Route element={<CoachLayout />}>
             <Route path="/coach/dashboard" element={<CoachDashboard />} />
+            <Route path="/coach/calendar" element={<CalendarPage />} />
             <Route path="/coach/trainings" element={<TrainingsPage />} />
             <Route path="/coach/registrations" element={<RegistrationsPage />} />
             <Route path="/coach/evaluations" element={<EvaluationsPage />} />
@@ -82,6 +84,7 @@ export default function AppRoutes() {
         <Route element={<RoleRoute roles={[UserRole.MIEMBRO]} />}>
           <Route element={<MemberLayout />}>
             <Route path="/member/dashboard" element={<MemberDashboard />} />
+            <Route path="/member/calendar" element={<CalendarPage />} />
           </Route>
         </Route>
       </Route>
