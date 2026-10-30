@@ -379,7 +379,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 
 ### Prioridad 3 — Validación Técnica y Suite Integral de Pruebas Automatizadas
 
-- [ ] [EJECUTABLE] **TAREA-P3-01A** — *Prioridad 3 | Ampliación Integral de Pruebas Unitarias Backend (`Sportify.Tests`)*
+- [x] **TAREA-P3-01A** — *Prioridad 3 | Ampliación Integral de Pruebas Unitarias Backend (`Sportify.Tests`)*
   - **Requerimientos y brechas**: `GAP-010`, validación transversal de reglas de negocio `RN-01`..`RN-10`, autenticación, usuarios, sedes, planes, membresías, pagos, entrenamientos/asistencia, competencias, inscripciones (`RN-03` bloqueo por morosidad/sin membresía activa), evaluaciones, dashboard (prevención `0/0` y serie de 12 meses) y reportes/colillas QuestPDF (`%PDF`).
   - **Descripción**: Crear suites completas de pruebas unitarias con xUnit y Moq en `backend/Sportify.Tests/Services/` cubriendo los servicios de aplicación que hoy tienen 0 pruebas (11 servicios adicionales a `PaymentServiceTests`).
   - **Estado actual comprobado**: Solo existe `PaymentServiceTests.cs` con 3 pruebas en todo el backend.
@@ -603,13 +603,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-10-29 20:48 | `TAREA-P1-03A`: Generación de colilla PDF individual de 2 páginas con QuestPDF y previsualización modal | Completado | `7482d591` | `dotnet build` 0 err/0 warn, `dotnet test` 5/5 OK, `frontend typecheck` 0 err, `vitest` 10/10 OK | Endpoint `GET /api/reports/payments/{id}/voucher-pdf` con control de titularidad y visor en Admin/Contaduría. |
 | 2026-10-29 20:52 | `TAREA-P2-05A`: Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar | Completado | `15da4a59` | `frontend typecheck` 0 err, `vitest run` 4/4 suites (12/12 tests) OK | Vistas `/admin/calendar`, `/coach/calendar` y `/member/calendar` con estados vacíos amigables (`VID2-RNF-005`). |
 | 2026-10-29 20:57 | `TAREA-P2-06A`: Tendencia anual de 12 meses, alertas accionables, protección `0/0` y `GET /api/dashboard/metrics` para `microservicio2` | Completado | `3a019242` | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `ms typecheck` 0 err, `frontend typecheck` 0 err, `vitest` 12/12 OK | Resuelto fallo `VER-TEC-001` de `microservicio2` y cubierto caso `0/0` en `DashboardServiceTests`. |
-| 2026-10-29 21:02 | `TAREA-P2-06B`: Contadores por rol/estado, filtros combinables, skeleton loading y exportación CSV UTF-8 BOM para Excel en directorio | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `frontend typecheck` 0 err, `vitest` 5/5 suites (15/15 tests) OK | Incluye vinculación opcional con `Sede` existente en dominio y pruebas en `UsersPage.test.tsx`. |
+| 2026-10-29 21:02 | `TAREA-P2-06B`: Contadores por rol/estado, filtros combinables, skeleton loading y exportación CSV UTF-8 BOM para Excel en directorio | Completado | `a1ba06f5` | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `frontend typecheck` 0 err, `vitest` 5/5 suites (15/15 tests) OK | Incluye vinculación opcional con `Sede` existente en dominio y pruebas en `UsersPage.test.tsx`. |
+| 2026-10-29 21:05 | `TAREA-P3-01A`: Suite integral de 13 archivos de pruebas unitarias xUnit en `Sportify.Tests` (35 pruebas) | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 35/35 OK | Cobertura de `Auth`, `Users`, `Locations`, `MembershipPlans`, `Memberships`, `Payments`, `Trainings`, `Competitions`, `Registrations`, `Evaluations`, `Dashboard` y `QuestPDF`. |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P2-06B`
-- **Última tarea completada**: `TAREA-P2-06B` (contadores por rol, filtros combinables, skeleton loading y exportación compatible con Excel en directorio de usuarios)
-- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (8/8 aprobadas), `frontend typecheck` (0 errores), `vitest run` (5 suites, 15/15 aprobadas)
-- **Archivos relevantes modificados**: `UserDto.cs`, `CreateUserDto.cs`, `UpdateUserDto.cs`, `UserService.cs`, `UserRepository.cs`, `frontend/src/models/index.ts`, `userService.ts`, `useUsersViewModel.ts`, `UsersPage.tsx`, `UsersPage.test.tsx`
+- **Última tarea iniciada**: `TAREA-P3-01A`
+- **Última tarea completada**: `TAREA-P3-01A` (ampliación integral de cobertura de pruebas unitarias xUnit en `Sportify.Tests`: 35/35 aprobadas)
+- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (35/35 aprobadas)
+- **Archivos relevantes modificados**: `AuthServiceTests.cs`, `UserServiceTests.cs`, `LocationServiceTests.cs`, `MembershipPlanServiceTests.cs`, `MembershipServiceTests.cs`, `TrainingServiceTests.cs`, `CompetitionServiceTests.cs`, `RegistrationServiceTests.cs`, `EvaluationServiceTests.cs`, `ReportServiceTests.cs`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P3-01A` (*Ampliación integral de pruebas unitarias xUnit en `Sportify.Tests` para los servicios de aplicación y generación PDF*).
+- **Siguiente tarea ejecutable**: `TAREA-P3-01B` (*Pruebas automatizadas de microservicios Node/TS `microservicio1` y `microservicio2`*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.
