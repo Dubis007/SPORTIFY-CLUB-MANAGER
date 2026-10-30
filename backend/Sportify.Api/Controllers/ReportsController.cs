@@ -4,7 +4,7 @@ using Sportify.Application.Interfaces;
 
 namespace Sportify.Api.Controllers;
 
-/// <summary>Controlador para generacion de reportes PDF con QuestPDF.</summary>
+/// <summary>Controlador para generación de reportes PDF con QuestPDF.</summary>
 [ApiController]
 [Route("api/reports")]
 [Authorize]
@@ -50,7 +50,7 @@ public class ReportsController : ControllerBase
         return File(pdfBytes, "application/pdf", fileName);
     }
 
-    /// <summary>Genera reporte PDF de asistencia y desempe�o en competencias (Entrenador).</summary>
+    /// <summary>Genera reporte PDF de asistencia y desempeño en competencias (Entrenador).</summary>
     [HttpGet("performance/pdf")]
     [Authorize(Roles = "ADMIN,ENTRENADOR")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]

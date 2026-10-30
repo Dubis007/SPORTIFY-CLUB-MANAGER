@@ -113,7 +113,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 
 ### Prioridad 1 — Correcciones Estructurales y Funcionales Críticas
 
-- [ ] [EJECUTABLE] **TAREA-P1-01A** — *Prioridad 1 | Arquitectura Backend (Clean Architecture & Codificación UTF-8)*
+- [x] **TAREA-P1-01A** — *Prioridad 1 | Arquitectura Backend (Clean Architecture & Codificación UTF-8)*
   - **Requerimientos y brechas**: `GAP-010`, `VER-TEC-001` (soporte estructural para `VID1-RF-001`, `VID1-RF-008`, `VID2-RF-010`, `VID1-RF-015`).
   - **Descripción**: Reubicar `MembershipService` y `ReportService` desde `Sportify.Infrastructure` hacia `Sportify.Application/Services/`, extrayendo el acceso a datos a repositorios dedicados (`IMembershipRepository` / `MembershipRepository`, `IReportRepository` / `ReportRepository`) y el renderizado QuestPDF a un adaptador (`IPdfReportRenderer` / `QuestPdfReportRenderer` en `Infrastructure`), y extraer la lógica de `DashboardController` hacia `IDashboardService` / `DashboardService` + `IDashboardRepository` / `DashboardRepository`. Normalizar `ReportService` y `ReportsController` a UTF-8 limpio.
   - **Estado actual comprobado**: `MembershipService.cs` y `ReportService.cs` están en `Sportify.Infrastructure` acoplados a `SportifyDbContext`; `DashboardController.cs` consulta `SportifyDbContext` directamente.
@@ -596,13 +596,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | Fecha / Hora (UTC-5) | Evento / Tarea | Estado | Commit | Pruebas y Resultados | Observaciones |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 2026-10-29 20:25 | Reconocimiento inicial y línea base (`VER-TEC-001`) | Completado | Base `e7c3007d` | Backend build 0 err/0 warn, `dotnet test` 3/3, Frontend `tsc` 0 err, `vitest` 7/7, Microservicios `tsc` 0 err | Árbol Git limpio en rama `Requerimientos_en_Automatico`. |
-| 2026-10-29 20:30 | `TAREA-P0-01`: Creación de `PLAN_IMPLEMENTACION_SPORTIFY.md` | Completado | Pendiente de registro en este paso | Verificación integral de trazabilidad (27 RF + 10 RNF + 10 GAP + 10 DEC + 8 CMP) | Siguiente tarea ejecutable: `TAREA-P1-01A`. |
+| 2026-10-29 20:30 | `TAREA-P0-01`: Creación de `PLAN_IMPLEMENTACION_SPORTIFY.md` | Completado | `31e118f5` | Verificación integral de trazabilidad (27 RF + 10 RNF + 10 GAP + 10 DEC + 8 CMP) | Siguiente tarea ejecutable: `TAREA-P1-01A`. |
+| 2026-10-29 20:36 | `TAREA-P1-01A`: Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK | Eliminado acoplamiento directo a `SportifyDbContext` y normalizado UTF-8 en reportes. |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P0-01`
-- **Última tarea completada**: `TAREA-P0-01` (creación y consolidación del plan maestro)
-- **Últimas pruebas ejecutadas**: Línea base completa (`dotnet build` OK, `dotnet test` 3/3 OK, `frontend typecheck` OK, `vitest` 7/7 OK, `microservice typecheck` OK)
-- **Archivos relevantes modificados**: `PLAN_IMPLEMENTACION_SPORTIFY.md`
+- **Última tarea iniciada**: `TAREA-P1-01A`
+- **Última tarea completada**: `TAREA-P1-01A` (`MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application`)
+- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (3/3 aprobadas)
+- **Archivos relevantes modificados**: `MembershipService.cs`, `ReportService.cs`, `DashboardService.cs`, `MembershipRepository.cs`, `ReportRepository.cs`, `DashboardRepository.cs`, `QuestPdfReportRenderer.cs`, `DashboardController.cs`, `ReportsController.cs`, `DependencyInjection.cs`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P1-01A` (*Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` desacoplando `SportifyDbContext`*).
+- **Siguiente tarea ejecutable**: `TAREA-P1-01B` (*Desacoplamiento de los 6 controladores restantes mediante contratos DTO en `Sportify.Application/DTOs/`*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.

@@ -18,7 +18,10 @@ public static class DependencyInjection
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<IMembershipPlanService, MembershipPlanService>();
         services.AddScoped<IMemberProfileService, MemberProfileService>();
-        
+        services.AddScoped<IMembershipService, MembershipService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IDashboardService, DashboardService>();
+
         return services;
     }
 }

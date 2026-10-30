@@ -28,13 +28,15 @@ public static class DependencyInjection
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IMembershipPlanRepository, MembershipPlanRepository>();
         services.AddScoped<IMemberProfileRepository, MemberProfileRepository>();
+        services.AddScoped<IMembershipRepository, MembershipRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
 
-        // Services
+        // Infrastructure Adapters & Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
-        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IPdfReportRenderer, QuestPdfReportRenderer>();
         services.AddScoped<IFileStorageService, FileStorageService>();
         services.AddScoped<IReceiptService, ReceiptService>();
-        services.AddScoped<IMembershipService, Sportify.Infrastructure.Services.MembershipService>();
 
         return services;
     }
