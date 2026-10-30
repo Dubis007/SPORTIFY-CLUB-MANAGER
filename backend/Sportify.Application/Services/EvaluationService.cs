@@ -1,4 +1,5 @@
 using Sportify.Application.DTOs.Common;
+using Sportify.Application.DTOs.Evaluations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
@@ -13,22 +14,12 @@ public class EvaluationService : IEvaluationService
         _repository = repository;
     }
 
-    public async Task<PagedResult<object>> GetPagedAsync(PaginationParams pagination, int? evaluadoPorId)
+    public async Task<PagedResult<EvaluationDto>> GetPagedAsync(PaginationParams pagination, int? evaluadoPorId)
     {
         var (evals, total) = await _repository.GetPagedWithIncludesAsync(pagination.Skip, pagination.PageSize, evaluadoPorId);
-        var items = evals.Select(e => (object)new {
-            e.Id,
-            e.InscripcionId,
-            e.Puntaje,
-            e.Desempeno,
-            e.Comentarios,
-            e.EvaluadoEn,
-            e.EvaluadoPorId,
-            UsuarioNombre = ((e.Inscripcion?.Usuario?.Nombre ?? "") + " " + (e.Inscripcion?.Usuario?.Apellido ?? "")).Trim(),
-            CompetenciaNombre = e.Inscripcion?.Competencia?.Nombre ?? ""
-        }).ToList();
+        var items = evals.Select(MapToDto).ToList();
 
-        return new PagedResult<object>
+        return new PagedResult<EvaluationDto>
         {
             Items = items,
             Page = pagination.Page,
@@ -37,56 +28,57 @@ public class EvaluationService : IEvaluationService
         };
     }
 
-    public async Task<IEnumerable<object>> GetAllAsync()
+    public async Task<IEnumerable<EvaluationDto>> GetAllAsync()
     {
         var evals = await _repository.GetAllWithIncludesAsync();
-        return evals.Select(e => new {
-            e.Id,
-            e.InscripcionId,
-            e.Puntaje,
-            e.Desempeno,
-            e.Comentarios,
-            e.EvaluadoEn,
-            e.EvaluadoPorId,
-            UsuarioNombre = ((e.Inscripcion?.Usuario?.Nombre ?? "") + " " + (e.Inscripcion?.Usuario?.Apellido ?? "")).Trim(),
-            CompetenciaNombre = e.Inscripcion?.Competencia?.Nombre ?? ""
-        }).OrderByDescending(e => e.EvaluadoEn).ToList();
+        return evals.Select(MapToDto).OrderByDescending(e => e.EvaluadoEn).ToList();
     }
 
-    public async Task<IEnumerable<object>> GetOptionsAsync()
+    public async Task<IEnumerable<EvaluationOptionDto>> GetOptionsAsync()
     {
         var inscripciones = await _repository.GetInscripcionesOptionsAsync();
-        return inscripciones.Select(i => new {
-            i.Id,
-            UsuarioNombre = ((i.Usuario?.Nombre ?? "") + " " + (i.Usuario?.Apellido ?? "")).Trim(),
-            CompetenciaNombre = i.Competencia?.Nombre ?? "",
+        return inscripciones.Select(i => new EvaluationOptionDto
+        {
+            Id = i.Id,
+            UsuarioNombre = $"{i.Usuario?.Nombre} {i.Usuario?.Apellido}".Trim(),
+            CompetenciaNombre = i.Competencia?.Nombre ?? string.Empty,
             FechaInicio = i.Competencia?.FechaInicio ?? DateTime.MinValue
         }).OrderByDescending(i => i.FechaInicio).ToList();
     }
 
-    public async Task<(bool IsSuccess, string ErrorMessage)> CreateAsync(EvaluacionCompetencia dto, int currentUserId)
+    public async Task<(bool IsSuccess, string ErrorMessage, EvaluationDto? Evaluation)> CreateAsync(SaveEvaluationDto dto, int currentUserId)
     {
-        dto.EvaluadoPorId = currentUserId > 0 ? currentUserId : 1;
-
         var exists = await _repository.ExistsByInscripcionIdAsync(dto.InscripcionId);
-        if (exists) return (false, "Esta inscripción ya tiene una evaluación.");
+        if (exists)
+            return (false, "Esta inscripción ya tiene una evaluación.", null);
 
-        dto.EvaluadoEn = DateTime.UtcNow;
-        await _repository.AddAsync(dto);
-        return (true, string.Empty);
+        var entity = new EvaluacionCompetencia
+        {
+            InscripcionId = dto.InscripcionId,
+            Puntaje = dto.Puntaje,
+            Posicion = dto.Posicion,
+            Desempeno = dto.Desempeno,
+            Comentarios = dto.Comentarios,
+            EvaluadoPorId = currentUserId > 0 ? currentUserId : 1,
+            EvaluadoEn = DateTime.UtcNow
+        };
+
+        await _repository.AddAsync(entity);
+        return (true, string.Empty, MapToDto(entity));
     }
 
-    public async Task<EvaluacionCompetencia?> UpdateAsync(int id, EvaluacionCompetencia dto)
+    public async Task<EvaluationDto?> UpdateAsync(int id, SaveEvaluationDto dto)
     {
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null) return null;
 
         existing.Puntaje = dto.Puntaje;
+        existing.Posicion = dto.Posicion;
         existing.Desempeno = dto.Desempeno;
         existing.Comentarios = dto.Comentarios;
 
         await _repository.UpdateAsync(existing);
-        return existing;
+        return MapToDto(existing);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -97,4 +89,18 @@ public class EvaluationService : IEvaluationService
         await _repository.DeleteAsync(existing);
         return true;
     }
+
+    private static EvaluationDto MapToDto(EvaluacionCompetencia e) => new()
+    {
+        Id = e.Id,
+        InscripcionId = e.InscripcionId,
+        Puntaje = e.Puntaje,
+        Posicion = e.Posicion,
+        Desempeno = e.Desempeno,
+        Comentarios = e.Comentarios,
+        EvaluadoEn = e.EvaluadoEn,
+        EvaluadoPorId = e.EvaluadoPorId,
+        UsuarioNombre = $"{e.Inscripcion?.Usuario?.Nombre} {e.Inscripcion?.Usuario?.Apellido}".Trim(),
+        CompetenciaNombre = e.Inscripcion?.Competencia?.Nombre ?? string.Empty
+    };
 }

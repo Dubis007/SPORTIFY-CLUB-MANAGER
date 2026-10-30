@@ -1,3 +1,4 @@
+using Sportify.Application.DTOs.Competitions;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
@@ -12,19 +13,29 @@ public class CompetitionService : ICompetitionService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<Competencia>> GetAllAsync()
+    public async Task<IEnumerable<CompetitionDto>> GetAllAsync()
     {
-        return await _repository.GetAllAsync();
+        var competitions = await _repository.GetAllAsync();
+        return competitions.Select(MapToDto);
     }
 
-    public async Task<Competencia> CreateAsync(Competencia dto)
+    public async Task<CompetitionDto> CreateAsync(SaveCompetitionDto dto)
     {
-        dto.CreadoEn = DateTime.UtcNow;
-        await _repository.AddAsync(dto);
-        return dto;
+        var entity = new Competencia
+        {
+            Nombre = dto.Nombre,
+            Descripcion = dto.Descripcion,
+            FechaInicio = dto.FechaInicio,
+            FechaFin = dto.FechaFin,
+            Ubicacion = dto.Ubicacion,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        await _repository.AddAsync(entity);
+        return MapToDto(entity);
     }
 
-    public async Task<Competencia?> UpdateAsync(int id, Competencia dto)
+    public async Task<CompetitionDto?> UpdateAsync(int id, SaveCompetitionDto dto)
     {
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null || existing.EliminadoEn != null) return null;
@@ -36,7 +47,7 @@ public class CompetitionService : ICompetitionService
         existing.Ubicacion = dto.Ubicacion;
 
         await _repository.UpdateAsync(existing);
-        return existing;
+        return MapToDto(existing);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -44,8 +55,19 @@ public class CompetitionService : ICompetitionService
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null || existing.EliminadoEn != null) return false;
 
-        existing.EliminadoEn = DateTime.UtcNow; // Soft delete
+        existing.EliminadoEn = DateTime.UtcNow;
         await _repository.UpdateAsync(existing);
         return true;
     }
+
+    private static CompetitionDto MapToDto(Competencia c) => new()
+    {
+        Id = c.Id,
+        Nombre = c.Nombre,
+        Descripcion = c.Descripcion,
+        FechaInicio = c.FechaInicio,
+        FechaFin = c.FechaFin,
+        Ubicacion = c.Ubicacion,
+        CreadoEn = c.CreadoEn
+    };
 }

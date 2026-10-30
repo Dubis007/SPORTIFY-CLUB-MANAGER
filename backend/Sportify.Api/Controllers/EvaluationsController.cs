@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sportify.Application.DTOs.Common;
+using Sportify.Application.DTOs.Evaluations;
 using Sportify.Application.Interfaces;
-using Sportify.Domain.Entities;
 using System.Security.Claims;
 
 namespace Sportify.Api.Controllers;
@@ -34,19 +34,20 @@ public class EvaluationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] EvaluacionCompetencia dto)
+    public async Task<IActionResult> Create([FromBody] SaveEvaluationDto dto)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        int userId = int.TryParse(userIdString, out int parsedId) ? parsedId : 1;
+        var userId = int.TryParse(userIdString, out var parsedId) ? parsedId : 1;
 
         var result = await _evaluationService.CreateAsync(dto, userId);
-        if (!result.IsSuccess) return BadRequest(new { message = result.ErrorMessage });
+        if (!result.IsSuccess || result.Evaluation == null)
+            return BadRequest(new { message = result.ErrorMessage });
 
-        return CreatedAtAction(nameof(GetAll), new { id = dto.Id }, dto);
+        return CreatedAtAction(nameof(GetAll), new { id = result.Evaluation.Id }, result.Evaluation);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] EvaluacionCompetencia dto)
+    public async Task<IActionResult> Update(int id, [FromBody] SaveEvaluationDto dto)
     {
         var existing = await _evaluationService.UpdateAsync(id, dto);
         if (existing == null) return NotFound();

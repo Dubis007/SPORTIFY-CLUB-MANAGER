@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Sportify.Application.DTOs.MembershipPlans;
 using Sportify.Application.Interfaces;
-using Sportify.Domain.Entities;
 
 namespace Sportify.Api.Controllers;
 
@@ -18,7 +18,7 @@ public class MembershipPlansController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous] // Permitir ver los planes sin login
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
         var planes = await _planService.GetAllAsync();
@@ -26,14 +26,14 @@ public class MembershipPlansController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] PlanMembresia dto)
+    public async Task<IActionResult> Create([FromBody] SaveMembershipPlanDto dto)
     {
         var result = await _planService.CreateAsync(dto);
         return Ok(result);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] PlanMembresia dto)
+    public async Task<IActionResult> Update(int id, [FromBody] SaveMembershipPlanDto dto)
     {
         var result = await _planService.UpdateAsync(id, dto);
         if (result == null) return NotFound();

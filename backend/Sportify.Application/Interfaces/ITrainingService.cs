@@ -1,14 +1,14 @@
-using Sportify.Domain.Entities;
+using Sportify.Application.DTOs.Trainings;
 
 namespace Sportify.Application.Interfaces;
 
 public interface ITrainingService
 {
-    Task<IEnumerable<Entrenamiento>> GetAllAsync();
-    Task<Entrenamiento> CreateAsync(Entrenamiento dto);
-    Task<Entrenamiento?> UpdateAsync(int id, Entrenamiento dto);
+    Task<IEnumerable<TrainingDto>> GetAllAsync();
+    Task<TrainingDto> CreateAsync(SaveTrainingDto dto);
+    Task<TrainingDto?> UpdateAsync(int id, SaveTrainingDto dto);
     Task<bool> DeleteAsync(int id);
-    Task<Entrenamiento?> CloseTrainingAsync(int id);
-    Task<IEnumerable<object>> GetAttendanceAsync(int id);
+    Task<TrainingDto?> CloseTrainingAsync(int id);
+    Task<IEnumerable<TrainingAttendanceMemberDto>> GetAttendanceAsync(int id);
     Task<(bool IsSuccess, string ErrorMessage)> MarkAttendanceAsync(int id, int usuarioId, string? observaciones);
 }

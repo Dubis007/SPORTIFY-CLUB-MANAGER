@@ -1,3 +1,4 @@
+using Sportify.Application.DTOs.Registrations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
@@ -22,24 +23,31 @@ public class RegistrationService : IRegistrationService
         return await _repository.GetOptionsAsync();
     }
 
-    public async Task<InscripcionCompetencia?> CreateAsync(InscripcionCompetencia dto)
+    public async Task<RegistrationDto?> CreateAsync(SaveRegistrationDto dto)
     {
         var exists = await _repository.ExistsAsync(dto.UsuarioId, dto.CompetenciaId);
         if (exists) return null;
 
-        dto.FechaInscripcion = DateTime.UtcNow;
-        await _repository.AddAsync(dto);
-        return dto;
+        var entity = new InscripcionCompetencia
+        {
+            CompetenciaId = dto.CompetenciaId,
+            UsuarioId = dto.UsuarioId,
+            Estado = dto.Estado,
+            FechaInscripcion = DateTime.UtcNow
+        };
+
+        await _repository.AddAsync(entity);
+        return MapToDto(entity);
     }
 
-    public async Task<InscripcionCompetencia?> UpdateAsync(int id, InscripcionCompetencia dto)
+    public async Task<RegistrationDto?> UpdateAsync(int id, SaveRegistrationDto dto)
     {
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null) return null;
 
         existing.Estado = dto.Estado;
         await _repository.UpdateAsync(existing);
-        return existing;
+        return MapToDto(existing);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -50,4 +58,13 @@ public class RegistrationService : IRegistrationService
         await _repository.DeleteAsync(existing);
         return true;
     }
+
+    private static RegistrationDto MapToDto(InscripcionCompetencia i) => new()
+    {
+        Id = i.Id,
+        CompetenciaId = i.CompetenciaId,
+        UsuarioId = i.UsuarioId,
+        Estado = i.Estado,
+        FechaInscripcion = i.FechaInscripcion
+    };
 }

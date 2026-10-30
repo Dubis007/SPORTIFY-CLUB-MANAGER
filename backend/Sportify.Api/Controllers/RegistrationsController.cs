@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Sportify.Application.DTOs.Registrations;
 using Sportify.Application.Interfaces;
-using Sportify.Domain.Entities;
 
 namespace Sportify.Api.Controllers;
 
@@ -32,16 +32,17 @@ public class RegistrationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] InscripcionCompetencia dto)
+    public async Task<IActionResult> Create([FromBody] SaveRegistrationDto dto)
     {
         var created = await _registrationService.CreateAsync(dto);
-        if (created == null) return BadRequest(new { message = "El usuario ya se encuentra inscrito en esta competencia." });
+        if (created == null)
+            return BadRequest(new { message = "El usuario ya se encuentra inscrito en esta competencia." });
 
         return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] InscripcionCompetencia dto)
+    public async Task<IActionResult> Update(int id, [FromBody] SaveRegistrationDto dto)
     {
         var updated = await _registrationService.UpdateAsync(id, dto);
         if (updated == null) return NotFound();

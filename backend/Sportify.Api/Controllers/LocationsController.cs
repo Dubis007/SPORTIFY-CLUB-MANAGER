@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Sportify.Application.DTOs.Locations;
 using Sportify.Application.Interfaces;
-using Sportify.Domain.Entities;
 
 namespace Sportify.Api.Controllers;
 
@@ -25,14 +25,14 @@ public class LocationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Sede dto)
+    public async Task<IActionResult> Create([FromBody] SaveLocationDto dto)
     {
         var result = await _locationService.CreateAsync(dto);
         return Ok(result);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Sede dto)
+    public async Task<IActionResult> Update(int id, [FromBody] SaveLocationDto dto)
     {
         var result = await _locationService.UpdateAsync(id, dto);
         if (result == null) return NotFound();

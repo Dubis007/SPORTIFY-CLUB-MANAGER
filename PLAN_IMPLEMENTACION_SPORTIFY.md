@@ -145,7 +145,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: `dotnet build backend/Sportify.Api/Sportify.Api.csproj` y `dotnet test backend/Sportify.Tests/Sportify.Tests.csproj`.
   - **Commit propuesto**: `refactor(arquitectura): reubica servicios en aplicación y desacopla acceso a datos`
 
-- [ ] [EJECUTABLE] **TAREA-P1-01B** — *Prioridad 1 | API y Contratos DTO en los 6 Módulos Restantes*
+- [x] **TAREA-P1-01B** — *Prioridad 1 | API y Contratos DTO en los 6 Módulos Restantes*
   - **Requerimientos y brechas**: `GAP-010` (transversal a Sedes `VID2-RF-009`, Planes `VID1-RF-015`, Entrenamientos `VID1-RF-003`/`007`, Competencias `VID1-RF-006`, Inscripciones y Evaluaciones `VID1-RF-010`).
   - **Descripción**: Crear los DTOs tipados faltantes en `Sportify.Application/DTOs/` para los 6 módulos que aún exponen entidades de dominio (`Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations`, `Evaluations`) y refactorizar sus interfaces de servicio, servicios y controladores para eliminar toda exposición directa de `Sportify.Domain.Entities` en `Sportify.Api/Controllers/`, manteniendo compatibilidad JSON 100% con el frontend React.
   - **Estado actual comprobado**: `CompetitionsController`, `EvaluationsController`, `LocationsController`, `MembershipPlansController`, `RegistrationsController` y `TrainingsController` reciben o retornan entidades de dominio directamente; `LocationDto` vive dentro de `ILocationRepository.cs` y `MarkAttendanceDto` vive dentro de `TrainingsController.cs`.
@@ -597,13 +597,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 2026-10-29 20:25 | Reconocimiento inicial y línea base (`VER-TEC-001`) | Completado | Base `e7c3007d` | Backend build 0 err/0 warn, `dotnet test` 3/3, Frontend `tsc` 0 err, `vitest` 7/7, Microservicios `tsc` 0 err | Árbol Git limpio en rama `Requerimientos_en_Automatico`. |
 | 2026-10-29 20:30 | `TAREA-P0-01`: Creación de `PLAN_IMPLEMENTACION_SPORTIFY.md` | Completado | `31e118f5` | Verificación integral de trazabilidad (27 RF + 10 RNF + 10 GAP + 10 DEC + 8 CMP) | Siguiente tarea ejecutable: `TAREA-P1-01A`. |
-| 2026-10-29 20:36 | `TAREA-P1-01A`: Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK | Eliminado acoplamiento directo a `SportifyDbContext` y normalizado UTF-8 en reportes. |
+| 2026-10-29 20:36 | `TAREA-P1-01A`: Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` | Completado | `9fb5e192` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK | Eliminado acoplamiento directo a `SportifyDbContext` y normalizado UTF-8 en reportes. |
+| 2026-10-29 20:41 | `TAREA-P1-01B`: Contratos DTO tipados en `Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations` y `Evaluations` | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK, `frontend typecheck` 0 err | 0 controladores en `Sportify.Api` referencian entidades de dominio o infraestructura. |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P1-01A`
-- **Última tarea completada**: `TAREA-P1-01A` (`MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application`)
-- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (3/3 aprobadas)
-- **Archivos relevantes modificados**: `MembershipService.cs`, `ReportService.cs`, `DashboardService.cs`, `MembershipRepository.cs`, `ReportRepository.cs`, `DashboardRepository.cs`, `QuestPdfReportRenderer.cs`, `DashboardController.cs`, `ReportsController.cs`, `DependencyInjection.cs`
+- **Última tarea iniciada**: `TAREA-P1-01B`
+- **Última tarea completada**: `TAREA-P1-01B` (desacoplamiento de los 6 controladores restantes mediante DTOs)
+- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (3/3 aprobadas), `npm --prefix frontend run typecheck` (0 errores)
+- **Archivos relevantes modificados**: `LocationDtos.cs`, `MembershipPlanDtos.cs`, `TrainingDtos.cs`, `CompetitionDtos.cs`, `RegistrationDtos.cs`, `EvaluationDtos.cs` y sus 6 servicios y 6 controladores.
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P1-01B` (*Desacoplamiento de los 6 controladores restantes mediante contratos DTO en `Sportify.Application/DTOs/`*).
+- **Siguiente tarea ejecutable**: `TAREA-P1-01C` (*Creación de `useAdminPaymentsViewModel.ts`, pruebas Vitest y desacoplamiento de `AdminPaymentsPage.tsx`*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.

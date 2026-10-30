@@ -1,13 +1,11 @@
-namespace Sportify.Application.Interfaces;
+using Sportify.Application.DTOs.MembershipPlans;
 
-using Sportify.Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+namespace Sportify.Application.Interfaces;
 
 public interface IMembershipPlanService
 {
-    Task<IEnumerable<PlanMembresia>> GetAllAsync();
-    Task<PlanMembresia> CreateAsync(PlanMembresia plan);
-    Task<PlanMembresia?> UpdateAsync(int id, PlanMembresia plan);
+    Task<IEnumerable<MembershipPlanDto>> GetAllAsync();
+    Task<MembershipPlanDto> CreateAsync(SaveMembershipPlanDto dto);
+    Task<MembershipPlanDto?> UpdateAsync(int id, SaveMembershipPlanDto dto);
     Task<bool> DeleteAsync(int id);
 }

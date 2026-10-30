@@ -1,10 +1,8 @@
-namespace Sportify.Application.Services;
-
+using Sportify.Application.DTOs.Locations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
+namespace Sportify.Application.Services;
 
 public class LocationService : ILocationService
 {
@@ -20,13 +18,23 @@ public class LocationService : ILocationService
         return await _repository.GetAllWithStatsAsync();
     }
 
-    public async Task<Sede> CreateAsync(Sede sede)
+    public async Task<LocationDto> CreateAsync(SaveLocationDto dto)
     {
-        sede.CreadoEn = DateTime.UtcNow;
-        return await _repository.AddAsync(sede);
+        var sede = new Sede
+        {
+            Nombre = dto.Nombre,
+            Direccion = dto.Direccion,
+            Ciudad = dto.Ciudad,
+            Telefono = dto.Telefono,
+            Activo = dto.Activo,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        var saved = await _repository.AddAsync(sede);
+        return MapToDto(saved);
     }
 
-    public async Task<Sede?> UpdateAsync(int id, Sede dto)
+    public async Task<LocationDto?> UpdateAsync(int id, SaveLocationDto dto)
     {
         var sede = await _repository.GetByIdAsync(id);
         if (sede == null) return null;
@@ -38,7 +46,7 @@ public class LocationService : ILocationService
         sede.Activo = dto.Activo;
 
         await _repository.UpdateAsync(sede);
-        return sede;
+        return MapToDto(sede);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -50,4 +58,15 @@ public class LocationService : ILocationService
         await _repository.UpdateAsync(sede);
         return true;
     }
+
+    private static LocationDto MapToDto(Sede s) => new()
+    {
+        Id = s.Id,
+        Nombre = s.Nombre,
+        Direccion = s.Direccion,
+        Ciudad = s.Ciudad,
+        Telefono = s.Telefono,
+        Activo = s.Activo,
+        CreadoEn = s.CreadoEn
+    };
 }

@@ -1,13 +1,11 @@
-namespace Sportify.Application.Interfaces;
+using Sportify.Application.DTOs.Locations;
 
-using Sportify.Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+namespace Sportify.Application.Interfaces;
 
 public interface ILocationService
 {
     Task<IEnumerable<LocationDto>> GetAllAsync();
-    Task<Sede> CreateAsync(Sede sede);
-    Task<Sede?> UpdateAsync(int id, Sede sede);
+    Task<LocationDto> CreateAsync(SaveLocationDto dto);
+    Task<LocationDto?> UpdateAsync(int id, SaveLocationDto dto);
     Task<bool> DeleteAsync(int id);
 }

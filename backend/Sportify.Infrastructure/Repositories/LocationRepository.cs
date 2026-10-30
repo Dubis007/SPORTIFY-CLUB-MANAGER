@@ -1,12 +1,10 @@
-namespace Sportify.Infrastructure.Repositories;
-
 using Microsoft.EntityFrameworkCore;
+using Sportify.Application.DTOs.Locations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 using Sportify.Infrastructure.Persistence;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
+namespace Sportify.Infrastructure.Repositories;
 
 public class LocationRepository : ILocationRepository
 {
@@ -20,13 +18,15 @@ public class LocationRepository : ILocationRepository
     public async Task<IEnumerable<LocationDto>> GetAllWithStatsAsync()
     {
         return await _context.Sedes
-            .Select(s => new LocationDto {
+            .Select(s => new LocationDto
+            {
                 Id = s.Id,
                 Nombre = s.Nombre,
                 Direccion = s.Direccion,
                 Ciudad = s.Ciudad,
                 Telefono = s.Telefono,
                 Activo = s.Activo,
+                CreadoEn = s.CreadoEn,
                 UsuariosActivos = _context.Usuarios.Count(u => u.SedeId == s.Id && u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO")),
                 Empleados = _context.Usuarios.Count(u => u.SedeId == s.Id && u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre != "MIEMBRO"))
             })

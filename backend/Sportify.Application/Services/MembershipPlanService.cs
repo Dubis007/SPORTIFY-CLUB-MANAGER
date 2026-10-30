@@ -1,10 +1,8 @@
-namespace Sportify.Application.Services;
-
+using Sportify.Application.DTOs.MembershipPlans;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
+namespace Sportify.Application.Services;
 
 public class MembershipPlanService : IMembershipPlanService
 {
@@ -15,18 +13,29 @@ public class MembershipPlanService : IMembershipPlanService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<PlanMembresia>> GetAllAsync()
+    public async Task<IEnumerable<MembershipPlanDto>> GetAllAsync()
     {
-        return await _repository.GetAllAsync();
+        var plans = await _repository.GetAllAsync();
+        return plans.Select(MapToDto);
     }
 
-    public async Task<PlanMembresia> CreateAsync(PlanMembresia plan)
+    public async Task<MembershipPlanDto> CreateAsync(SaveMembershipPlanDto dto)
     {
-        plan.CreadoEn = DateTime.UtcNow;
-        return await _repository.AddAsync(plan);
+        var plan = new PlanMembresia
+        {
+            Nombre = dto.Nombre,
+            Descripcion = dto.Descripcion,
+            PrecioCOP = dto.PrecioCOP,
+            DuracionDias = dto.DuracionDias,
+            Activo = dto.Activo,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        var saved = await _repository.AddAsync(plan);
+        return MapToDto(saved);
     }
 
-    public async Task<PlanMembresia?> UpdateAsync(int id, PlanMembresia dto)
+    public async Task<MembershipPlanDto?> UpdateAsync(int id, SaveMembershipPlanDto dto)
     {
         var plan = await _repository.GetByIdAsync(id);
         if (plan == null) return null;
@@ -38,7 +47,7 @@ public class MembershipPlanService : IMembershipPlanService
         plan.Activo = dto.Activo;
 
         await _repository.UpdateAsync(plan);
-        return plan;
+        return MapToDto(plan);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -50,4 +59,15 @@ public class MembershipPlanService : IMembershipPlanService
         await _repository.UpdateAsync(plan);
         return true;
     }
+
+    private static MembershipPlanDto MapToDto(PlanMembresia p) => new()
+    {
+        Id = p.Id,
+        Nombre = p.Nombre,
+        Descripcion = p.Descripcion,
+        PrecioCOP = p.PrecioCOP,
+        DuracionDias = p.DuracionDias,
+        Activo = p.Activo,
+        CreadoEn = p.CreadoEn
+    };
 }

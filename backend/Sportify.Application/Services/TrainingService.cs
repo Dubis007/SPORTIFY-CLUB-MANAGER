@@ -1,3 +1,4 @@
+using Sportify.Application.DTOs.Trainings;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
@@ -12,23 +13,32 @@ public class TrainingService : ITrainingService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<Entrenamiento>> GetAllAsync()
+    public async Task<IEnumerable<TrainingDto>> GetAllAsync()
     {
         var trainings = await _repository.GetAllActiveAsync();
-        return trainings.OrderByDescending(e => e.FechaHora).ToList();
+        return trainings.OrderByDescending(e => e.FechaHora).Select(MapToDto).ToList();
     }
 
-    public async Task<Entrenamiento> CreateAsync(Entrenamiento dto)
+    public async Task<TrainingDto> CreateAsync(SaveTrainingDto dto)
     {
-        dto.CreadoEn = DateTime.UtcNow;
-        dto.Estado = "PENDIENTE";
-        if (dto.CapacidadMaxima <= 0) dto.CapacidadMaxima = 20;
+        var entity = new Entrenamiento
+        {
+            SedeId = dto.SedeId,
+            EntrenadorId = dto.EntrenadorId,
+            Titulo = dto.Titulo,
+            Descripcion = dto.Descripcion,
+            FechaHora = dto.FechaHora,
+            FechaFin = dto.FechaFin,
+            CapacidadMaxima = dto.CapacidadMaxima > 0 ? dto.CapacidadMaxima : 20,
+            Estado = "PENDIENTE",
+            CreadoEn = DateTime.UtcNow
+        };
 
-        await _repository.AddAsync(dto);
-        return dto;
+        await _repository.AddAsync(entity);
+        return MapToDto(entity);
     }
 
-    public async Task<Entrenamiento?> UpdateAsync(int id, Entrenamiento dto)
+    public async Task<TrainingDto?> UpdateAsync(int id, SaveTrainingDto dto)
     {
         var existing = await _repository.GetByIdActiveAsync(id);
         if (existing == null) return null;
@@ -41,7 +51,7 @@ public class TrainingService : ITrainingService
         existing.CapacidadMaxima = dto.CapacidadMaxima;
 
         await _repository.UpdateAsync(existing);
-        return existing;
+        return MapToDto(existing);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -54,30 +64,29 @@ public class TrainingService : ITrainingService
         return true;
     }
 
-    public async Task<Entrenamiento?> CloseTrainingAsync(int id)
+    public async Task<TrainingDto?> CloseTrainingAsync(int id)
     {
         var existing = await _repository.GetByIdActiveAsync(id);
         if (existing == null) return null;
 
         existing.Estado = "CERRADO";
         await _repository.UpdateAsync(existing);
-        return existing;
+        return MapToDto(existing);
     }
 
-    public async Task<IEnumerable<object>> GetAttendanceAsync(int id)
+    public async Task<IEnumerable<TrainingAttendanceMemberDto>> GetAttendanceAsync(int id)
     {
         var asistencia = await _repository.GetAsistenciasByEntrenamientoIdAsync(id);
         var miembrosDb = await _repository.GetActiveMembersAsync();
-        
-        var miembros = miembrosDb.Select(u => new {
-            u.Id,
-            u.Nombre,
-            u.Apellido,
+
+        return miembrosDb.Select(u => new TrainingAttendanceMemberDto
+        {
+            Id = u.Id,
+            Nombre = u.Nombre,
+            Apellido = u.Apellido,
             Asistio = asistencia.Any(a => a.UsuarioId == u.Id && a.Presente),
             Observaciones = asistencia.FirstOrDefault(a => a.UsuarioId == u.Id)?.Observaciones
         }).ToList();
-        
-        return miembros;
     }
 
     public async Task<(bool IsSuccess, string ErrorMessage)> MarkAttendanceAsync(int id, int usuarioId, string? observaciones)
@@ -89,9 +98,9 @@ public class TrainingService : ITrainingService
 
         if (existingAttendance != null)
         {
-            if (existingAttendance.Presente) 
+            if (existingAttendance.Presente)
                 return (false, "El usuario ya tiene asistencia marcada para este entrenamiento.");
-            
+
             existingAttendance.Presente = true;
             existingAttendance.Observaciones = observaciones;
             await _repository.SaveChangesAsync();
@@ -111,4 +120,18 @@ public class TrainingService : ITrainingService
 
         return (true, string.Empty);
     }
+
+    private static TrainingDto MapToDto(Entrenamiento e) => new()
+    {
+        Id = e.Id,
+        SedeId = e.SedeId,
+        EntrenadorId = e.EntrenadorId,
+        Titulo = e.Titulo,
+        Descripcion = e.Descripcion,
+        FechaHora = e.FechaHora,
+        FechaFin = e.FechaFin,
+        CapacidadMaxima = e.CapacidadMaxima,
+        Estado = e.Estado,
+        CreadoEn = e.CreadoEn
+    };
 }
