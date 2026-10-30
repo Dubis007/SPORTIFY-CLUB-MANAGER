@@ -10,6 +10,7 @@ export interface User {
   activo: boolean;
   rol: UserRole;
   sedeId?: number | null;
+  sedeNombre?: string | null;
   solicitaCambioClave?: boolean;
   creadoEn?: string;
 }

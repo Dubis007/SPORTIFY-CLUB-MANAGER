@@ -18,4 +18,6 @@ public class UpdateUserDto
     public string Correo { get; set; } = string.Empty;
 
     public string? RolNombre { get; set; }
+
+    public int? SedeId { get; set; }
 }

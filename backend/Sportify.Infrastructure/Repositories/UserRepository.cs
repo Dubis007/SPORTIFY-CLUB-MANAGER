@@ -17,6 +17,7 @@ public class UserRepository : IUserRepository
     public async Task<IEnumerable<Usuario>> GetAllAsync()
     {
         return await _context.Usuarios
+            .Include(u => u.Sede)
             .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
             .AsNoTracking()
@@ -26,6 +27,7 @@ public class UserRepository : IUserRepository
     public async Task<Usuario?> GetByIdAsync(int id)
     {
         return await _context.Usuarios
+            .Include(u => u.Sede)
             .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
             .Include(u => u.Membresias)
@@ -36,6 +38,7 @@ public class UserRepository : IUserRepository
     public async Task<Usuario?> GetByEmailAsync(string email)
     {
         return await _context.Usuarios
+            .Include(u => u.Sede)
             .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
             .FirstOrDefaultAsync(u => u.Correo == email);

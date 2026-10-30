@@ -7,6 +7,7 @@ export interface CreateUserDto {
   correo: string;
   contrasena: string;
   rolNombre: UserRole;
+  sedeId?: number | null;
 }
 
 export interface UpdateUserDto {
@@ -14,6 +15,7 @@ export interface UpdateUserDto {
   apellido: string;
   correo: string;
   rolNombre: UserRole;
+  sedeId?: number | null;
 }
 
 export const userService = {
@@ -21,7 +23,7 @@ export const userService = {
     const response = await apiClient.get<User[]>('/api/users');
     return response.data;
   },
-  
+
   createUser: async (data: CreateUserDto): Promise<User> => {
     const response = await apiClient.post<User>('/api/users', data);
     return response.data;
@@ -35,8 +37,8 @@ export const userService = {
   updateUserStatus: async (id: number, activo: boolean): Promise<void> => {
     await apiClient.patch(`/api/users/${id}/status`, activo, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
   },
 
@@ -46,5 +48,5 @@ export const userService = {
 
   deleteUser: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/users/${id}`);
-  }
+  },
 };

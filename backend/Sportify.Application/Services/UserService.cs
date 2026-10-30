@@ -42,13 +42,15 @@ public class UserService : IUserService
             Apellido = dto.Apellido,
             Correo = dto.Correo,
             ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena),
+            SedeId = dto.SedeId,
             Activo = true,
             CreadoEn = DateTime.UtcNow
         };
 
         await _userRepository.CreateAsync(usuario, dto.RolNombre);
+        var reloaded = await _userRepository.GetByIdAsync(usuario.Id) ?? usuario;
 
-        return MapToDto(usuario);
+        return MapToDto(reloaded);
     }
 
     /// <inheritdoc/>
@@ -68,16 +70,16 @@ public class UserService : IUserService
         usuario.Nombre = dto.Nombre;
         usuario.Apellido = dto.Apellido;
         usuario.Correo = dto.Correo;
+        usuario.SedeId = dto.SedeId;
 
         await _userRepository.UpdateAsync(usuario);
 
         if (!string.IsNullOrEmpty(dto.RolNombre))
         {
             await _userRepository.UpdateRoleAsync(usuario.Id, dto.RolNombre);
-            
-            // Reload the user to get the new roles for the DTO
-            usuario = await _userRepository.GetByIdAsync(usuario.Id) ?? usuario;
         }
+
+        usuario = await _userRepository.GetByIdAsync(usuario.Id) ?? usuario;
 
         return MapToDto(usuario);
     }
@@ -125,6 +127,8 @@ public class UserService : IUserService
         Correo = u.Correo,
         Activo = u.Activo,
         SolicitaCambioClave = u.SolicitaCambioClave,
+        SedeId = u.SedeId,
+        SedeNombre = u.Sede?.Nombre,
         CreadoEn = u.CreadoEn,
         Roles = u.UsuarioRoles?
             .Select(ur => ur.Rol?.Nombre ?? string.Empty)

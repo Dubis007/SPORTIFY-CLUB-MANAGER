@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Sportify.Application.DTOs.Users;
 
@@ -24,4 +24,6 @@ public class CreateUserDto
     /// <summary>Nombre del rol a asignar. Ej: "ADMIN", "MIEMBRO".</summary>
     [Required(ErrorMessage = "El rol es requerido")]
     public string RolNombre { get; set; } = string.Empty;
+
+    public int? SedeId { get; set; }
 }
