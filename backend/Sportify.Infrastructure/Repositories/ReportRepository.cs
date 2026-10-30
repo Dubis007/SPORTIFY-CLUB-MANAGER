@@ -96,4 +96,39 @@ public class ReportRepository : IReportRepository
             Observaciones = eval.Comentarios ?? "Sin observaciones"
         }).ToList();
     }
+
+    public async Task<PaymentVoucherDataDto?> GetPaymentVoucherDataAsync(int pagoId)
+    {
+        var pago = await _context.Pagos
+            .Include(p => p.Usuario)
+                .ThenInclude(u => u.Sede)
+            .Include(p => p.Membresia)
+                .ThenInclude(m => m!.PlanMembresia)
+            .Include(p => p.AprobadoPor)
+            .FirstOrDefaultAsync(p => p.Id == pagoId);
+
+        if (pago == null)
+            return null;
+
+        return new PaymentVoucherDataDto
+        {
+            PagoId = pago.Id,
+            UsuarioId = pago.UsuarioId,
+            UsuarioNombre = $"{pago.Usuario?.Nombre} {pago.Usuario?.Apellido}".Trim(),
+            UsuarioCorreo = pago.Usuario?.Correo ?? string.Empty,
+            SedeNombre = pago.Usuario?.Sede?.Nombre ?? "Sede Principal",
+            PlanNombre = pago.Membresia?.PlanMembresia?.Nombre ?? "Cuota Deportiva / Cargo Directo",
+            FechaInicioMembresia = pago.Membresia?.FechaInicio,
+            FechaFinMembresia = pago.Membresia?.FechaFin,
+            MontoCOP = pago.MontoCOP,
+            Estado = pago.Estado.ToString(),
+            FechaPago = pago.FechaPago,
+            FechaAprobacion = pago.FechaAprobacion,
+            AprobadoPorNombre = pago.AprobadoPor != null
+                ? $"{pago.AprobadoPor.Nombre} {pago.AprobadoPor.Apellido}".Trim()
+                : null,
+            ComentarioRechazo = pago.ComentarioRechazo,
+            CodigoVerificacion = $"SPT-{pago.FechaPago:yyyyMM}-{pago.Id:D6}"
+        };
+    }
 }

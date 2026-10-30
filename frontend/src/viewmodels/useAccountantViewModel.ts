@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { paymentService } from '../services/api/paymentService';
 import { profileService } from '../services/profile/profileService';
-import { apiClient } from '../services/api/apiClient';
 import { Payment, PaymentSummary } from '../models';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -47,7 +46,7 @@ export const useAccountantViewModel = () => {
     try {
       const [profData, optData] = await Promise.all([
         profileService.getProfile(),
-        apiClient.get('/api/payments/options').then(res => res.data)
+        paymentService.getOptions()
       ]);
       setProfile(profData);
       setOptions(optData);
@@ -83,7 +82,6 @@ export const useAccountantViewModel = () => {
   const registerManualPayment = async (data: { usuarioId: number; membresiaId?: number; montoCOP: number }) => {
     try {
       await paymentService.registerManual(data);
-      // El pago nuevo queda primero (orden por fecha desc): volver a la página 1
       if (page === 1) fetchPayments();
       else setPage(1);
       fetchSummary();
@@ -104,6 +102,15 @@ export const useAccountantViewModel = () => {
       await paymentService.downloadPaymentsReport();
     } catch {
       setError('Error al generar el reporte PDF');
+    }
+  };
+
+  const getVoucherPreviewUrl = async (pagoId: number): Promise<string | null> => {
+    try {
+      return await paymentService.getPaymentVoucherBlobUrl(pagoId);
+    } catch {
+      setError('Error al generar la colilla PDF oficial del pago');
+      return null;
     }
   };
 
@@ -143,6 +150,7 @@ export const useAccountantViewModel = () => {
     rejectPayment,
     registerManualPayment,
     downloadReport,
+    getVoucherPreviewUrl,
     changePassword,
     refresh: () => {
       fetchInitialData();

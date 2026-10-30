@@ -73,6 +73,15 @@ export const paymentService = {
     window.URL.revokeObjectURL(url);
   },
 
+  getPaymentVoucherBlobUrl: async (pagoId: number): Promise<string> => {
+    const response = await apiClient.get(`/api/reports/payments/${pagoId}/voucher-pdf`, {
+      responseType: 'blob'
+    });
+    return window.URL.createObjectURL(
+      new Blob([response.data], { type: 'application/pdf' })
+    );
+  },
+
   downloadPaymentsReport: async (): Promise<void> => {
     const response = await apiClient.get('/api/reports/payments/pdf', {
       responseType: 'blob'

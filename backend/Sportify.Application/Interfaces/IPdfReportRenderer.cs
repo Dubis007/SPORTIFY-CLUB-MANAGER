@@ -8,4 +8,5 @@ public interface IPdfReportRenderer
     byte[] RenderMembersReport(IReadOnlyList<MemberReportRowDto> usuarios);
     byte[] RenderLocationsReport(IReadOnlyList<LocationReportRowDto> sedes);
     byte[] RenderPerformanceReport(IReadOnlyList<PerformanceReportItemDto> items);
+    byte[] RenderPaymentVoucher(PaymentVoucherDataDto voucher);
 }

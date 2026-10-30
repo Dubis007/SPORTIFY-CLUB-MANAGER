@@ -36,4 +36,16 @@ public class ReportService : IReportService
         var items = await _reportRepository.GetPerformanceReportDataAsync();
         return _pdfRenderer.RenderPerformanceReport(items);
     }
+
+    public async Task<byte[]?> GeneratePaymentVoucherPdfAsync(int pagoId, int? restrictToUserId = null)
+    {
+        var voucher = await _reportRepository.GetPaymentVoucherDataAsync(pagoId);
+        if (voucher == null)
+            return null;
+
+        if (restrictToUserId.HasValue && voucher.UsuarioId != restrictToUserId.Value)
+            return null;
+
+        return _pdfRenderer.RenderPaymentVoucher(voucher);
+    }
 }

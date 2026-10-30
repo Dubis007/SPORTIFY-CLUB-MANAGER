@@ -116,6 +116,15 @@ export const useAdminPaymentsViewModel = () => {
     }
   };
 
+  const getVoucherPreviewUrl = async (pagoId: number): Promise<string | null> => {
+    try {
+      return await paymentService.getPaymentVoucherBlobUrl(pagoId);
+    } catch {
+      setError('Error al generar la colilla PDF oficial del pago');
+      return null;
+    }
+  };
+
   const downloadReport = async (): Promise<boolean> => {
     try {
       await paymentService.downloadPaymentsReport();
@@ -161,6 +170,7 @@ export const useAdminPaymentsViewModel = () => {
     rejectPayment,
     registerManualPayment,
     downloadAttachment,
+    getVoucherPreviewUrl,
     downloadReport,
     refresh: () => {
       fetchOptions();

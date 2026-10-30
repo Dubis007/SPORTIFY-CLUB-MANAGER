@@ -289,4 +289,171 @@ public class QuestPdfReportRenderer : IPdfReportRenderer
 
         return document.GeneratePdf();
     }
+
+    public byte[] RenderPaymentVoucher(PaymentVoucherDataDto voucher)
+    {
+        var (statusBg, statusFg, statusLabel) = voucher.Estado switch
+        {
+            "APROBADO" => (Colors.Green.Lighten4, Colors.Green.Darken3, "APROBADO / AL DÍA"),
+            "RECHAZADO" => (Colors.Red.Lighten4, Colors.Red.Darken3, "RECHAZADO"),
+            _ => (Colors.Amber.Lighten4, Colors.Amber.Darken3, "PENDIENTE DE VALIDACIÓN")
+        };
+
+        var document = Document.Create(container =>
+        {
+            // Página 1: Colilla oficial y detalle de la obligación / pago
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1.8f, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken4));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(left =>
+                        {
+                            left.Item().Text("SPORTIFY CLUB MANAGER").Bold().FontSize(18).FontColor(Colors.Blue.Darken3);
+                            left.Item().Text("Colilla Oficial de Pago y Estado de Membresía").FontSize(11).FontColor(Colors.Grey.Darken2);
+                            left.Item().Text($"Referencia: {voucher.CodigoVerificacion}").SemiBold().FontSize(9).FontColor(Colors.Blue.Darken2);
+                        });
+
+                        row.ConstantItem(170).Background(statusBg).Border(1).BorderColor(statusFg)
+                            .PaddingVertical(8).PaddingHorizontal(10).AlignCenter().AlignMiddle()
+                            .Text(statusLabel).Bold().FontSize(10).FontColor(statusFg);
+                    });
+
+                    col.Item().PaddingTop(10).Height(1.5f).Background(Colors.Blue.Darken3);
+                });
+
+                page.Content().PaddingVertical(16).Column(col =>
+                {
+                    col.Spacing(14);
+
+                    col.Item().Background(Colors.Grey.Lighten4).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(12).Column(info =>
+                    {
+                        info.Spacing(4);
+                        info.Item().Text("DATOS DEL DEPORTISTA / TITULAR").Bold().FontSize(10).FontColor(Colors.Blue.Darken3);
+                        info.Item().Text($"Nombre Completo: {voucher.UsuarioNombre}").SemiBold();
+                        info.Item().Text($"Correo Registrado: {voucher.UsuarioCorreo}");
+                        info.Item().Text($"Sede Asignada: {voucher.SedeNombre}");
+                    });
+
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(65);
+                            columns.RelativeColumn(2.5f);
+                            columns.RelativeColumn(2f);
+                            columns.RelativeColumn(1.5f);
+                        });
+
+                        static IContainer HeaderCell(IContainer c) =>
+                            c.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.White))
+                             .Background(Colors.Blue.Darken3).Padding(7);
+
+                        static IContainer BodyCell(IContainer c) =>
+                            c.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(7);
+
+                        table.Header(h =>
+                        {
+                            h.Cell().Element(HeaderCell).Text("ID Pago");
+                            h.Cell().Element(HeaderCell).Text("Concepto / Plan");
+                            h.Cell().Element(HeaderCell).Text("Vigencia");
+                            h.Cell().Element(HeaderCell).AlignRight().Text("Valor (COP)");
+                        });
+
+                        var vigencia = voucher.FechaInicioMembresia.HasValue && voucher.FechaFinMembresia.HasValue
+                            ? $"{voucher.FechaInicioMembresia:dd/MM/yyyy} - {voucher.FechaFinMembresia:dd/MM/yyyy}"
+                            : "Pago puntual";
+
+                        table.Cell().Element(BodyCell).Text($"#{voucher.PagoId}").Bold();
+                        table.Cell().Element(BodyCell).Text(voucher.PlanNombre);
+                        table.Cell().Element(BodyCell).Text(vigencia);
+                        table.Cell().Element(BodyCell).AlignRight().Text($"$ {voucher.MontoCOP:N0} COP").Bold();
+                    });
+
+                    col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(12).Column(audit =>
+                    {
+                        audit.Spacing(4);
+                        audit.Item().Text("TRAZABILIDAD CONTABLE").Bold().FontSize(10).FontColor(Colors.Blue.Darken3);
+                        audit.Item().Text($"Fecha de Registro: {voucher.FechaPago:dd/MM/yyyy HH:mm} UTC");
+                        audit.Item().Text($"Fecha de Revisión Contable: {(voucher.FechaAprobacion.HasValue ? voucher.FechaAprobacion.Value.ToString("dd/MM/yyyy HH:mm") + " UTC" : "En espera de validación")}");
+                        audit.Item().Text($"Auditor Responsable: {voucher.AprobadoPorNombre ?? "Pendiente de asignación"}");
+                        if (!string.IsNullOrWhiteSpace(voucher.ComentarioRechazo))
+                        {
+                            audit.Item().Text($"Motivo de Rechazo: {voucher.ComentarioRechazo}").FontColor(Colors.Red.Darken2).SemiBold();
+                        }
+                    });
+                });
+
+                page.Footer().Row(row =>
+                {
+                    row.RelativeItem().Text($"Emitido el {DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    row.ConstantItem(100).AlignRight().Text(t =>
+                    {
+                        t.Span("Página ").FontSize(8);
+                        t.CurrentPageNumber().FontSize(8);
+                        t.Span(" de ").FontSize(8);
+                        t.TotalPages().FontSize(8);
+                    });
+                });
+            });
+
+            // Página 2: Instrucciones institucionales de recaudo y código de verificación
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1.8f, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken4));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Text("SPORTIFY CLUB MANAGER — Información de Recaudo y Verificación")
+                        .Bold().FontSize(14).FontColor(Colors.Blue.Darken3);
+                    col.Item().PaddingTop(6).Height(1).Background(Colors.Blue.Darken3);
+                });
+
+                page.Content().PaddingVertical(16).Column(col =>
+                {
+                    col.Spacing(14);
+                    col.Item().Background(Colors.Blue.Lighten5).Border(1).BorderColor(Colors.Blue.Lighten3).Padding(14).Column(bank =>
+                    {
+                        bank.Spacing(5);
+                        bank.Item().Text("CANALES INSTITUCIONALES DE RECAUDO").Bold().FontColor(Colors.Blue.Darken3);
+                        bank.Item().Text("• Canal Oficial: Tesorería Sportify Club Manager (Transferencia / Consignación verificada por Contaduría).");
+                        bank.Item().Text($"• Referencia Obligatoria del Comprobante: {voucher.CodigoVerificacion}");
+                        bank.Item().Text("• Recuerde cargar el soporte digital (PDF, JPG o PNG) en su portal de miembro para conciliación.");
+                    });
+
+                    col.Item().AlignCenter().Width(240).Border(1.5f).BorderColor(Colors.Blue.Darken3).Padding(14).Column(qrBox =>
+                    {
+                        qrBox.Spacing(6);
+                        qrBox.Item().AlignCenter().Text("SELLO DE VERIFICACIÓN DIGITAL").Bold().FontSize(9).FontColor(Colors.Blue.Darken3);
+                        qrBox.Item().AlignCenter().Background(Colors.Grey.Lighten3).Padding(12)
+                            .Text(voucher.CodigoVerificacion).FontFamily(Fonts.Consolas).Bold().FontSize(11);
+                        qrBox.Item().AlignCenter().Text($"Pago #{voucher.PagoId} • Estado: {voucher.Estado}").FontSize(8).FontColor(Colors.Grey.Darken2);
+                    });
+                });
+
+                page.Footer().Row(row =>
+                {
+                    row.RelativeItem().Text("Documento generado electrónicamente por Sportify Club Manager.").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    row.ConstantItem(100).AlignRight().Text(t =>
+                    {
+                        t.Span("Página ").FontSize(8);
+                        t.CurrentPageNumber().FontSize(8);
+                        t.Span(" de ").FontSize(8);
+                        t.TotalPages().FontSize(8);
+                    });
+                });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
 }

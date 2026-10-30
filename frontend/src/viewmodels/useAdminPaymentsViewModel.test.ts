@@ -13,6 +13,7 @@ vi.mock('../services/api/paymentService', () => ({
     reject: vi.fn(),
     registerManual: vi.fn(),
     downloadReceiptAttachment: vi.fn(),
+    getPaymentVoucherBlobUrl: vi.fn(),
     downloadPaymentsReport: vi.fn(),
   },
 }));

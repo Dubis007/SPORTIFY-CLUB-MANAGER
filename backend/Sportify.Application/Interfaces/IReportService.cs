@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Sportify.Application.Interfaces;
 
 public interface IReportService
@@ -8,4 +6,5 @@ public interface IReportService
     Task<byte[]> GenerateMembersReportAsync();
     Task<byte[]> GenerateLocationsReportAsync();
     Task<byte[]> GeneratePerformanceReportAsync();
+    Task<byte[]?> GeneratePaymentVoucherPdfAsync(int pagoId, int? restrictToUserId = null);
 }

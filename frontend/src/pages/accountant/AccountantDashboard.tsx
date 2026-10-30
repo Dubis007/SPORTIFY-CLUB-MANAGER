@@ -57,6 +57,7 @@ export default function AccountantDashboard() {
     rejectPayment,
     registerManualPayment,
     downloadReport,
+    getVoucherPreviewUrl,
     changePassword,
   } = useAccountantViewModel();
 
@@ -180,6 +181,16 @@ export default function AccountantDashboard() {
       toast.success(`Comprobante del pago #${pagoId} descargado.`);
     } catch {
       toast.error('Este registro de pago no posee archivo adjunto en el servidor.');
+    }
+  };
+
+  const handleOpenVoucherPdf = async (pagoId: number) => {
+    const blobUrl = await getVoucherPreviewUrl(pagoId);
+    if (blobUrl) {
+      setSelectedPdfUrl(blobUrl);
+      setIsPdfModalOpen(true);
+    } else {
+      toast.error('No fue posible generar la colilla PDF oficial.');
     }
   };
 
@@ -369,6 +380,13 @@ export default function AccountantDashboard() {
                         </td>
                         <td className="p-4 text-center">{getStatusBadge(payment.estado)}</td>
                         <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenVoucherPdf(payment.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30"
+                          >
+                            <FileText size={12} /> Colilla PDF
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDownloadReceipt(payment.id)}

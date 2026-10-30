@@ -8,4 +8,5 @@ public interface IReportRepository
     Task<IReadOnlyList<MemberReportRowDto>> GetActiveMembersReportDataAsync();
     Task<IReadOnlyList<LocationReportRowDto>> GetLocationsReportDataAsync();
     Task<IReadOnlyList<PerformanceReportItemDto>> GetPerformanceReportDataAsync();
+    Task<PaymentVoucherDataDto?> GetPaymentVoucherDataAsync(int pagoId);
 }

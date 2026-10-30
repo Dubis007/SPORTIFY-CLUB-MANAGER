@@ -27,3 +27,22 @@ public class LocationReportRowDto
     public bool Activo { get; set; }
     public DateTime CreadoEn { get; set; }
 }
+
+public class PaymentVoucherDataDto
+{
+    public int PagoId { get; set; }
+    public int UsuarioId { get; set; }
+    public string UsuarioNombre { get; set; } = string.Empty;
+    public string UsuarioCorreo { get; set; } = string.Empty;
+    public string SedeNombre { get; set; } = "Sede General";
+    public string PlanNombre { get; set; } = "Cargo Administrativo / Membresía";
+    public DateTime? FechaInicioMembresia { get; set; }
+    public DateTime? FechaFinMembresia { get; set; }
+    public decimal MontoCOP { get; set; }
+    public string Estado { get; set; } = string.Empty;
+    public DateTime FechaPago { get; set; }
+    public DateTime? FechaAprobacion { get; set; }
+    public string? AprobadoPorNombre { get; set; }
+    public string? ComentarioRechazo { get; set; }
+    public string CodigoVerificacion { get; set; } = string.Empty;
+}
