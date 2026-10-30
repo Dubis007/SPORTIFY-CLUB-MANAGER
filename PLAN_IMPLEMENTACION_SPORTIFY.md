@@ -403,7 +403,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: `dotnet test backend/Sportify.Tests/Sportify.Tests.csproj`.
   - **Commit propuesto**: `test(backend): amplía cobertura de pruebas unitarias en servicios de aplicación y reportes PDF`
 
-- [ ] [EJECUTABLE] **TAREA-P3-01B** — *Prioridad 3 | Pruebas Automatizadas de Microservicios Node/TS (`microservicio1` y `microservicio2`)*
+- [x] **TAREA-P3-01B** — *Prioridad 3 | Pruebas Automatizadas de Microservicios Node/TS (`microservicio1` y `microservicio2`)*
   - **Requerimientos y brechas**: `GAP-010`, `VER-TEC-001`.
   - **Descripción**: Incorporar pruebas automatizadas ejecutables con el runner nativo `node:test` + `tsx` (sin añadir dependencias externas innecesarias) en `backend/microservice/`, validando en `microservicio1` la verificación criptográfica HMAC-SHA256 de JWT, detección de expiración, autorización por rol, normalización de claims de ASP.NET Core y revocación de sesiones concurrentes (`>2`), y en `microservicio2` la validación estricta de esquemas Zod, agregación financiera y cálculo de KPIs ejecutivos.
   - **Estado actual comprobado**: `backend/microservice/` tiene `0` pruebas automatizadas y carece de script `test` en `package.json`.
@@ -604,13 +604,17 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-10-29 20:52 | `TAREA-P2-05A`: Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar | Completado | `15da4a59` | `frontend typecheck` 0 err, `vitest run` 4/4 suites (12/12 tests) OK | Vistas `/admin/calendar`, `/coach/calendar` y `/member/calendar` con estados vacíos amigables (`VID2-RNF-005`). |
 | 2026-10-29 20:57 | `TAREA-P2-06A`: Tendencia anual de 12 meses, alertas accionables, protección `0/0` y `GET /api/dashboard/metrics` para `microservicio2` | Completado | `3a019242` | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `ms typecheck` 0 err, `frontend typecheck` 0 err, `vitest` 12/12 OK | Resuelto fallo `VER-TEC-001` de `microservicio2` y cubierto caso `0/0` en `DashboardServiceTests`. |
 | 2026-10-29 21:02 | `TAREA-P2-06B`: Contadores por rol/estado, filtros combinables, skeleton loading y exportación CSV UTF-8 BOM para Excel en directorio | Completado | `a1ba06f5` | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `frontend typecheck` 0 err, `vitest` 5/5 suites (15/15 tests) OK | Incluye vinculación opcional con `Sede` existente en dominio y pruebas en `UsersPage.test.tsx`. |
-| 2026-10-29 21:05 | `TAREA-P3-01A`: Suite integral de 13 archivos de pruebas unitarias xUnit en `Sportify.Tests` (35 pruebas) | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 35/35 OK | Cobertura de `Auth`, `Users`, `Locations`, `MembershipPlans`, `Memberships`, `Payments`, `Trainings`, `Competitions`, `Registrations`, `Evaluations`, `Dashboard` y `QuestPDF`. |
+| 2026-10-29 21:05 | `TAREA-P3-01A`: Suite integral de 13 archivos de pruebas unitarias xUnit en `Sportify.Tests` (35 pruebas) | Completado | `9ce3ef07` | `dotnet build` 0 err/0 warn, `dotnet test` 35/35 OK | Cobertura de `Auth`, `Users`, `Locations`, `MembershipPlans`, `Memberships`, `Payments`, `Trainings`, `Competitions`, `Registrations`, `Evaluations`, `Dashboard` y `QuestPDF`. |
+| 2026-10-29 21:08 | `TAREA-P3-01B`: Suite de pruebas automatizadas (`node:test` + `tsx`) para `microservicio1` y `microservicio2` | Completado | Registrado en este commit | `ms typecheck` 0 err, `ms test` 2/2 suites (9/9 tests) OK | Verifica firma HMAC-SHA256, claims .NET, expiración, sesiones concurrentes (`>2`), sincronización `CORE_API_LIVE`, protección `0/0` y esquemas Zod. |
 
-### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P3-01A`
-- **Última tarea completada**: `TAREA-P3-01A` (ampliación integral de cobertura de pruebas unitarias xUnit en `Sportify.Tests`: 35/35 aprobadas)
-- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (35/35 aprobadas)
-- **Archivos relevantes modificados**: `AuthServiceTests.cs`, `UserServiceTests.cs`, `LocationServiceTests.cs`, `MembershipPlanServiceTests.cs`, `MembershipServiceTests.cs`, `TrainingServiceTests.cs`, `CompetitionServiceTests.cs`, `RegistrationServiceTests.cs`, `EvaluationServiceTests.cs`, `ReportServiceTests.cs`
+### Estado operativo actual (Cierre de tareas ejecutables)
+- **Última tarea iniciada**: `TAREA-P3-01B`
+- **Última tarea completada**: `TAREA-P3-01B` (10 de 10 tareas ejecutables `[x]` completadas, verificadas y confirmadas en commits atómicos)
+- **Balance global de pruebas automatizadas**:
+  - **Backend (.NET 10 / xUnit)**: `dotnet build` 0 errores / 0 advertencias · `dotnet test` **35/35 aprobadas** (13 suites).
+  - **Frontend (React 19 / TypeScript / Vitest)**: `npm --prefix frontend run typecheck` 0 errores · `npm --prefix frontend run test` **15/15 aprobadas** (5 suites).
+  - **Microservicios (Node / TypeScript / Zod)**: `npm --prefix backend/microservice run typecheck` 0 errores · `npm --prefix backend/microservice run test` **9/9 aprobadas** (2 suites).
+- **Archivos relevantes modificados en esta tarea**: `backend/microservice/package.json`, `backend/microservice/tsconfig.json`, `backend/microservice/tests/microservicio1.test.ts`, `backend/microservice/tests/microservicio2.test.ts`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P3-01B` (*Pruebas automatizadas de microservicios Node/TS `microservicio1` y `microservicio2`*).
-- **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.
+- **Siguiente tarea prioritaria recomendada tras resolución de decisiones de negocio**: `TAREA-P1-02` (*Asistencia de 4 estados con vista dual tabla/tarjetas táctiles*, inmediatamente después de definir el 4° estado en `DEC-003`), seguida de `TAREA-P1-03B` (*Tarifa General, abonos parciales y despacho de colilla por WhatsApp*, tras resolver `DEC-001` y `DEC-002`).
+- **Incidencias que condicionan la continuación**: Únicamente las decisiones de negocio `DEC-001` a `DEC-010` documentadas en la Sección E; el repositorio queda 100% limpio, compilando sin errores ni advertencias y con las 59 pruebas automatizadas del ecosistema en verde.

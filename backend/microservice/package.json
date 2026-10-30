@@ -10,7 +10,8 @@
     "dev:ms1": "tsx watch microservicio1/endpoint.ts",
     "dev:ms2": "tsx watch microservicio2/endpoint.ts",
     "start:all": "concurrently -n \"MS1-AUTH,MS2-REPORTS\" -c \"blue,emerald\" \"npm run start:ms1\" \"npm run start:ms2\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/microservicio1.test.ts tests/microservicio2.test.ts"
   },
   "dependencies": {
     "zod": "^3.24.2"

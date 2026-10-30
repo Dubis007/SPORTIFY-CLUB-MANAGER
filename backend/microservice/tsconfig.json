@@ -13,6 +13,7 @@
   },
   "include": [
     "microservicio1/**/*.ts",
-    "microservicio2/**/*.ts"
+    "microservicio2/**/*.ts",
+    "tests/**/*.ts"
   ]
 }
