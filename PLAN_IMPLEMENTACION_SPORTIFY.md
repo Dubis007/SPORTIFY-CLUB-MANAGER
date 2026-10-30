@@ -318,7 +318,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: Pruebas unitarias de cálculo de IMC y series en `Sportify.Tests` y `Vitest`.
   - **Commit propuesto**: `feat(perfil): agrega ficha médica con cálculo de IMC y seguimiento antropométrico`
 
-- [ ] [EJECUTABLE] **TAREA-P2-06A** — *Prioridad 2 | Analítica Financiera de 12 Meses, Alertas Accionables, Prevención `0/0` y Sincronización `microservicio2`*
+- [x] **TAREA-P2-06A** — *Prioridad 2 | Analítica Financiera de 12 Meses, Alertas Accionables, Prevención `0/0` y Sincronización `microservicio2`*
   - **Requerimientos y brechas**: Núcleo verificable sin bloqueo de `VID1-RF-008`, `VID2-RF-010`, `VID2-RNF-005` (prevención división por cero `0% / 0 de 0` y estados vacíos), `GRP-RF-08`, `CMP-07`, `GAP-008`, `VER-TEC-001` (Regla: `VID1-RN-008`; Criterios: `CA-008`, `VID2-CA-010`).
   - **Descripción**: Ampliar `DashboardStatsDto` y `DashboardService` (conservando compatibilidad hacia atrás) con:
     1. Serie histórica anual de facturación aprobada de **12 meses** (`IngresosUltimos12Meses`).
@@ -601,13 +601,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-10-29 20:41 | `TAREA-P1-01B`: Contratos DTO tipados en `Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations` y `Evaluations` | Completado | `5bd4148d` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK, `frontend typecheck` 0 err | 0 controladores en `Sportify.Api` referencian entidades de dominio o infraestructura. |
 | 2026-10-29 20:44 | `TAREA-P1-01C`: Implementación de `useAdminPaymentsViewModel.ts`, filtros, skeletons y pruebas Vitest | Completado | `864363e6` | `frontend typecheck` 0 err, `vitest run` 3/3 suites (10/10 tests) OK | `AdminPaymentsPage.tsx` desacoplada de `useAccountantViewModel.ts` y de llamadas `apiClient` directas. |
 | 2026-10-29 20:48 | `TAREA-P1-03A`: Generación de colilla PDF individual de 2 páginas con QuestPDF y previsualización modal | Completado | `7482d591` | `dotnet build` 0 err/0 warn, `dotnet test` 5/5 OK, `frontend typecheck` 0 err, `vitest` 10/10 OK | Endpoint `GET /api/reports/payments/{id}/voucher-pdf` con control de titularidad y visor en Admin/Contaduría. |
-| 2026-10-29 20:52 | `TAREA-P2-05A`: Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar | Completado | Registrado en este commit | `frontend typecheck` 0 err, `vitest run` 4/4 suites (12/12 tests) OK | Vistas `/admin/calendar`, `/coach/calendar` y `/member/calendar` con estados vacíos amigables (`VID2-RNF-005`). |
+| 2026-10-29 20:52 | `TAREA-P2-05A`: Calendario mensual y de lista unificado de Entrenamientos y Competencias con exportación a Google Calendar | Completado | `15da4a59` | `frontend typecheck` 0 err, `vitest run` 4/4 suites (12/12 tests) OK | Vistas `/admin/calendar`, `/coach/calendar` y `/member/calendar` con estados vacíos amigables (`VID2-RNF-005`). |
+| 2026-10-29 20:57 | `TAREA-P2-06A`: Tendencia anual de 12 meses, alertas accionables, protección `0/0` y `GET /api/dashboard/metrics` para `microservicio2` | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 8/8 OK, `ms typecheck` 0 err, `frontend typecheck` 0 err, `vitest` 12/12 OK | Resuelto fallo `VER-TEC-001` de `microservicio2` y cubierto caso `0/0` en `DashboardServiceTests`. |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P2-05A`
-- **Última tarea completada**: `TAREA-P2-05A` (calendario mensual y de lista unificado de entrenamientos y competencias)
-- **Últimas pruebas ejecutadas**: `frontend typecheck` (0 errores), `vitest run` (4 suites, 12/12 aprobadas incluyendo `CalendarPage.test.tsx`)
-- **Archivos relevantes modificados**: `useCalendarViewModel.ts`, `CalendarPage.tsx`, `CalendarPage.test.tsx`, `AppRoutes.tsx`, `AdminLayout/index.tsx`, `CoachLayout/index.tsx`, `MemberLayout/index.tsx`
+- **Última tarea iniciada**: `TAREA-P2-06A`
+- **Última tarea completada**: `TAREA-P2-06A` (analítica financiera de 12 meses, alertas accionables, prevención `0/0` y sincronización en vivo con `microservicio2`)
+- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (8/8 aprobadas), `microservice typecheck` (0 errores), `frontend typecheck` (0 errores), `vitest run` (4 suites, 12/12 aprobadas)
+- **Archivos relevantes modificados**: `DashboardStatsDto.cs`, `IDashboardRepository.cs`, `IDashboardService.cs`, `DashboardService.cs`, `DashboardRepository.cs`, `DashboardController.cs`, `DashboardServiceTests.cs`, `microservicio2/microservicio.ts`, `frontend/src/models/index.ts`, `DashboardPage.tsx`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P2-06A` (*Analítica financiera de 12 meses, alertas accionables, protección contra división `0/0` y sincronización en vivo con `microservicio2`*).
+- **Siguiente tarea ejecutable**: `TAREA-P2-06B` (*Directorio de usuarios/miembros con contadores por rol, filtros combinables, skeleton loading y exportación compatible con Excel*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.

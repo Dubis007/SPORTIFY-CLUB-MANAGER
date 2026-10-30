@@ -53,24 +53,14 @@ async function fetchCoreMetrics(authToken?: string): Promise<{
       const data = (await res.json()) as Partial<CoreMetricsSnapshot>;
       return {
         snapshot: {
-          miembrosActivos: Number(data.miembrosActivos ?? DEFAULT_SNAPSHOT.miembrosActivos),
-          membresiasVencidas: Number(data.membresiasVencidas ?? DEFAULT_SNAPSHOT.membresiasVencidas),
-          membresiasPendientes: Number(data.membresiasPendientes ?? DEFAULT_SNAPSHOT.membresiasPendientes),
-          ingresosTotalesAprobados: Number(
-            data.ingresosTotalesAprobados ?? DEFAULT_SNAPSHOT.ingresosTotalesAprobados
-          ),
-          pagosPendientesRevision: Number(
-            data.pagosPendientesRevision ?? DEFAULT_SNAPSHOT.pagosPendientesRevision
-          ),
-          entrenamientosProgramados: Number(
-            data.entrenamientosProgramados ?? DEFAULT_SNAPSHOT.entrenamientosProgramados
-          ),
-          competenciasActivas: Number(
-            data.competenciasActivas ?? DEFAULT_SNAPSHOT.competenciasActivas
-          ),
-          tasaAsistenciaPromedio: Number(
-            data.tasaAsistenciaPromedio ?? DEFAULT_SNAPSHOT.tasaAsistenciaPromedio
-          ),
+          miembrosActivos: Number(data.miembrosActivos ?? 0),
+          membresiasVencidas: Number(data.membresiasVencidas ?? 0),
+          membresiasPendientes: Number(data.membresiasPendientes ?? 0),
+          ingresosTotalesAprobados: Number(data.ingresosTotalesAprobados ?? 0),
+          pagosPendientesRevision: Number(data.pagosPendientesRevision ?? 0),
+          entrenamientosProgramados: Number(data.entrenamientosProgramados ?? 0),
+          competenciasActivas: Number(data.competenciasActivas ?? 0),
+          tasaAsistenciaPromedio: Number(data.tasaAsistenciaPromedio ?? 0),
         },
         source: 'CORE_API_LIVE',
       };
@@ -130,13 +120,15 @@ export async function processAnalyticalAggregation(
     snapshot.membresiasVencidas +
     snapshot.membresiasPendientes;
 
+  // Protección contra división 0/0 (VID2-RNF-005): retorna 0 cuando no existen registros
   const retentionRate =
     totalMemberships > 0
       ? Number(((snapshot.miembrosActivos / totalMemberships) * 100).toFixed(1))
-      : 100;
+      : 0;
 
   const estimatedPendingAmount = pendingCount * 120000;
   const projectedMonthlyRevenue = Math.round(approvedTotal + estimatedPendingAmount * 0.85);
+  const averageAttendance = Number((snapshot.tasaAsistenciaPromedio ?? 0).toFixed(1));
 
   const monthlySeries = [
     { mes: 'May', recaudado: Math.round(approvedTotal * 0.62), proyectado: Math.round(approvedTotal * 0.68), asistencia: 82 },
@@ -144,7 +136,7 @@ export async function processAnalyticalAggregation(
     { mes: 'Jul', recaudado: Math.round(approvedTotal * 0.81), proyectado: Math.round(approvedTotal * 0.85), asistencia: 84 },
     { mes: 'Ago', recaudado: Math.round(approvedTotal * 0.89), proyectado: Math.round(approvedTotal * 0.92), asistencia: 87 },
     { mes: 'Sep', recaudado: Math.round(approvedTotal * 0.95), proyectado: Math.round(approvedTotal * 0.97), asistencia: 88 },
-    { mes: 'Oct', recaudado: approvedTotal, proyectado: projectedMonthlyRevenue, asistencia: Math.round(snapshot.tasaAsistenciaPromedio || 89) },
+    { mes: 'Oct', recaudado: approvedTotal, proyectado: projectedMonthlyRevenue, asistencia: Math.round(averageAttendance) },
   ];
 
   return {
@@ -169,7 +161,7 @@ export async function processAnalyticalAggregation(
           ? Number(
               ((approvedTotal / (approvedTotal + estimatedPendingAmount)) * 100).toFixed(1)
             )
-          : 100,
+          : 0,
     },
     membershipSummary: {
       totalMemberships,
@@ -181,9 +173,7 @@ export async function processAnalyticalAggregation(
     sportsOperations: {
       scheduledTrainings: snapshot.entrenamientosProgramados,
       activeCompetitions: snapshot.competenciasActivas,
-      averageAttendancePct: Number(
-        (snapshot.tasaAsistenciaPromedio || 88.5).toFixed(1)
-      ),
+      averageAttendancePct: averageAttendance,
     },
     monthlySeries: input.exportParams.includeBreakdown ? monthlySeries : [],
     questPdfMetadata: {
@@ -208,12 +198,12 @@ export async function computeExecutiveKpis(rawQuery: unknown, authToken?: string
   const retentionRate =
     totalMembers > 0
       ? Number(((snapshot.miembrosActivos / totalMembers) * 100).toFixed(1))
-      : 100;
+      : 0;
 
   const arpu =
     snapshot.miembrosActivos > 0
       ? Math.round(snapshot.ingresosTotalesAprobados / snapshot.miembrosActivos)
-      : 120000;
+      : 0;
 
   return {
     service: 'microservicio2-analytical-reports',
@@ -225,9 +215,7 @@ export async function computeExecutiveKpis(rawQuery: unknown, authToken?: string
       ingresosAprobados: snapshot.ingresosTotalesAprobados,
       ingresoPromedioPorMiembro: arpu,
       tasaRetencionMiembros: retentionRate,
-      tasaAsistenciaDeportiva: Number(
-        (snapshot.tasaAsistenciaPromedio || 88.5).toFixed(1)
-      ),
+      tasaAsistenciaDeportiva: Number((snapshot.tasaAsistenciaPromedio ?? 0).toFixed(1)),
       pagosEnColaAuditoria: snapshot.pagosPendientesRevision,
       indiceSaludFinanciera:
         snapshot.pagosPendientesRevision <= 3 ? 'OPTIMO' : 'ATENCION_REQUERIDA',

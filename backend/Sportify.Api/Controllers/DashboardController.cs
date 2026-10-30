@@ -5,10 +5,10 @@ using Sportify.Application.Interfaces;
 
 namespace Sportify.Api.Controllers;
 
-/// <summary>Métricas para el dashboard de administración (el frontend las consulta periódicamente).</summary>
+/// <summary>Métricas para el dashboard ejecutivo y sincronización analítica con Microservicio 2 (:5102).</summary>
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Roles = "ADMIN")]
+[Authorize]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
@@ -19,10 +19,20 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("stats")]
+    [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(typeof(DashboardStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats()
     {
         var stats = await _dashboardService.GetStatsAsync();
         return Ok(stats);
+    }
+
+    [HttpGet("metrics")]
+    [Authorize(Roles = "ADMIN,CONTADOR,ENTRENADOR,MIEMBRO")]
+    [ProducesResponseType(typeof(DashboardLiveMetricsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetLiveMetrics()
+    {
+        var metrics = await _dashboardService.GetLiveMetricsAsync();
+        return Ok(metrics);
     }
 }

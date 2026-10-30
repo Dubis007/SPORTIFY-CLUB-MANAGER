@@ -9,6 +9,7 @@ export interface User {
   correo: string;
   activo: boolean;
   rol: UserRole;
+  sedeId?: number | null;
   solicitaCambioClave?: boolean;
   creadoEn?: string;
 }
@@ -131,13 +132,26 @@ export interface MembresiasPorEstado {
   cantidad: number;
 }
 
+export interface DashboardAlerts {
+  miembrosSinAsistencia21Dias: number;
+  membresiasPorVencer7Dias: number;
+  membresiasVencidas: number;
+  pagosPendientesRevision: number;
+  totalAlertas?: number;
+}
+
 export interface DashboardStats {
   usuariosActivos: number;
   membresiasActivas: number;
+  totalMiembrosDeportivos?: number;
+  tasaMembresiasAlDiaPct?: number;
   ingresosMesCOP: number;
+  ingresosAnualesCOP?: number;
   pagosPendientes: number;
   ingresosPorMes: IngresoMensual[];
+  ingresosUltimos12Meses?: IngresoMensual[];
   membresiasPorEstado: MembresiasPorEstado[];
   nuevosUsuariosPorMes: UsuariosMensual[];
+  alertasAccionables?: DashboardAlerts;
   generadoEn: string;
 }

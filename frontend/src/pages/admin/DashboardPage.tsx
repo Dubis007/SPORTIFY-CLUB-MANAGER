@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Bar,
@@ -22,6 +23,11 @@ import {
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
+  BellRing,
+  UserX,
+  CalendarClock,
+  ShieldAlert,
+  ArrowRight,
 } from 'lucide-react';
 import { apiClient } from '../../services/api/apiClient';
 import {
@@ -87,6 +93,7 @@ export default function DashboardPage() {
 
   const [ms2Report, setMs2Report] = useState<AnalyticalAggregateResponse | null>(null);
   const [ms2Loading, setMs2Loading] = useState(false);
+  const [revenueWindow, setRevenueWindow] = useState<'12M' | '6M'>('12M');
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -133,7 +140,12 @@ export default function DashboardPage() {
     }
   };
 
-  const ingresosData = (stats?.ingresosPorMes ?? []).map((m) => ({
+  const activeRevenueSeries =
+    revenueWindow === '12M' && stats?.ingresosUltimos12Meses?.length
+      ? stats.ingresosUltimos12Meses
+      : stats?.ingresosPorMes ?? [];
+
+  const ingresosData = activeRevenueSeries.map((m) => ({
     mes: monthLabel(m.anio, m.mes),
     total: m.totalCOP,
   }));
@@ -147,6 +159,38 @@ export default function DashboardPage() {
     color: ESTADO_MEMBRESIA[m.estado]?.color ?? AXIS_TEXT,
   }));
 
+  // Protección explícita contra división 0/0 en cliente (VID2-RNF-005)
+  const totalMiembrosDeportivos = stats?.totalMiembrosDeportivos ?? 0;
+  const membresiasAlDiaCount = Math.min(
+    stats?.membresiasActivas ?? 0,
+    totalMiembrosDeportivos > 0 ? totalMiembrosDeportivos : stats?.membresiasActivas ?? 0
+  );
+  const tasaAlDiaPct =
+    stats?.tasaMembresiasAlDiaPct ??
+    (totalMiembrosDeportivos > 0
+      ? Number(((membresiasAlDiaCount / totalMiembrosDeportivos) * 100).toFixed(1))
+      : 0);
+
+  const alertas = stats?.alertasAccionables ?? {
+    miembrosSinAsistencia21Dias: 0,
+    membresiasPorVencer7Dias: 0,
+    membresiasVencidas: 0,
+    pagosPendientesRevision: stats?.pagosPendientes ?? 0,
+  };
+  const totalAlertas =
+    alertas.totalAlertas ??
+    alertas.miembrosSinAsistencia21Dias +
+      alertas.membresiasPorVencer7Dias +
+      alertas.membresiasVencidas +
+      alertas.pagosPendientesRevision;
+
+  const ingresosAnualesCOP =
+    stats?.ingresosAnualesCOP ??
+    (stats?.ingresosUltimos12Meses ?? stats?.ingresosPorMes ?? []).reduce(
+      (acc, cur) => acc + cur.totalCOP,
+      0
+    );
+
   return (
     <div className="space-y-6">
       {/* Encabezado Ejecutivo */}
@@ -159,7 +203,7 @@ export default function DashboardPage() {
             Dashboard Ejecutivo
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Métricas operativas en tiempo real consolidadas entre Sportify.Api (.NET) y Microservicio 2 (:5102)
+            Analítica anual de 12 meses, alertas accionables y sincronización en vivo con Microservicio 2 (:5102)
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs">
@@ -228,7 +272,7 @@ export default function DashboardPage() {
                 </p>
                 <p className="text-3xl font-bold text-slate-100 mt-1">{stats.usuariosActivos}</p>
                 <span className="inline-block mt-2 text-[11px] text-emerald-400 font-medium">
-                  100% habilitados en plataforma
+                  {totalMiembrosDeportivos} deportistas activos
                 </span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400">
@@ -239,11 +283,13 @@ export default function DashboardPage() {
             <div className="bg-slate-900/90 rounded-xl border border-slate-800 p-5 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Membresías Activas
+                  Membresías al Día
                 </p>
-                <p className="text-3xl font-bold text-slate-100 mt-1">{stats.membresiasActivas}</p>
+                <p className="text-3xl font-bold text-slate-100 mt-1">{tasaAlDiaPct}%</p>
                 <span className="inline-block mt-2 text-[11px] text-emerald-400 font-medium">
-                  Retención: {ms2Report?.membershipSummary.retentionRatePct ?? 100}%
+                  {totalMiembrosDeportivos > 0
+                    ? `${membresiasAlDiaCount} de ${totalMiembrosDeportivos} miembros activos`
+                    : '0 de 0 miembros registrados'}
                 </span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
@@ -262,8 +308,8 @@ export default function DashboardPage() {
                 >
                   {copFormatter.format(stats.ingresosMesCOP)}
                 </p>
-                <span className="inline-block mt-2 text-[11px] text-blue-400 font-medium">
-                  Recaudo verificado en COP
+                <span className="inline-block mt-2 text-[11px] text-blue-400 font-medium truncate">
+                  12M: {copFormatter.format(ingresosAnualesCOP)}
                 </span>
               </div>
               <div className="w-12 h-12 shrink-0 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400">
@@ -287,6 +333,135 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Panel de Alertas Accionables (VID1-RF-008 / VID2-RF-010 / VID2-RNF-005) */}
+          <div className="bg-slate-900/95 rounded-xl border border-slate-800 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                  <BellRing size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-slate-100">
+                      Alertas Operativas Accionables
+                    </h2>
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded border ${
+                        totalAlertas > 0
+                          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      }`}
+                    >
+                      {totalAlertas > 0 ? `${totalAlertas} ACTIVAS` : 'SIN NOVEDADES'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Monitoreo preventivo de ausentismo (&gt; 3 semanas sin asistir), vencimientos próximos y cartera
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {totalAlertas === 0 ? (
+              <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3 text-xs text-emerald-300">
+                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+                <span>
+                  Operación al día: no existen deportistas con más de 21 días de inasistencia, membresías vencidas ni pagos pendientes de conciliación.
+                </span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <UserX size={14} className="text-rose-400" /> &gt; 3 Semanas sin Asistir
+                      </span>
+                      <span className="text-lg font-bold text-slate-100">
+                        {alertas.miembrosSinAsistencia21Dias}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      Deportistas activos sin asistencia registrada en los últimos 21 días.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/trainings"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    Revisar asistencias <ArrowRight size={12} />
+                  </Link>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <CalendarClock size={14} className="text-amber-400" /> Por Vencer (7 días)
+                      </span>
+                      <span className="text-lg font-bold text-slate-100">
+                        {alertas.membresiasPorVencer7Dias}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      Membresías activas próximas a expirar esta semana.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/users"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    Ver padrón de socios <ArrowRight size={12} />
+                  </Link>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <ShieldAlert size={14} className="text-rose-400" /> Membresías Vencidas
+                      </span>
+                      <span className="text-lg font-bold text-slate-100">
+                        {alertas.membresiasVencidas}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      Registros en mora que requieren renovación o gestión de cobro.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/payments"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    Gestionar cartera <ArrowRight size={12} />
+                  </Link>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Clock size={14} className="text-amber-400" /> Pagos por Conciliar
+                      </span>
+                      <span className="text-lg font-bold text-slate-100">
+                        {alertas.pagosPendientesRevision}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      Soportes recibidos pendientes de aprobación o rechazo.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/payments"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    Auditar pagos <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Banda de Inteligencia Analítica (Microservicio 2 :5102) */}
           <div className="bg-slate-900/95 rounded-xl border border-slate-800 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800">
@@ -300,11 +475,17 @@ export default function DashboardPage() {
                       Motor Analítico Desacoplado · Microservicio 2 (Puerto 5102)
                     </h2>
                     <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                      {ms2Report ? 'ZOD VALIDATED' : ms2Loading ? 'SINCRONIZANDO' : 'STANDBY'}
+                      {ms2Report
+                        ? ms2Report.dataSource === 'CORE_API_LIVE'
+                          ? 'LIVE SYNC · ZOD'
+                          : 'CACHE · ZOD'
+                        : ms2Loading
+                          ? 'SINCRONIZANDO'
+                          : 'STANDBY'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Agregación financiera asíncrona y proyecciones para reportes ejecutivos QuestPDF
+                    Agregación financiera asíncrona sincronizada con /api/dashboard/metrics y lista para QuestPDF
                   </p>
                 </div>
               </div>
@@ -332,7 +513,7 @@ export default function DashboardPage() {
                   <CheckCircle2 size={14} className="text-emerald-400" /> Eficiencia de Cobranza
                 </span>
                 <p className="text-xl font-bold text-emerald-400 mt-1">
-                  {ms2Report?.financialSummary.collectionEfficiencyPct ?? 100}%
+                  {ms2Report?.financialSummary.collectionEfficiencyPct ?? 0}%
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90">
@@ -340,7 +521,7 @@ export default function DashboardPage() {
                   <Users size={14} className="text-blue-400" /> Asistencia Deportiva Promedio
                 </span>
                 <p className="text-xl font-bold text-slate-100 mt-1">
-                  {ms2Report?.sportsOperations.averageAttendancePct ?? 88.5}%
+                  {ms2Report?.sportsOperations.averageAttendancePct ?? 0}%
                 </p>
               </div>
             </div>
@@ -349,12 +530,38 @@ export default function DashboardPage() {
           {/* Gráficas Recharts Sobrias */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-slate-900/90 rounded-xl border border-slate-800 p-6 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-base font-bold text-slate-100">
-                    Evolución de Ingresos Aprobados
+                    Evolución Histórica de Ingresos Aprobados
                   </h2>
-                  <p className="text-xs text-slate-400">Últimos 6 meses en Pesos Colombianos (COP)</p>
+                  <p className="text-xs text-slate-400">
+                    Tendencia {revenueWindow === '12M' ? 'anual (últimos 12 meses)' : 'semestral (últimos 6 meses)'} en Pesos Colombianos (COP) · Acumulado 12M: {copFormatter.format(ingresosAnualesCOP)}
+                  </p>
+                </div>
+                <div className="inline-flex rounded-lg bg-slate-950 border border-slate-800 p-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setRevenueWindow('12M')}
+                    className={`px-3 py-1 rounded-md font-semibold transition-colors ${
+                      revenueWindow === '12M'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    12 Meses
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRevenueWindow('6M')}
+                    className={`px-3 py-1 rounded-md font-semibold transition-colors ${
+                      revenueWindow === '6M'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    6 Meses
+                  </button>
                 </div>
               </div>
               <div className="h-72">
@@ -362,7 +569,7 @@ export default function DashboardPage() {
                   <BarChart
                     data={ingresosData}
                     margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
-                    barCategoryGap="30%"
+                    barCategoryGap="24%"
                   >
                     <CartesianGrid vertical={false} stroke={GRID_COLOR} />
                     <XAxis
@@ -382,7 +589,7 @@ export default function DashboardPage() {
                       {...tooltipStyle}
                       formatter={(v) => [copFormatter.format(Number(v)), 'Ingresos']}
                     />
-                    <Bar dataKey="total" fill={SERIES_COLOR} radius={[6, 6, 0, 0]} maxBarSize={52} />
+                    <Bar dataKey="total" fill={SERIES_COLOR} radius={[6, 6, 0, 0]} maxBarSize={48} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

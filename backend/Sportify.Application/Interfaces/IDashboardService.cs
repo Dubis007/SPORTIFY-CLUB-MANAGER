@@ -5,4 +5,5 @@ namespace Sportify.Application.Interfaces;
 public interface IDashboardService
 {
     Task<DashboardStatsDto> GetStatsAsync();
+    Task<DashboardLiveMetricsDto> GetLiveMetricsAsync();
 }
