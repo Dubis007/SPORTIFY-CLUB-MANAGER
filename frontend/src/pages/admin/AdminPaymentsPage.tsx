@@ -11,18 +11,27 @@ import {
   CreditCard,
   Eye,
   FileText,
+  Search,
 } from 'lucide-react';
-import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
+import {
+  useAdminPaymentsViewModel,
+  PaymentStatusFilter,
+} from '../../viewmodels/useAdminPaymentsViewModel';
 import { Payment } from '../../models';
-import { apiClient, API_URL } from '../../services/api/apiClient';
+import { API_URL } from '../../services/api/apiClient';
 import Pagination from '../../components/Pagination';
 import PdfViewerModal from '../../components/common/PdfViewerModal';
 
 export default function AdminPaymentsPage() {
   const {
     payments,
+    filteredPayments,
     summary,
     options,
+    statusFilter,
+    setStatusFilter,
+    searchTerm,
+    setSearchTerm,
     loading,
     error,
     page,
@@ -34,8 +43,9 @@ export default function AdminPaymentsPage() {
     approvePayment,
     rejectPayment,
     registerManualPayment,
+    downloadAttachment,
     downloadReport,
-  } = useAccountantViewModel();
+  } = useAdminPaymentsViewModel();
 
   const [activeTab, setActiveTab] = useState<'pagos' | 'manual'>('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
@@ -50,8 +60,10 @@ export default function AdminPaymentsPage() {
   });
 
   const handleApprove = async (id: number) => {
-    await approvePayment(id);
-    toast.success(`Pago #${id} aprobado exitosamente.`);
+    const success = await approvePayment(id);
+    if (success) {
+      toast.success(`Pago #${id} aprobado exitosamente.`);
+    }
   };
 
   const handleReject = async (e: React.FormEvent) => {
@@ -88,20 +100,10 @@ export default function AdminPaymentsPage() {
   };
 
   const handleDownloadReceipt = async (pagoId: number) => {
-    try {
-      const response = await apiClient.get(`/api/receipts/${pagoId}/preview`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Comprobante_Pago_${pagoId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+    const ok = await downloadAttachment(pagoId);
+    if (ok) {
       toast.success(`Comprobante #${pagoId} descargado.`);
-    } catch {
+    } else {
       toast.error('Este pago no cuenta con soporte adjunto.');
     }
   };
@@ -138,8 +140,13 @@ export default function AdminPaymentsPage() {
 
   if (loading && payments.length === 0) {
     return (
-      <div className="p-8 text-center text-slate-400">
-        Cargando registros financieros...
+      <div className="space-y-6 animate-pulse" data-testid="admin-payments-skeleton">
+        <div className="h-12 bg-slate-800/80 rounded-xl w-1/3" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="h-24 bg-slate-900 rounded-xl border border-slate-800" />
+          <div className="h-24 bg-slate-900 rounded-xl border border-slate-800" />
+        </div>
+        <div className="h-64 bg-slate-900 rounded-xl border border-slate-800" />
       </div>
     );
   }
@@ -219,6 +226,37 @@ export default function AdminPaymentsPage() {
             </div>
           </div>
 
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-slate-900/70 p-3.5 rounded-xl border border-slate-800">
+            <div className="relative flex-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por usuario o ID de pago..."
+                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none focus:border-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(['TODOS', 'PENDIENTE', 'APROBADO', 'RECHAZADO'] as PaymentStatusFilter[]).map(
+                (st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      statusFilter === st
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+
           <div className="bg-slate-900/90 rounded-xl overflow-hidden border border-slate-800">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -233,14 +271,14 @@ export default function AdminPaymentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80 text-sm">
-                  {payments.length === 0 ? (
+                  {filteredPayments.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-400">
-                        No hay pagos registrados.
+                        No hay pagos registrados para los filtros seleccionados.
                       </td>
                     </tr>
                   ) : (
-                    payments.map((payment) => (
+                    filteredPayments.map((payment) => (
                       <tr key={payment.id} className="hover:bg-slate-800/40">
                         <td className="p-4 font-mono text-xs text-slate-400">#{payment.id}</td>
                         <td className="p-4 font-medium text-slate-100">{payment.nombreUsuario}</td>
@@ -326,7 +364,7 @@ export default function AdminPaymentsPage() {
                 }
               >
                 <option value="">Seleccione el miembro...</option>
-                {options.Members?.map((m: any) => (
+                {options.Members?.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.nombre} {m.apellido}
                   </option>
@@ -347,8 +385,8 @@ export default function AdminPaymentsPage() {
                 <option value="">Ninguna - Cobro adicional</option>
                 {manualPayment.usuarioId &&
                   options.Memberships?.filter(
-                    (mem: any) => mem.usuarioId.toString() === manualPayment.usuarioId
-                  ).map((mem: any) => (
+                    (mem) => mem.usuarioId.toString() === manualPayment.usuarioId
+                  ).map((mem) => (
                     <option key={mem.id} value={mem.id}>
                       Plan {mem.plan} - {mem.estado}
                     </option>

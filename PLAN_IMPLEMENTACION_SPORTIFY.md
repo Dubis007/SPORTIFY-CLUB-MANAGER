@@ -184,7 +184,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: `dotnet build`, `dotnet test` y `npm --prefix frontend run typecheck`.
   - **Commit propuesto**: `refactor(api): desacopla los seis controladores restantes mediante contratos DTO`
 
-- [ ] [EJECUTABLE] **TAREA-P1-01C** — *Prioridad 1 | Arquitectura MVVM Frontend (`useAdminPaymentsViewModel`)*
+- [x] **TAREA-P1-01C** — *Prioridad 1 | Arquitectura MVVM Frontend (`useAdminPaymentsViewModel`)*
   - **Requerimientos y brechas**: `GAP-010`, `VID1-RNF-001` (consistencia MVVM en administración de pagos).
   - **Descripción**: Crear el ViewModel dedicado `frontend/src/viewmodels/useAdminPaymentsViewModel.ts` para gestionar estado, filtros, paginación, resumen financiero, aprobación/rechazo de pagos y previsualización de comprobantes en la vista administrativa, actualizando `AdminPaymentsPage.tsx` para desacoplarla de `useAccountantViewModel.ts`.
   - **Estado actual comprobado**: `AdminPaymentsPage.tsx` importa `useAccountantViewModel` directamente; `useAdminPaymentsViewModel.ts` no existe.
@@ -598,13 +598,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-10-29 20:25 | Reconocimiento inicial y línea base (`VER-TEC-001`) | Completado | Base `e7c3007d` | Backend build 0 err/0 warn, `dotnet test` 3/3, Frontend `tsc` 0 err, `vitest` 7/7, Microservicios `tsc` 0 err | Árbol Git limpio en rama `Requerimientos_en_Automatico`. |
 | 2026-10-29 20:30 | `TAREA-P0-01`: Creación de `PLAN_IMPLEMENTACION_SPORTIFY.md` | Completado | `31e118f5` | Verificación integral de trazabilidad (27 RF + 10 RNF + 10 GAP + 10 DEC + 8 CMP) | Siguiente tarea ejecutable: `TAREA-P1-01A`. |
 | 2026-10-29 20:36 | `TAREA-P1-01A`: Reubicación de `MembershipService`, `ReportService` y `DashboardService` en `Sportify.Application` | Completado | `9fb5e192` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK | Eliminado acoplamiento directo a `SportifyDbContext` y normalizado UTF-8 en reportes. |
-| 2026-10-29 20:41 | `TAREA-P1-01B`: Contratos DTO tipados en `Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations` y `Evaluations` | Completado | Registrado en este commit | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK, `frontend typecheck` 0 err | 0 controladores en `Sportify.Api` referencian entidades de dominio o infraestructura. |
+| 2026-10-29 20:41 | `TAREA-P1-01B`: Contratos DTO tipados en `Locations`, `MembershipPlans`, `Trainings`, `Competitions`, `Registrations` y `Evaluations` | Completado | `5bd4148d` | `dotnet build` 0 err/0 warn, `dotnet test` 3/3 OK, `frontend typecheck` 0 err | 0 controladores en `Sportify.Api` referencian entidades de dominio o infraestructura. |
+| 2026-10-29 20:44 | `TAREA-P1-01C`: Implementación de `useAdminPaymentsViewModel.ts`, filtros, skeletons y pruebas Vitest | Completado | Registrado en este commit | `frontend typecheck` 0 err, `vitest run` 3/3 suites (10/10 tests) OK | `AdminPaymentsPage.tsx` desacoplada de `useAccountantViewModel.ts` y de llamadas `apiClient` directas. |
 
 ### Estado operativo actual
-- **Última tarea iniciada**: `TAREA-P1-01B`
-- **Última tarea completada**: `TAREA-P1-01B` (desacoplamiento de los 6 controladores restantes mediante DTOs)
-- **Últimas pruebas ejecutadas**: `dotnet build` (0 errores, 0 advertencias), `dotnet test` (3/3 aprobadas), `npm --prefix frontend run typecheck` (0 errores)
-- **Archivos relevantes modificados**: `LocationDtos.cs`, `MembershipPlanDtos.cs`, `TrainingDtos.cs`, `CompetitionDtos.cs`, `RegistrationDtos.cs`, `EvaluationDtos.cs` y sus 6 servicios y 6 controladores.
+- **Última tarea iniciada**: `TAREA-P1-01C`
+- **Última tarea completada**: `TAREA-P1-01C` (`useAdminPaymentsViewModel.ts` y pruebas unitarias Vitest)
+- **Últimas pruebas ejecutadas**: `npm --prefix frontend run typecheck` (0 errores), `npm --prefix frontend run test` (10/10 aprobadas)
+- **Archivos relevantes modificados**: `paymentService.ts`, `useAdminPaymentsViewModel.ts`, `useAdminPaymentsViewModel.test.ts`, `AdminPaymentsPage.tsx`
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-02` (`DEC-003`), `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P2-06C` (`DEC-009`), `TAREA-P4-01A..F` (`DEC-010`).
-- **Siguiente tarea ejecutable**: `TAREA-P1-01C` (*Creación de `useAdminPaymentsViewModel.ts`, pruebas Vitest y desacoplamiento de `AdminPaymentsPage.tsx`*).
+- **Siguiente tarea ejecutable**: `TAREA-P1-03A` (*Generación de colilla PDF individual de pago mediante QuestPDF e integración en vistas financieras*).
 - **Incidencias que condicionan la continuación**: Ninguna para las tareas marcadas como `[EJECUTABLE]`.

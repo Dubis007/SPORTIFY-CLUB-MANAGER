@@ -5,6 +5,24 @@ export interface RejectPaymentDto {
   comentario: string;
 }
 
+export interface PaymentMemberOption {
+  id: number;
+  nombre: string;
+  apellido: string;
+}
+
+export interface PaymentMembershipOption {
+  id: number;
+  usuarioId: number;
+  plan: string;
+  estado: string;
+}
+
+export interface PaymentOptionsDto {
+  Members: PaymentMemberOption[];
+  Memberships: PaymentMembershipOption[];
+}
+
 export const paymentService = {
   getAll: async (page: number, pageSize: number): Promise<PagedResult<Payment>> => {
     const response = await apiClient.get<PagedResult<Payment>>('/api/payments', { params: { page, pageSize } });
@@ -13,6 +31,11 @@ export const paymentService = {
 
   getSummary: async (): Promise<PaymentSummary> => {
     const response = await apiClient.get<PaymentSummary>('/api/payments/summary');
+    return response.data;
+  },
+
+  getOptions: async (): Promise<PaymentOptionsDto> => {
+    const response = await apiClient.get<PaymentOptionsDto>('/api/payments/options');
     return response.data;
   },
 
@@ -34,6 +57,20 @@ export const paymentService = {
   reject: async (id: number, data: RejectPaymentDto): Promise<Payment> => {
     const response = await apiClient.patch<Payment>(`/api/payments/${id}/reject`, data);
     return response.data;
+  },
+
+  downloadReceiptAttachment: async (pagoId: number): Promise<void> => {
+    const response = await apiClient.get(`/api/receipts/${pagoId}/preview`, {
+      responseType: 'blob'
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Comprobante_Pago_${pagoId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   downloadPaymentsReport: async (): Promise<void> => {
