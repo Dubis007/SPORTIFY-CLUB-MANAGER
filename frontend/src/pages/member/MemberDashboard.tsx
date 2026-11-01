@@ -16,6 +16,7 @@ import {
   Medal,
   Activity,
   Plus,
+  Cake,
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
 
@@ -29,6 +30,7 @@ export default function MemberDashboard() {
     error,
     uploading,
     changePassword,
+    updateBirthDate,
     createPaymentAndUpload,
     registerForCompetition,
   } = useMemberViewModel();
@@ -397,6 +399,27 @@ export default function MemberDashboard() {
                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
                   {profile?.activo ? 'MIEMBRO ACTIVO' : 'INACTIVO'}
                 </span>
+              </div>
+              <div className="pt-2 border-t border-slate-800">
+                <label
+                  htmlFor="member-birthdate"
+                  className="text-xs text-slate-400 font-semibold uppercase flex items-center gap-1.5"
+                >
+                  <Cake size={14} className="text-amber-400" /> Fecha de Cumpleaños
+                </label>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <input
+                    id="member-birthdate"
+                    type="date"
+                    defaultValue={profile?.fechaNacimiento ? profile.fechaNacimiento.slice(0, 10) : ''}
+                    onChange={async (e) => {
+                      const val = e.target.value || null;
+                      const ok = await updateBirthDate(val);
+                      if (ok) toast.success('Fecha de cumpleaños actualizada en el calendario.');
+                    }}
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
             </div>
           </div>

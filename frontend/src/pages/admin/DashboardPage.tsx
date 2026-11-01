@@ -28,8 +28,11 @@ import {
   CalendarClock,
   ShieldAlert,
   ArrowRight,
+  Cake,
 } from 'lucide-react';
 import { apiClient } from '../../services/api/apiClient';
+import { userService } from '../../services/users/userService';
+import type { UpcomingBirthday } from '../../models';
 import {
   microserviceClient,
   type AnalyticalAggregateResponse,
@@ -93,6 +96,7 @@ export default function DashboardPage() {
 
   const [ms2Report, setMs2Report] = useState<AnalyticalAggregateResponse | null>(null);
   const [ms2Loading, setMs2Loading] = useState(false);
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<UpcomingBirthday[]>([]);
   const [revenueWindow, setRevenueWindow] = useState<'12M' | '6M'>('12M');
 
   const [now, setNow] = useState(() => Date.now());
@@ -115,6 +119,12 @@ export default function DashboardPage() {
       }
     };
     loadMs2Aggregation();
+    userService
+      .getUpcomingBirthdays(30)
+      .then((list) => {
+        if (active) setUpcomingBirthdays(list.slice(0, 4));
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -460,6 +470,50 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Widget de Próximos Cumpleaños con Enlace al Calendario (TAREA-P2-06C) */}
+          <div className="bg-slate-900/95 rounded-xl border border-slate-800 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                <Cake size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-100">
+                  Próximos Cumpleaños del Club (30 días)
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {upcomingBirthdays.length === 0
+                    ? 'No hay cumpleaños registrados para los próximos 30 días.'
+                    : `${upcomingBirthdays.length} celebración(es) próxima(s) agendada(s) en el calendario.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {upcomingBirthdays.map((b) => (
+                <Link
+                  key={b.usuarioId}
+                  to="/admin/calendar"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 text-xs transition-colors"
+                >
+                  <span className="font-semibold text-slate-100">{b.nombreCompleto}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-bold text-[10px]">
+                    {b.diasFaltantes === 0
+                      ? '¡HOY!'
+                      : b.diasFaltantes === 1
+                        ? 'MAÑANA'
+                        : `${b.diasFaltantes} DÍAS`}
+                  </span>
+                </Link>
+              ))}
+              <Link
+                to="/admin/calendar"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-blue-300 transition-colors"
+              >
+                Ver calendario <ArrowRight size={12} />
+              </Link>
+            </div>
           </div>
 
           {/* Banda de Inteligencia Analítica (Microservicio 2 :5102) */}

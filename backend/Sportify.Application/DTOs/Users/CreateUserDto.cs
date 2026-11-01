@@ -26,4 +26,6 @@ public class CreateUserDto
     public string RolNombre { get; set; } = string.Empty;
 
     public int? SedeId { get; set; }
+
+    public DateTime? FechaNacimiento { get; set; }
 }

@@ -17,6 +17,7 @@ import {
   Search,
   FilterX,
   MapPin,
+  Cake,
 } from 'lucide-react';
 import {
   useUsersViewModel,
@@ -62,6 +63,7 @@ export default function UsersPage() {
     contrasena: '',
     rolNombre: UserRole.MIEMBRO as UserRole,
     sedeId: '' as string,
+    fechaNacimiento: '' as string,
   });
 
   const handleOpenModal = (user?: User) => {
@@ -74,6 +76,7 @@ export default function UsersPage() {
         contrasena: '',
         rolNombre: user.rol,
         sedeId: user.sedeId ? String(user.sedeId) : '',
+        fechaNacimiento: user.fechaNacimiento ? user.fechaNacimiento.slice(0, 10) : '',
       });
     } else {
       setEditingUser(null);
@@ -84,6 +87,7 @@ export default function UsersPage() {
         contrasena: '',
         rolNombre: UserRole.MIEMBRO,
         sedeId: '',
+        fechaNacimiento: '',
       });
     }
     setIsModalOpen(true);
@@ -124,6 +128,7 @@ export default function UsersPage() {
     e.preventDefault();
     let success = false;
     const parsedSedeId = formData.sedeId ? Number(formData.sedeId) : null;
+    const parsedBirthDate = formData.fechaNacimiento || null;
 
     if (editingUser) {
       const updateDto: UpdateUserDto = {
@@ -132,6 +137,7 @@ export default function UsersPage() {
         correo: formData.correo,
         rolNombre: formData.rolNombre,
         sedeId: parsedSedeId,
+        fechaNacimiento: parsedBirthDate,
       };
       success = await updateUser(editingUser.id, updateDto);
     } else {
@@ -142,6 +148,7 @@ export default function UsersPage() {
         contrasena: formData.contrasena,
         rolNombre: formData.rolNombre,
         sedeId: parsedSedeId,
+        fechaNacimiento: parsedBirthDate,
       };
       success = await createUser(createDto);
     }
@@ -456,6 +463,15 @@ export default function UsersPage() {
                         <div className="font-semibold text-slate-100">
                           {user.nombre} {user.apellido}
                         </div>
+                        {user.fechaNacimiento && (
+                          <div className="text-[11px] text-amber-300/90 flex items-center gap-1 mt-0.5">
+                            <Cake size={11} />
+                            {new Date(`${user.fechaNacimiento.slice(0, 10)}T12:00:00`).toLocaleDateString(
+                              'es-CO',
+                              { day: '2-digit', month: 'short' }
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 text-slate-300">{user.correo}</td>
                       <td className="p-4 text-xs text-slate-400">
@@ -642,6 +658,19 @@ export default function UsersPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Fecha de Nacimiento (opcional · aviso en calendario)
+                </label>
+                <input
+                  type="date"
+                  aria-label="Fecha de nacimiento"
+                  value={formData.fechaNacimiento}
+                  onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-100 focus:border-blue-500 outline-none"
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-3">

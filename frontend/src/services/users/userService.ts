@@ -1,5 +1,5 @@
 import { apiClient } from '../api/apiClient';
-import { User, UserRole } from '../../models';
+import { User, UserRole, UpcomingBirthday } from '../../models';
 
 export interface CreateUserDto {
   nombre: string;
@@ -8,6 +8,7 @@ export interface CreateUserDto {
   contrasena: string;
   rolNombre: UserRole;
   sedeId?: number | null;
+  fechaNacimiento?: string | null;
 }
 
 export interface UpdateUserDto {
@@ -16,11 +17,19 @@ export interface UpdateUserDto {
   correo: string;
   rolNombre: UserRole;
   sedeId?: number | null;
+  fechaNacimiento?: string | null;
 }
 
 export const userService = {
   getAllUsers: async (): Promise<User[]> => {
     const response = await apiClient.get<User[]>('/api/users');
+    return response.data;
+  },
+
+  getUpcomingBirthdays: async (withinDays = 366): Promise<UpcomingBirthday[]> => {
+    const response = await apiClient.get<UpcomingBirthday[]>('/api/users/birthdays', {
+      params: { withinDays },
+    });
     return response.data;
   },
 

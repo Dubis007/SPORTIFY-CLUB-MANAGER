@@ -1,4 +1,4 @@
-﻿namespace Sportify.Domain.Entities;
+namespace Sportify.Domain.Entities;
 
 public class Usuario
 {
@@ -10,6 +10,7 @@ public class Usuario
     public bool Activo { get; set; } = true;
     public bool SolicitaCambioClave { get; set; } = false;
     public int? SedeId { get; set; }
+    public DateTime? FechaNacimiento { get; set; }
     public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
     public DateTime ActualizadoEn { get; set; } = DateTime.UtcNow;
 

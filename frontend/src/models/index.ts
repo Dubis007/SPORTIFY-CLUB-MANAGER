@@ -11,8 +11,19 @@ export interface User {
   rol: UserRole;
   sedeId?: number | null;
   sedeNombre?: string | null;
+  fechaNacimiento?: string | null;
   solicitaCambioClave?: boolean;
   creadoEn?: string;
+}
+
+export interface UpcomingBirthday {
+  usuarioId: number;
+  nombreCompleto: string;
+  rol: string;
+  mes: number;
+  dia: number;
+  proximaFecha: string;
+  diasFaltantes: number;
 }
 
 export interface Payment {

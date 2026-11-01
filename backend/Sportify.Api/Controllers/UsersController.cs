@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Sportify.Application.DTOs.Users;
 using Sportify.Application.Interfaces;
 
@@ -26,6 +25,16 @@ public class UsersController : ControllerBase
     {
         var users = await _userService.GetAllAsync();
         return Ok(users);
+    }
+
+    /// <summary>Lista los próximos cumpleaños de los integrantes activos del club para avisos en calendario y dashboard.</summary>
+    [HttpGet("birthdays")]
+    [Authorize(Roles = "ADMIN,ENTRENADOR,MIEMBRO,CONTADOR")]
+    [ProducesResponseType(typeof(IEnumerable<UpcomingBirthdayDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUpcomingBirthdays([FromQuery] int withinDays = 366)
+    {
+        var birthdays = await _userService.GetUpcomingBirthdaysAsync(withinDays);
+        return Ok(birthdays);
     }
 
     /// <summary>Obtiene un usuario por ID.</summary>
@@ -73,7 +82,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Activa o desactiva un usuario (borrado logico).</summary>
+    /// <summary>Activa o desactiva un usuario (borrado lógico).</summary>
     [HttpPatch("{id:int}/status")]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -84,7 +93,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Resetea la contraseÃ±a de un usuario por defecto y apaga la alarma.</summary>
+    /// <summary>Resetea la contraseña de un usuario por defecto y apaga la alarma.</summary>
     [HttpPost("{id:int}/reset-password")]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -94,4 +103,3 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 }
-

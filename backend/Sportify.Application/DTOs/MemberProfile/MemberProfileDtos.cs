@@ -10,6 +10,7 @@ public class MemberProfileDto
     public string Apellido { get; set; } = string.Empty;
     public string Correo { get; set; } = string.Empty;
     public bool Activo { get; set; }
+    public DateTime? FechaNacimiento { get; set; }
 }
 
 public class MemberPaymentsDto

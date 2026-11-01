@@ -164,6 +164,13 @@ using (var scope = app.Services.CreateScope())
                     UPDATE Asistencias SET Estado = CASE WHEN Presente = 1 THEN 'PRESENTE' ELSE 'AUSENTE' END;";
                 alterCmd.ExecuteNonQuery();
             }
+
+            if (!ColumnExists(schemaConn, "Usuarios", "FechaNacimiento"))
+            {
+                using var alterUsersCmd = schemaConn.CreateCommand();
+                alterUsersCmd.CommandText = "ALTER TABLE Usuarios ADD COLUMN FechaNacimiento DATETIME NULL;";
+                alterUsersCmd.ExecuteNonQuery();
+            }
         }
         catch
         {
@@ -238,6 +245,15 @@ using (var scope = app.Services.CreateScope())
             context.Competencias.Add(new Sportify.Domain.Entities.Competencia { Id = 1, Nombre = "Torneo Relampago", Descripcion = "Torneo de fin de mes", FechaInicio = DateTime.UtcNow.AddDays(5), FechaFin = DateTime.UtcNow.AddDays(6), Ubicacion = "Sede Principal Norte", CreadoEn = DateTime.UtcNow });
             context.SaveChanges();
             context.InscripcionesCompetencia.Add(new Sportify.Domain.Entities.InscripcionCompetencia { Id = 1, UsuarioId = 4, CompetenciaId = 1, Estado = Sportify.Domain.Enums.EstadoInscripcion.CONFIRMADA, FechaInscripcion = DateTime.UtcNow });
+            context.SaveChanges();
+        }
+
+        if (!context.Usuarios.Any(u => u.FechaNacimiento != null))
+        {
+            var mario = context.Usuarios.FirstOrDefault(u => u.Correo == "miembro@sportify.com");
+            if (mario != null) mario.FechaNacimiento = DateTime.UtcNow.Date.AddYears(-19).AddDays(4);
+            var eduardo = context.Usuarios.FirstOrDefault(u => u.Correo == "entrenador@sportify.com");
+            if (eduardo != null) eduardo.FechaNacimiento = DateTime.UtcNow.Date.AddYears(-31).AddDays(14);
             context.SaveChanges();
         }
 

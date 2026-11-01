@@ -40,6 +40,17 @@ export const useMemberViewModel = () => {
     }
   };
 
+  const updateBirthDate = async (fechaNacimiento: string | null) => {
+    try {
+      await memberService.updateBirthDate(fechaNacimiento);
+      await fetchAllData();
+      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'No se pudo actualizar la fecha de nacimiento.');
+      return false;
+    }
+  };
+
   const createPaymentAndUpload = async (membresiaId: number, montoCOP: number, file: File) => {
     setUploading(true);
     try {
@@ -106,6 +117,7 @@ export const useMemberViewModel = () => {
     error,
     availableCompetitions,
     changePassword,
+    updateBirthDate,
     createPaymentAndUpload,
     registerForCompetition,
     refresh: fetchAllData

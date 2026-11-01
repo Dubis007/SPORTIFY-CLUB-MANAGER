@@ -43,6 +43,7 @@ public class UserService : IUserService
             Correo = dto.Correo,
             ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena),
             SedeId = dto.SedeId,
+            FechaNacimiento = dto.FechaNacimiento?.Date,
             Activo = true,
             CreadoEn = DateTime.UtcNow
         };
@@ -71,6 +72,8 @@ public class UserService : IUserService
         usuario.Apellido = dto.Apellido;
         usuario.Correo = dto.Correo;
         usuario.SedeId = dto.SedeId;
+        usuario.FechaNacimiento = dto.FechaNacimiento?.Date;
+        usuario.ActualizadoEn = DateTime.UtcNow;
 
         await _userRepository.UpdateAsync(usuario);
 
@@ -119,6 +122,53 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
     }
 
+    public async Task<IEnumerable<UpcomingBirthdayDto>> GetUpcomingBirthdaysAsync(
+        int withinDays = 366,
+        DateTime? referenceDate = null)
+    {
+        var maxWindow = Math.Clamp(withinDays, 0, 366);
+        var today = (referenceDate ?? DateTime.UtcNow).Date;
+        var usuarios = await _userRepository.GetAllAsync();
+
+        static DateTime BuildBirthdayInYear(int year, int month, int day)
+        {
+            var safeDay = Math.Min(day, DateTime.DaysInMonth(year, month));
+            return new DateTime(year, month, safeDay, 0, 0, 0, DateTimeKind.Utc);
+        }
+
+        return usuarios
+            .Where(u => u.Activo && u.FechaNacimiento.HasValue)
+            .Select(u =>
+            {
+                var birth = u.FechaNacimiento!.Value;
+                var nextDate = BuildBirthdayInYear(today.Year, birth.Month, birth.Day);
+                if (nextDate < today)
+                {
+                    nextDate = BuildBirthdayInYear(today.Year + 1, birth.Month, birth.Day);
+                }
+
+                var diasFaltantes = (int)(nextDate - today).TotalDays;
+                var primaryRole = u.UsuarioRoles?
+                    .Select(ur => ur.Rol?.Nombre)
+                    .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r)) ?? "MIEMBRO";
+
+                return new UpcomingBirthdayDto
+                {
+                    UsuarioId = u.Id,
+                    NombreCompleto = $"{u.Nombre} {u.Apellido}".Trim(),
+                    Rol = primaryRole!,
+                    Mes = birth.Month,
+                    Dia = birth.Day,
+                    ProximaFecha = nextDate,
+                    DiasFaltantes = diasFaltantes
+                };
+            })
+            .Where(b => b.DiasFaltantes <= maxWindow)
+            .OrderBy(b => b.DiasFaltantes)
+            .ThenBy(b => b.NombreCompleto)
+            .ToList();
+    }
+
     private static UserDto MapToDto(Usuario u) => new()
     {
         Id = u.Id,
@@ -129,6 +179,7 @@ public class UserService : IUserService
         SolicitaCambioClave = u.SolicitaCambioClave,
         SedeId = u.SedeId,
         SedeNombre = u.Sede?.Nombre,
+        FechaNacimiento = u.FechaNacimiento,
         CreadoEn = u.CreadoEn,
         Roles = u.UsuarioRoles?
             .Select(ur => ur.Rol?.Nombre ?? string.Empty)

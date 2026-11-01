@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Sportify.Application.Interfaces;
 using Sportify.Application.DTOs.MemberProfile;
-using BCrypt.Net;
 
 namespace Sportify.Application.Services;
 
@@ -27,8 +26,20 @@ public class MemberProfileService : IMemberProfileService
             Nombre = user.Nombre,
             Apellido = user.Apellido,
             Correo = user.Correo,
-            Activo = user.Activo
+            Activo = user.Activo,
+            FechaNacimiento = user.FechaNacimiento
         };
+    }
+
+    public async Task<bool> UpdateBirthDateAsync(int userId, DateTime? fechaNacimiento)
+    {
+        var user = await _repository.GetUserByIdAsync(userId);
+        if (user == null) return false;
+
+        user.FechaNacimiento = fechaNacimiento?.Date;
+        user.ActualizadoEn = DateTime.UtcNow;
+        await _repository.UpdateUserAsync(user);
+        return true;
     }
 
     public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)

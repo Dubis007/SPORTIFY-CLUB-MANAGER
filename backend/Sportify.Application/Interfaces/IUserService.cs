@@ -12,4 +12,5 @@ public interface IUserService
     Task DeleteAsync(int id);
     Task SetStatusAsync(int id, bool activo);
     Task ResetPasswordAsync(int id, string defaultPassword);
+    Task<IEnumerable<UpcomingBirthdayDto>> GetUpcomingBirthdaysAsync(int withinDays = 366, DateTime? referenceDate = null);
 }

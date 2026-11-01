@@ -20,4 +20,6 @@ public class UpdateUserDto
     public string? RolNombre { get; set; }
 
     public int? SedeId { get; set; }
+
+    public DateTime? FechaNacimiento { get; set; }
 }

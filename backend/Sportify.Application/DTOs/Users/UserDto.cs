@@ -12,5 +12,6 @@ public class UserDto
     public bool SolicitaCambioClave { get; set; }
     public int? SedeId { get; set; }
     public string? SedeNombre { get; set; }
+    public DateTime? FechaNacimiento { get; set; }
     public DateTime CreadoEn { get; set; }
 }
