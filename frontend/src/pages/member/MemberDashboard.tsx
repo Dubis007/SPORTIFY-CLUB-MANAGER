@@ -113,11 +113,40 @@ export default function MemberDashboard() {
     }
   };
 
+  const getAttendanceBadge = (estadoRaw?: string) => {
+    const estado = (estadoRaw || 'PRESENTE').toUpperCase();
+    switch (estado) {
+      case 'TARDE':
+        return {
+          label: 'Tarde',
+          cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+        };
+      case 'EXCUSA':
+        return {
+          label: 'Excusa',
+          cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+        };
+      case 'AUSENTE':
+        return {
+          label: 'Ausente',
+          cls: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+        };
+      default:
+        return {
+          label: 'Presente',
+          cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        };
+    }
+  };
+
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div aria-busy="true" className="space-y-4">
         <div className="h-20 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
-        <div className="h-64 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
+          <div className="h-64 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -127,13 +156,13 @@ export default function MemberDashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800 pb-4">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400">
-            Portal de Autogestión del Atleta
+            Mi Espacio Deportivo
           </span>
           <h1 className="text-2xl font-bold text-slate-100 mt-0.5">
-            Bienvenido, {profile?.nombre || 'Mario'} {profile?.apellido || 'Miembro'}
+            Hola, {profile?.nombre || 'Mario'} {profile?.apellido || 'Miembro'}
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Consulta tu estado de membresía, sube soportes de pago y gestiona tu calendario de competencias
+            Consulta tu membresía, reporta pagos y revisa tus entrenamientos y torneos
           </p>
         </div>
       </div>
@@ -150,7 +179,7 @@ export default function MemberDashboard() {
           <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden">
             <div className="p-4 border-b border-slate-800 bg-slate-950/50">
               <h2 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <CreditCard size={17} className="text-blue-400" /> Mis Membresías Suscritas
+                <CreditCard size={17} className="text-blue-400" /> Mis Membresías
               </h2>
             </div>
             <div>
@@ -181,7 +210,7 @@ export default function MemberDashboard() {
                         onClick={() => setSelectedMembership(m)}
                         className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors text-xs font-semibold flex justify-center items-center gap-2"
                       >
-                        <Upload size={15} /> Subir Comprobante de Pago / Renovación
+                        <Upload size={15} /> Subir Comprobante de Pago
                       </button>
                     </li>
                   ))}
@@ -193,7 +222,7 @@ export default function MemberDashboard() {
           <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden">
             <div className="p-4 border-b border-slate-800 bg-slate-950/50">
               <h2 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <FileUp size={17} className="text-emerald-400" /> Historial de Pagos Reportados
+                <FileUp size={17} className="text-emerald-400" /> Historial de Pagos
               </h2>
             </div>
             <div>
@@ -235,7 +264,7 @@ export default function MemberDashboard() {
               onClick={() => setShowCompModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-colors shadow-sm"
             >
-              <Plus size={16} /> Inscribirse a Competencia Oficial
+              <Plus size={16} /> Inscribirse a Competencia
             </button>
           </div>
 
@@ -310,25 +339,35 @@ export default function MemberDashboard() {
             <ul className="divide-y divide-slate-800">
               {activitiesData.attendances?.length === 0 ? (
                 <p className="p-6 text-center text-slate-400 text-sm">
-                  No tienes asistencias registradas.
+                  No tienes registros de asistencia todavía.
                 </p>
               ) : (
-                activitiesData.attendances?.map((a: any, i: number) => (
-                  <li
-                    key={i}
-                    className="p-4 hover:bg-slate-800/40 flex justify-between items-center"
-                  >
-                    <div>
-                      <h4 className="font-bold text-slate-100 text-sm">{a.titulo}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {new Date(a.fechaHora).toLocaleDateString('es-CO')}
-                      </p>
-                    </div>
-                    <span className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs px-2.5 py-0.5 rounded-full font-semibold">
-                      ASISTIÓ
-                    </span>
-                  </li>
-                ))
+                activitiesData.attendances?.map((a: any, i: number) => {
+                  const badge = getAttendanceBadge(a.estado);
+                  return (
+                    <li
+                      key={i}
+                      className="p-4 hover:bg-slate-800/40 flex justify-between items-start gap-3"
+                    >
+                      <div>
+                        <h4 className="font-bold text-slate-100 text-sm">{a.titulo}</h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {new Date(a.fechaHora).toLocaleDateString('es-CO')}
+                        </p>
+                        {a.observaciones && (
+                          <p className="text-xs text-slate-300 mt-1 italic">
+                            “{a.observaciones}”
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`${badge.cls} border text-xs px-2.5 py-0.5 rounded-full font-semibold shrink-0`}
+                      >
+                        {badge.label}
+                      </span>
+                    </li>
+                  );
+                })
               )}
             </ul>
           </div>
@@ -484,7 +523,7 @@ export default function MemberDashboard() {
               <Medal size={20} className="text-blue-400" /> Inscribirse a Competencia
             </h2>
             <p className="text-slate-400 text-xs mb-4">
-              Selecciona una convocatoria activa para registrar tu participación oficial.
+              Selecciona una convocatoria activa para registrar tu participación.
             </p>
 
             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">

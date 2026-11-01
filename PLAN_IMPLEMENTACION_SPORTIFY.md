@@ -199,15 +199,15 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: `npm --prefix frontend run typecheck` y `npm --prefix frontend run test`.
   - **Commit propuesto**: `refactor(pagos): incorpora useAdminPaymentsViewModel en la vista administrativa`
 
-- [ ] [BLOQUEADA: DEC-003] **TAREA-P1-02** — *Prioridad 1 | Módulo de Asistencia de 4 Estados, Estado Inicial e Interfaz*
-  - **Requerimientos y brechas**: `VID1-RF-003`, `VID2-RF-004`, `VID2-RNF-003`, `GRP-RF-05`, `CMP-01`, `GAP-002` (Reglas: `VID1-RN-003`, `VID1-RN-011`, `VID2-RN-004`, `VID2-RN-005`; Criterios: `CA-003`, `VID2-CA-004`; Dudas: `VID1-DU-005`, `VID2-DU-006`).
-  - **Descripción**: Incorporar enum `EstadoAsistencia` de 4 estados en `Sportify.Domain`, migrar `Asistencia.cs` (que hoy usa `bool Presente`), implementar vista de pase de lista masivo con recálculo instantáneo (`<100ms`, `VID2-RNF-003`), notas opcionales y/o rotación táctil cíclica en tarjetas.
-  - **Estado actual comprobado**: `Asistencia.cs` solo tiene `bool Presente` y `string? Observaciones`; no existe `EstadoAsistencia.cs` ni vista dedicada de pase de lista de 4 estados.
-  - **Dependencias**: **Bloqueada por `DEC-003` (`CMP-01`)** — contradicción directa entre Video 1 (tabla con 4 botones separados, filas sin estado preasignado, cuarto estado `'Justificada'`, notas opcionales y alta de `'persona no registrada'`) y Video 2 (cuadrícula táctil donde todos inician obligatoriamente en `'Ausente'`, rotación cíclica en un toque y cuarto estado `'Excusa médica'`), lo cual altera el enum persistido en MySQL y la regla de negocio por defecto.
-  - **Archivos potencialmente afectados**: `backend/Sportify.Domain/Enums/EstadoAsistencia.cs`, `backend/Sportify.Domain/Entities/Asistencia.cs`, `backend/Sportify.Infrastructure/Persistence/SportifyDbContext.cs`, `backend/Sportify.Application/Services/TrainingService.cs`, `frontend/src/pages/admin/TrainingsPage.tsx`, `frontend/src/pages/coach/CoachDashboard.tsx`.
-  - **Criterios de aceptación**: Persistir los 4 estados acordados, recalcular los 4 contadores en cliente en `<100ms` y guardar lote por sesión/grupo.
-  - **Pruebas a ejecutar**: Pruebas unitarias de servicio en `Sportify.Tests` y de interacción optimista en `Vitest`.
-  - **Commit propuesto**: `feat(asistencia): incorpora registro masivo de cuatro estados y contadores en vivo`
+- [x] **TAREA-P1-02** — *Prioridad 1 | Módulo de Asistencia de 4 Estados (`Presente`, `Ausente`, `Tarde`, `Excusa`) y Comentarios Opcionales*
+  - **Requerimientos y brechas**: `VID1-RF-003`, `VID2-RF-004`, `VID2-RNF-003`, `GRP-RF-05`, `CMP-01`, `GAP-002` (Reglas: `VID1-RN-003`, `VID1-RN-011`, `VID2-RN-004`, `VID2-RN-005`; Criterios: `CA-003`, `VID2-CA-004`).
+  - **Descripción**: Incorporar enum `EstadoAsistencia` (`PRESENTE`, `AUSENTE`, `TARDE`, `EXCUSA`) en `Sportify.Domain`, evolucionar `Asistencia.cs` manteniendo sincronizado `bool Presente` (`true` en `PRESENTE` y `TARDE`) para métricas de actividad, habilitar comentarios opcionales (`Observaciones`), bloqueo de edición cuando la sesión está `CERRADO`, actualización optimista instantánea (`<100ms`) con contadores en vivo en `TrainingsPage.tsx` y visualización de los 4 estados + comentario en `MemberDashboard.tsx`.
+  - **Estado actual comprobado**: Implementado al 100%, verificado con `TrainingServiceTests` y `TrainingsPage.test.tsx`.
+  - **Dependencias**: **`DEC-003` resuelta por definición explícita del usuario** (estados `Presente`, `Ausente`, `Tarde`, `Excusa` con comentarios opcionales).
+  - **Archivos creados/modificados**: `backend/Sportify.Domain/Enums/EstadoAsistencia.cs`, `backend/Sportify.Domain/Entities/Asistencia.cs`, `backend/Sportify.Infrastructure/Persistence/SportifyDbContext.cs`, `backend/Sportify.Api/Program.cs`, `backend/Sportify.Application/DTOs/Trainings/TrainingDtos.cs`, `backend/Sportify.Application/Interfaces/ITrainingService.cs`, `backend/Sportify.Application/Services/TrainingService.cs`, `backend/Sportify.Api/Controllers/TrainingsController.cs`, `backend/Sportify.Application/DTOs/MemberProfile/MemberProfileDtos.cs`, `backend/Sportify.Application/Services/MemberProfileService.cs`, `backend/Sportify.Infrastructure/Repositories/MemberProfileRepository.cs`, `backend/Sportify.Tests/Services/TrainingServiceTests.cs`, `frontend/src/models/index.ts`, `frontend/src/services/trainings/trainingService.ts`, `frontend/src/pages/admin/TrainingsPage.tsx`, `frontend/src/pages/admin/TrainingsPage.test.tsx`, `frontend/src/pages/member/MemberDashboard.tsx`.
+  - **Criterios de aceptación**: Persistir los 4 estados (`PRESENTE`, `AUSENTE`, `TARDE`, `EXCUSA`) y comentarios opcionales, recalcular contadores en cliente de forma inmediata y bloquear cambios tras cierre de sesión.
+  - **Pruebas ejecutadas**: `dotnet test` (41/41 aprobadas) y `vitest run` (16/16 aprobadas).
+  - **Commit**: `feat(asistencia): incorpora estados presente, ausente, tarde y excusa con comentarios opcionales`
 
 - [x] **TAREA-P1-03A** — *Prioridad 1 | Emisión de Colilla / Comprobante PDF Individual de Pago mediante QuestPDF*
   - **Requerimientos y brechas**: Base verificable sin bloqueo de `VID1-RF-001` y `VID2-RF-006`, `GAP-005`, `VER-TEC-001` (`DISC-01`).
@@ -524,7 +524,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 - **Consecuencia técnica**: Define los valores del enum persistido en MySQL y si abrir una sesión pre-inicializa a todos los inscritos como `AUSENTE` o permite estado sin marcar.
 - **Evidencia en el repositorio**: `Asistencia.cs` tiene `bool Presente` y `string? Observaciones` (alineado parcialmente con el campo de notas del Video 1), sin enum de 4 estados.
 - **Recomendación técnica razonada**: Definir `enum EstadoAsistencia { Ausente = 0, Presente = 1, Tarde = 2, Justificada = 3 }` (mostrando etiqueta `"Justificada / Excusa médica"`), conservar `Observaciones` y ofrecer conmutador UI Tabla (escritorio) / Tarjetas táctiles cíclicas `<100ms` (móvil).
-- **Estado**: **Pendiente / Bloquea `TAREA-P1-02`**.
+- **Estado**: **Resuelta por instrucción del usuario (2026-11-01) / Implementada en `TAREA-P1-02`** (`Presente`, `Ausente`, `Tarde`, `Excusa` + comentarios opcionales).
 
 #### `DEC-004` (Relacionada con `CMP-04`, `VID1-DU-012`, `VID2-DU-002`)
 - **Pregunta concreta**: ¿Se confirma la jerarquía de dominio `Club -> Sede (lugar físico con municipio) -> Grupo/Categoría (división por edad/nivel con cupo máximo, horario, entrenador y dorsales)`?

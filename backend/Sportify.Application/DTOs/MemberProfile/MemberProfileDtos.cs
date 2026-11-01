@@ -57,6 +57,7 @@ public class AttendanceDto
     public string Titulo { get; set; } = string.Empty;
     public DateTime FechaHora { get; set; }
     public string Observaciones { get; set; } = string.Empty;
+    public string Estado { get; set; } = "PRESENTE";
     public string Tipo { get; set; } = "ASISTENCIA_ENTRENAMIENTO";
 }
 

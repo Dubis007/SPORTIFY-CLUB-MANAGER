@@ -1,3 +1,5 @@
+using Sportify.Domain.Enums;
+
 namespace Sportify.Application.DTOs.Trainings;
 
 public class TrainingDto
@@ -32,11 +34,13 @@ public class TrainingAttendanceMemberDto
     public string Nombre { get; set; } = string.Empty;
     public string Apellido { get; set; } = string.Empty;
     public bool Asistio { get; set; }
+    public string? Estado { get; set; }
     public string? Observaciones { get; set; }
 }
 
 public class MarkAttendanceDto
 {
     public int UsuarioId { get; set; }
+    public EstadoAsistencia Estado { get; set; } = EstadoAsistencia.PRESENTE;
     public string? Observaciones { get; set; }
 }

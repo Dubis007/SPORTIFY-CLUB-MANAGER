@@ -1,6 +1,7 @@
 using Sportify.Application.DTOs.Trainings;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
+using Sportify.Domain.Enums;
 
 namespace Sportify.Application.Services;
 
@@ -79,30 +80,43 @@ public class TrainingService : ITrainingService
         var asistencia = await _repository.GetAsistenciasByEntrenamientoIdAsync(id);
         var miembrosDb = await _repository.GetActiveMembersAsync();
 
-        return miembrosDb.Select(u => new TrainingAttendanceMemberDto
+        return miembrosDb.Select(u =>
         {
-            Id = u.Id,
-            Nombre = u.Nombre,
-            Apellido = u.Apellido,
-            Asistio = asistencia.Any(a => a.UsuarioId == u.Id && a.Presente),
-            Observaciones = asistencia.FirstOrDefault(a => a.UsuarioId == u.Id)?.Observaciones
+            var registro = asistencia.FirstOrDefault(a => a.UsuarioId == u.Id);
+            return new TrainingAttendanceMemberDto
+            {
+                Id = u.Id,
+                Nombre = u.Nombre,
+                Apellido = u.Apellido,
+                Asistio = registro != null && registro.Presente,
+                Estado = registro?.Estado.ToString(),
+                Observaciones = registro?.Observaciones
+            };
         }).ToList();
     }
 
-    public async Task<(bool IsSuccess, string ErrorMessage)> MarkAttendanceAsync(int id, int usuarioId, string? observaciones)
+    public async Task<(bool IsSuccess, string ErrorMessage)> MarkAttendanceAsync(
+        int id,
+        int usuarioId,
+        EstadoAsistencia estado,
+        string? observaciones)
     {
         var training = await _repository.GetByIdAsync(id);
         if (training == null) return (false, "Entrenamiento no encontrado.");
 
+        if (string.Equals(training.Estado, "CERRADO", StringComparison.OrdinalIgnoreCase))
+            return (false, "El entrenamiento está cerrado y no admite cambios de asistencia.");
+
+        var cleanObservaciones = string.IsNullOrWhiteSpace(observaciones) ? null : observaciones.Trim();
+        var asistioEfectivo = estado is EstadoAsistencia.PRESENTE or EstadoAsistencia.TARDE;
         var existingAttendance = await _repository.GetAsistenciaAsync(id, usuarioId);
 
         if (existingAttendance != null)
         {
-            if (existingAttendance.Presente)
-                return (false, "El usuario ya tiene asistencia marcada para este entrenamiento.");
-
-            existingAttendance.Presente = true;
-            existingAttendance.Observaciones = observaciones;
+            existingAttendance.Estado = estado;
+            existingAttendance.Presente = asistioEfectivo;
+            existingAttendance.Observaciones = cleanObservaciones;
+            existingAttendance.FechaRegistro = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
         }
         else
@@ -111,8 +125,9 @@ public class TrainingService : ITrainingService
             {
                 EntrenamientoId = id,
                 UsuarioId = usuarioId,
-                Presente = true,
-                Observaciones = observaciones,
+                Estado = estado,
+                Presente = asistioEfectivo,
+                Observaciones = cleanObservaciones,
                 FechaRegistro = DateTime.UtcNow
             };
             await _repository.AddAsistenciaAsync(asistencia);

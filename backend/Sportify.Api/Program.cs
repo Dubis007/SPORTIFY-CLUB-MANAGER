@@ -136,6 +136,41 @@ using (var scope = app.Services.CreateScope())
             context.Database.EnsureCreated();
         }
 
+        // Guardas idempotentes de evolución de esquema para bases MySQL existentes
+        try
+        {
+            using var schemaConn = new MySql.Data.MySqlClient.MySqlConnection(context.Database.GetDbConnection().ConnectionString);
+            schemaConn.Open();
+
+            static bool ColumnExists(MySql.Data.MySqlClient.MySqlConnection conn, string table, string column)
+            {
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = @table
+                      AND COLUMN_NAME = @column;";
+                checkCmd.Parameters.AddWithValue("@table", table);
+                checkCmd.Parameters.AddWithValue("@column", column);
+                return Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+            }
+
+            if (!ColumnExists(schemaConn, "Asistencias", "Estado"))
+            {
+                using var alterCmd = schemaConn.CreateCommand();
+                alterCmd.CommandText = @"
+                    ALTER TABLE Asistencias ADD COLUMN Estado VARCHAR(20) NOT NULL DEFAULT 'PRESENTE';
+                    UPDATE Asistencias SET Estado = CASE WHEN Presente = 1 THEN 'PRESENTE' ELSE 'AUSENTE' END;";
+                alterCmd.ExecuteNonQuery();
+            }
+        }
+        catch
+        {
+            // Ignorar si la base de datos no es accesible en entorno aislado
+        
+        }
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
 
         if (!context.Roles.Any())

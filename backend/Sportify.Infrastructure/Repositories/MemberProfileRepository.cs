@@ -60,7 +60,7 @@ public class MemberProfileRepository : IMemberProfileRepository
     {
         return await _context.Asistencias
             .Include(a => a.Entrenamiento)
-            .Where(a => a.UsuarioId == userId && a.Presente)
+            .Where(a => a.UsuarioId == userId)
             .OrderByDescending(a => a.FechaRegistro)
             .ToListAsync();
     }

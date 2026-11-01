@@ -75,7 +75,7 @@ public class TrainingsController : ControllerBase
     [Authorize(Roles = "ADMIN,ENTRENADOR")]
     public async Task<IActionResult> MarkAttendance(int id, [FromBody] MarkAttendanceDto dto)
     {
-        var result = await _trainingService.MarkAttendanceAsync(id, dto.UsuarioId, dto.Observaciones);
+        var result = await _trainingService.MarkAttendanceAsync(id, dto.UsuarioId, dto.Estado, dto.Observaciones);
         if (!result.IsSuccess) return BadRequest(new { message = result.ErrorMessage });
 
         return Ok(new { message = "Asistencia registrada correctamente." });

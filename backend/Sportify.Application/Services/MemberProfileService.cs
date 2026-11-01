@@ -96,6 +96,7 @@ public class MemberProfileService : IMemberProfileService
             Titulo = a.Entrenamiento?.Titulo ?? string.Empty,
             FechaHora = a.Entrenamiento?.FechaHora ?? DateTime.MinValue,
             Observaciones = a.Observaciones ?? string.Empty,
+            Estado = a.Estado.ToString(),
             Tipo = "ASISTENCIA_ENTRENAMIENTO"
         }).ToList();
 

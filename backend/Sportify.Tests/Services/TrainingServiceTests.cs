@@ -3,6 +3,7 @@ using Sportify.Application.DTOs.Trainings;
 using Sportify.Application.Interfaces;
 using Sportify.Application.Services;
 using Sportify.Domain.Entities;
+using Sportify.Domain.Enums;
 
 namespace Sportify.Tests.Services;
 
@@ -30,19 +31,103 @@ public class TrainingServiceTests
         mockRepo.Verify(r => r.AddAsync(It.IsAny<Entrenamiento>()), Times.Once);
     }
 
-    [Fact]
-    public async Task MarkAttendanceAsync_AlreadyPresent_RejectsDuplicateAttendance()
+    [Theory]
+    [InlineData(EstadoAsistencia.PRESENTE, true)]
+    [InlineData(EstadoAsistencia.TARDE, true)]
+    [InlineData(EstadoAsistencia.AUSENTE, false)]
+    [InlineData(EstadoAsistencia.EXCUSA, false)]
+    public async Task MarkAttendanceAsync_NewRecord_PersistsFourStatesAndSynchronizesPresenteFlag(
+        EstadoAsistencia estado,
+        bool expectedPresente)
     {
+        Asistencia? captured = null;
         var mockRepo = new Mock<ITrainingRepository>();
-        mockRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(new Entrenamiento { Id = 10 });
-        mockRepo.Setup(r => r.GetAsistenciaAsync(10, 4))
-            .ReturnsAsync(new Asistencia { EntrenamientoId = 10, UsuarioId = 4, Presente = true });
+        mockRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(new Entrenamiento { Id = 10, Estado = "PENDIENTE" });
+        mockRepo.Setup(r => r.GetAsistenciaAsync(10, 4)).ReturnsAsync((Asistencia?)null);
+        mockRepo.Setup(r => r.AddAsistenciaAsync(It.IsAny<Asistencia>()))
+            .Callback<Asistencia>(a => captured = a)
+            .Returns(Task.CompletedTask);
 
         var service = new TrainingService(mockRepo.Object);
-        var (isSuccess, error) = await service.MarkAttendanceAsync(10, 4, "Puntual");
+        var (isSuccess, error) = await service.MarkAttendanceAsync(10, 4, estado, "  Observación opcional  ");
+
+        Assert.True(isSuccess);
+        Assert.Equal(string.Empty, error);
+        Assert.NotNull(captured);
+        Assert.Equal(estado, captured!.Estado);
+        Assert.Equal(expectedPresente, captured.Presente);
+        Assert.Equal("Observación opcional", captured.Observaciones);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_ExistingRecord_AllowsUpdatingStateAndOptionalComment()
+    {
+        var existing = new Asistencia
+        {
+            EntrenamientoId = 10,
+            UsuarioId = 4,
+            Estado = EstadoAsistencia.AUSENTE,
+            Presente = false,
+            Observaciones = null
+        };
+
+        var mockRepo = new Mock<ITrainingRepository>();
+        mockRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(new Entrenamiento { Id = 10, Estado = "PENDIENTE" });
+        mockRepo.Setup(r => r.GetAsistenciaAsync(10, 4)).ReturnsAsync(existing);
+
+        var service = new TrainingService(mockRepo.Object);
+        var (isSuccess, _) = await service.MarkAttendanceAsync(10, 4, EstadoAsistencia.TARDE, "Llegó 15 minutos tarde");
+
+        Assert.True(isSuccess);
+        Assert.Equal(EstadoAsistencia.TARDE, existing.Estado);
+        Assert.True(existing.Presente);
+        Assert.Equal("Llegó 15 minutos tarde", existing.Observaciones);
+        mockRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_ClosedTraining_RejectsAttendanceChanges()
+    {
+        var mockRepo = new Mock<ITrainingRepository>();
+        mockRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(new Entrenamiento { Id = 10, Estado = "CERRADO" });
+
+        var service = new TrainingService(mockRepo.Object);
+        var (isSuccess, error) = await service.MarkAttendanceAsync(10, 4, EstadoAsistencia.EXCUSA, "Cita médica");
 
         Assert.False(isSuccess);
-        Assert.Contains("ya tiene asistencia marcada", error);
+        Assert.Contains("cerrado", error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetAttendanceAsync_MapsRecordedStateAndLeavesUnmarkedNull()
+    {
+        var mockRepo = new Mock<ITrainingRepository>();
+        mockRepo.Setup(r => r.GetActiveMembersAsync()).ReturnsAsync(new List<Usuario>
+        {
+            new() { Id = 4, Nombre = "Mario", Apellido = "Miembro" },
+            new() { Id = 5, Nombre = "Laura", Apellido = "Atleta" }
+        });
+        mockRepo.Setup(r => r.GetAsistenciasByEntrenamientoIdAsync(10)).ReturnsAsync(new List<Asistencia>
+        {
+            new()
+            {
+                EntrenamientoId = 10,
+                UsuarioId = 4,
+                Estado = EstadoAsistencia.EXCUSA,
+                Presente = false,
+                Observaciones = "Incapacidad médica"
+            }
+        });
+
+        var service = new TrainingService(mockRepo.Object);
+        var list = (await service.GetAttendanceAsync(10)).ToList();
+
+        Assert.Equal(2, list.Count);
+        Assert.Equal("EXCUSA", list[0].Estado);
+        Assert.False(list[0].Asistio);
+        Assert.Equal("Incapacidad médica", list[0].Observaciones);
+        Assert.Null(list[1].Estado);
+        Assert.False(list[1].Asistio);
     }
 
     [Fact]

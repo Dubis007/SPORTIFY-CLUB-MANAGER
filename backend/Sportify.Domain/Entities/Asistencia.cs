@@ -1,4 +1,6 @@
-﻿namespace Sportify.Domain.Entities;
+using Sportify.Domain.Enums;
+
+namespace Sportify.Domain.Entities;
 
 public class Asistencia
 {
@@ -7,6 +9,7 @@ public class Asistencia
     public int UsuarioId { get; set; }
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
     public bool Presente { get; set; }
+    public EstadoAsistencia Estado { get; set; } = EstadoAsistencia.PRESENTE;
     public string? Observaciones { get; set; }
 
     // Navigation properties

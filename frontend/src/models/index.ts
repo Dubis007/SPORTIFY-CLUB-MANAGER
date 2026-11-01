@@ -72,12 +72,15 @@ export interface Training {
   estado: string;
 }
 
+export type AttendanceStatus = 'PRESENTE' | 'AUSENTE' | 'TARDE' | 'EXCUSA';
+
 export interface AttendanceMember {
   id: number;
   nombre: string;
   apellido: string;
   asistio: boolean;
-  observaciones?: string;
+  estado?: AttendanceStatus | null;
+  observaciones?: string | null;
 }
 
 export interface Registration {

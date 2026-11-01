@@ -1,5 +1,5 @@
-﻿import { apiClient } from '../api/apiClient';
-import { Training, AttendanceMember } from '../../models';
+import { apiClient } from '../api/apiClient';
+import { Training, AttendanceMember, AttendanceStatus } from '../../models';
 
 export const trainingService = {
   getAll: async (): Promise<Training[]> => {
@@ -31,7 +31,16 @@ export const trainingService = {
     return response.data;
   },
 
-  markAttendance: async (id: number, usuarioId: number, observaciones?: string): Promise<void> => {
-    await apiClient.post(`/api/trainings/${id}/attendance`, { usuarioId, observaciones });
+  markAttendance: async (
+    id: number,
+    usuarioId: number,
+    estado: AttendanceStatus = 'PRESENTE',
+    observaciones?: string
+  ): Promise<void> => {
+    await apiClient.post(`/api/trainings/${id}/attendance`, {
+      usuarioId,
+      estado,
+      observaciones: observaciones?.trim() ? observaciones.trim() : null,
+    });
   }
 };

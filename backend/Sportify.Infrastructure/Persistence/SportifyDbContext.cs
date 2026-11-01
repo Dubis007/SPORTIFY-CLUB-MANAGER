@@ -172,6 +172,11 @@ public class SportifyDbContext : DbContext
             entity.HasIndex(a => new { a.UsuarioId, a.EntrenamientoId }).IsUnique();
             entity.HasQueryFilter(a => a.Entrenamiento.EliminadoEn == null);
 
+            entity.Property(a => a.Estado)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .HasDefaultValue(EstadoAsistencia.PRESENTE);
+
             entity.HasOne(a => a.Usuario)
                   .WithMany(u => u.Asistencias)
                   .HasForeignKey(a => a.UsuarioId)
