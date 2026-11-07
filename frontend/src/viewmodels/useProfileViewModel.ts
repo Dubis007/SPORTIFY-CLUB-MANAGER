@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { profileService } from '../services/profile/profileService';
 
 export const useProfileViewModel = () => {
@@ -19,12 +19,25 @@ export const useProfileViewModel = () => {
     }
   }, []);
 
-  const changePassword = async (data: any) => {
+  const changePassword = async (data: { currentPassword: string; newPassword: string }) => {
     try {
+      setError(null);
       await profileService.changePassword(data);
       return true;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cambiar contraseña.');
+      return false;
+    }
+  };
+
+  const updateBirthDate = async (fechaNacimiento: string | null) => {
+    try {
+      setError(null);
+      await profileService.updateBirthDate(fechaNacimiento);
+      await fetchProfile();
+      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error al guardar fecha de nacimiento.');
       return false;
     }
   };
@@ -38,6 +51,7 @@ export const useProfileViewModel = () => {
     loading,
     error,
     changePassword,
-    refresh: fetchProfile
+    updateBirthDate,
+    refresh: fetchProfile,
   };
 };

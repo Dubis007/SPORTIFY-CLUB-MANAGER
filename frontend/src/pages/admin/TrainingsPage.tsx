@@ -24,6 +24,9 @@ import { trainingSchema } from '../../validations/schemas';
 import { Training, AttendanceMember, AttendanceStatus } from '../../models';
 import { trainingService } from '../../services/trainings/trainingService';
 import { useAuth } from '../../context/AuthContext';
+import ConfirmDialogModal, {
+  useConfirmDialog,
+} from '../../components/common/ConfirmDialogModal';
 
 type TrainingFormInputs = z.infer<typeof trainingSchema>;
 
@@ -178,11 +181,19 @@ export default function TrainingsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Deseas eliminar esta sesión de entrenamiento?')) {
-      const ok = await deleteTraining(id);
-      if (ok) toast.success('Sesión eliminada.');
-    }
+  const { requestConfirm, confirmDialogProps } = useConfirmDialog();
+
+  const handleDelete = (id: number) => {
+    requestConfirm({
+      title: 'Eliminar entrenamiento',
+      description: '¿Deseas eliminar esta sesión de entrenamiento programada?',
+      confirmLabel: 'Sí, eliminar',
+      variant: 'danger',
+      onConfirm: async () => {
+        const ok = await deleteTraining(id);
+        if (ok) toast.success('Sesión eliminada.');
+      },
+    });
   };
 
   const onSubmit = async (data: TrainingFormInputs) => {
@@ -250,20 +261,23 @@ export default function TrainingsPage() {
     toast.success(`${unmarked.length} deportista(s) marcados como Presente.`);
   };
 
-  const handleCloseTraining = async (training: Training) => {
-    if (
-      window.confirm(
-        '¿Cerrar esta sesión? Una vez cerrada, el registro de asistencia quedará bloqueado para edición.'
-      )
-    ) {
-      const ok = await closeTraining(training.id);
-      if (ok) {
-        toast.success('Sesión cerrada.');
-        if (selectedTraining?.id === training.id) {
-          setSelectedTraining({ ...training, estado: 'CERRADO' });
+  const handleCloseTraining = (training: Training) => {
+    requestConfirm({
+      title: 'Cerrar sesión de entrenamiento',
+      description:
+        'Una vez cerrada la sesión, el registro de asistencia quedará bloqueado para edición.',
+      confirmLabel: 'Cerrar sesión',
+      variant: 'warning',
+      onConfirm: async () => {
+        const ok = await closeTraining(training.id);
+        if (ok) {
+          toast.success('Sesión cerrada.');
+          if (selectedTraining?.id === training.id) {
+            setSelectedTraining({ ...training, estado: 'CERRADO' });
+          }
         }
-      }
-    }
+      },
+    });
   };
 
   const attendanceSummary = useMemo(() => {
@@ -785,6 +799,8 @@ export default function TrainingsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialogModal {...confirmDialogProps} />
     </div>
   );
 }

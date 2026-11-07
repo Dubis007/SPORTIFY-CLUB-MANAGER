@@ -20,6 +20,8 @@ export interface Evaluation {
   comentarios?: string;
   evaluadoEn: string;
   evaluadoPorId: number;
+  usuarioNombre?: string;
+  competenciaNombre?: string;
 }
 
 export const coachService = {

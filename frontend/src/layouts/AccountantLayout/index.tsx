@@ -27,11 +27,10 @@ const ACCOUNTANT_NAV_ITEMS: ErpNavItem[] = [
     section: 'TESORERÍA Y RECAUDO',
   },
   {
-    label: 'Analítica Financiera (MS2)',
+    label: 'Consolidado Financiero',
     to: '/accountant/dashboard?tab=analitica',
     icon: BarChart3,
-    section: 'REPORTES Y AUDITORÍA',
-    badge: 'MS2',
+    section: 'REPORTES',
   },
   {
     label: 'Mi Perfil Contable',

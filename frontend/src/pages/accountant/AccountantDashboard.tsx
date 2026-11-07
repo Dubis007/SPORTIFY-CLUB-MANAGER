@@ -258,7 +258,7 @@ export default function AccountantDashboard() {
             onClick={downloadReport}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
           >
-            <Download size={15} /> Exportar Reporte QuestPDF
+            <Download size={15} /> Exportar Reporte PDF
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ export default function AccountantDashboard() {
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-semibold uppercase">
-                  Eficiencia Cobranza (MS2)
+                  Eficiencia de Cobranza
                 </p>
                 <h3 className="text-2xl font-bold text-emerald-400">
                   {ms2Report?.financialSummary.collectionEfficiencyPct ?? 100}%
@@ -390,9 +390,9 @@ export default function AccountantDashboard() {
                           <button
                             type="button"
                             onClick={() => handleDownloadReceipt(payment.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700"
+                            className={`${payment.tieneComprobante ? 'inline-flex' : 'hidden'} items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700`}
                           >
-                            <FileText size={12} /> Anexo
+                            <Download size={12} /> Soporte
                           </button>
 
                           {payment.tieneComprobante && payment.comprobanteUrl && (
@@ -530,7 +530,7 @@ export default function AccountantDashboard() {
 
       {/* VISTA 3: GESTIÓN DE MEMBRESÍAS */}
       {activeTab === 'membresias' && (
-        <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden">
+        <div>
           <MembershipsPage />
         </div>
       )}
@@ -541,14 +541,14 @@ export default function AccountantDashboard() {
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div>
               <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <BarChart3 size={20} className="text-emerald-400" /> Consolidado Financiero · Microservicio 2 (:5102)
+                <BarChart3 size={20} className="text-emerald-400" /> Consolidado Financiero
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Agregación asíncrona validada con esquemas Zod en el nodo de reportes
+                Resumen de recaudo aprobado, pagos en revisión y proyección mensual del club
               </p>
             </div>
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              {ms2Report?.dataSource || 'CORE_API_LIVE'}
+              {ms2Report ? 'Sincronizado' : 'En línea'}
             </span>
           </div>
 

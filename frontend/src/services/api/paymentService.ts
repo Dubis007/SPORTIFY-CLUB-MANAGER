@@ -54,6 +54,15 @@ export const paymentService = {
     return response.data;
   },
 
+  uploadReceipt: async (pagoId: number, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('pagoId', pagoId.toString());
+    formData.append('archivo', file);
+    await apiClient.post('/api/receipts', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   reject: async (id: number, data: RejectPaymentDto): Promise<Payment> => {
     const response = await apiClient.patch<Payment>(`/api/payments/${id}/reject`, data);
     return response.data;

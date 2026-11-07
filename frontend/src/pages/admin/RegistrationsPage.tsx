@@ -1,15 +1,36 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import {
+  ClipboardCheck,
+  UserPlus,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { useRegistrationsViewModel } from '../../viewmodels/useRegistrationsViewModel';
 import { Registration } from '../../models';
+import ConfirmDialogModal, {
+  useConfirmDialog,
+} from '../../components/common/ConfirmDialogModal';
 
 export default function RegistrationsPage() {
-  const { registrations, options, loading, error, createRegistration, updateRegistration, deleteRegistration } = useRegistrationsViewModel();
+  const {
+    registrations,
+    options,
+    loading,
+    error,
+    createRegistration,
+    updateRegistration,
+    deleteRegistration,
+  } = useRegistrationsViewModel();
   const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
   const [formData, setFormData] = useState({
     usuarioId: '',
     competenciaId: '',
-    estado: 'PENDIENTE'
+    estado: 'PENDIENTE',
   });
 
   const handleAddNew = () => {
@@ -23,151 +44,233 @@ export default function RegistrationsPage() {
     setFormData({
       usuarioId: registration.usuarioId.toString(),
       competenciaId: registration.competenciaId.toString(),
-      estado: registration.estado
+      estado: registration.estado,
     });
     setShowModal(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro de eliminar esta inscripción?')) {
-      await deleteRegistration(id);
-    }
+  const { requestConfirm, confirmDialogProps } = useConfirmDialog();
+
+  const handleDelete = (id: number) => {
+    requestConfirm({
+      title: 'Eliminar inscripción',
+      description: '¿Deseas retirar esta inscripción de la competencia seleccionada?',
+      confirmLabel: 'Sí, eliminar',
+      variant: 'danger',
+      onConfirm: async () => {
+        const ok = await deleteRegistration(id);
+        if (ok !== false) toast.success('Inscripción eliminada.');
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     const payload = {
-      usuarioId: parseInt(formData.usuarioId),
-      competenciaId: parseInt(formData.competenciaId),
-      estado: formData.estado
+      usuarioId: parseInt(formData.usuarioId, 10),
+      competenciaId: parseInt(formData.competenciaId, 10),
+      estado: formData.estado,
     };
 
-    let success = false;
-    if (editingRegistration) {
-      success = await updateRegistration(editingRegistration.id, payload);
-    } else {
-      success = await createRegistration(payload);
-    }
+    const success = editingRegistration
+      ? await updateRegistration(editingRegistration.id, payload)
+      : await createRegistration(payload);
+    setSaving(false);
 
-    if (success) setShowModal(false);
+    if (success) {
+      toast.success(editingRegistration ? 'Inscripción actualizada.' : 'Deportista inscrito.');
+      setShowModal(false);
+    }
+  };
+
+  const getBadgeStyle = (estado: string) => {
+    switch (estado) {
+      case 'CONFIRMADA':
+        return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      case 'PAGO':
+        return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
+      case 'CANCELADA':
+        return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
+      default:
+        return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center border-b pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800 pb-4 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-sportify-dark">Inscripciones</h1>
-          <p className="text-gray-500 text-sm">Gestiona las inscripciones a competencias</p>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400">
+            Convocatorias y Torneos
+          </span>
+          <h1 className="text-2xl font-bold text-slate-100 mt-0.5 flex items-center gap-2">
+            <ClipboardCheck size={22} className="text-blue-400" /> Inscripciones a Competencias
+          </h1>
+          <p className="text-slate-400 text-xs mt-1">
+            Inscribe deportistas con membresía activa y gestiona su estado de participación.
+          </p>
         </div>
-        <button onClick={handleAddNew} className="bg-sportify-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center shadow-sm">
-          <i className="bi bi-person-plus-fill mr-2"></i> Inscribir Miembro
+        <button
+          type="button"
+          onClick={handleAddNew}
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto"
+        >
+          <UserPlus size={16} /> Inscribir Deportista
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center border border-red-200">
-          <i className="bi bi-exclamation-triangle mr-2"></i> {error}
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 p-4 rounded-xl text-xs flex items-center gap-2">
+          <AlertTriangle size={16} className="shrink-0" /> {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-10 text-gray-500">Cargando...</div>
+      {loading && registrations.length === 0 ? (
+        <div className="space-y-3 animate-pulse" aria-busy="true">
+          {[1, 2, 3, 4].map((row) => (
+            <div key={row} className="h-16 bg-slate-900 border border-slate-800 rounded-xl" />
+          ))}
+        </div>
       ) : (
-        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Miembro</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Competencia</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {registrations.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">No hay inscripciones.</td>
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-950/70 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Deportista</th>
+                  <th className="px-5 py-3.5">Competencia</th>
+                  <th className="px-5 py-3.5">Fecha Registro</th>
+                  <th className="px-5 py-3.5">Estado</th>
+                  <th className="px-5 py-3.5 text-right">Acciones</th>
                 </tr>
-              ) : (
-                registrations.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-800">{r.usuarioNombre || `ID: ${r.usuarioId}`}</div>
-                      <div className="text-xs text-gray-500">ID: {r.usuarioId}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-800">{r.competenciaNombre || `ID: ${r.competenciaId}`}</div>
-                      <div className="text-xs text-gray-500">ID: {r.competenciaId}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(r.fechaInscripcion).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        r.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' : 
-                        r.estado === 'PAGO' ? 'bg-blue-100 text-blue-800' :
-                        r.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {r.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-3">
-                      <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800" title="Editar"><i className="bi bi-pencil-square text-lg"></i></button>
-                      <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:text-red-800" title="Eliminar"><i className="bi bi-trash text-lg"></i></button>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-sm">
+                {registrations.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <ClipboardCheck size={28} className="mx-auto text-slate-600 mb-2" />
+                      <p className="text-slate-300 font-medium text-sm">
+                        No hay inscripciones registradas
+                      </p>
+                      <p className="text-slate-500 text-xs mt-1">
+                        Usa el botón superior para convocar o inscribir deportistas a un torneo.
+                      </p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  registrations.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="font-semibold text-slate-100">
+                          {r.usuarioNombre || `Deportista #${r.usuarioId}`}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-slate-300 font-medium">
+                        {r.competenciaNombre || `Competencia #${r.competenciaId}`}
+                      </td>
+                      <td className="px-5 py-4 text-xs text-slate-400">
+                        {new Date(r.fechaInscripcion).toLocaleDateString('es-CO')}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${getBadgeStyle(
+                            r.estado
+                          )}`}
+                        >
+                          {r.estado}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(r)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+                          title="Cambiar estado"
+                        >
+                          <Edit2 size={13} /> Estado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(r.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25 transition-colors"
+                          title="Eliminar inscripción"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
-              {editingRegistration ? 'Editar Inscripción' : 'Inscribir Miembro'}
-            </h3>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 className="text-lg font-bold text-slate-100">
+                {editingRegistration ? 'Actualizar Inscripción' : 'Inscribir Deportista'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="text-slate-400 hover:text-slate-200 p-1"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Seleccionar Miembro</label>
-                <select 
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Deportista
+                </label>
+                <select
                   required
                   disabled={!!editingRegistration}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-sportify-primary disabled:bg-gray-100"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500 disabled:opacity-60"
                   value={formData.usuarioId}
                   onChange={(e) => setFormData({ ...formData, usuarioId: e.target.value })}
                 >
-                  <option value="">Seleccione...</option>
-                  {options.members?.map(m => (
-                    <option key={m.id} value={m.id}>{m.nombre} {m.apellido} (ID: {m.id})</option>
+                  <option value="">Seleccione un deportista...</option>
+                  {options.members?.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre} {m.apellido}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Competencia</label>
-                <select 
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Competencia
+                </label>
+                <select
                   required
                   disabled={!!editingRegistration}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-sportify-primary disabled:bg-gray-100"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500 disabled:opacity-60"
                   value={formData.competenciaId}
                   onChange={(e) => setFormData({ ...formData, competenciaId: e.target.value })}
                 >
-                  <option value="">Seleccione...</option>
-                  {options.competitions?.map(c => (
-                    <option key={c.id} value={c.id}>{c.nombre} ({new Date(c.fechaInicio).toLocaleDateString()})</option>
+                  <option value="">Seleccione un torneo...</option>
+                  {options.competitions?.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} ({new Date(c.fechaInicio).toLocaleDateString('es-CO')})
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado</label>
-                <select 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-sportify-primary"
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Estado
+                </label>
+                <select
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
                   value={formData.estado}
                   onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
                 >
@@ -178,14 +281,28 @@ export default function RegistrationsPage() {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t mt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-sportify-primary text-white rounded-lg hover:bg-red-700 font-semibold shadow">Guardar</button>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors"
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDialogModal {...confirmDialogProps} />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { memberService } from '../services/members/memberService';
 import { paymentService } from '../services/api/paymentService';
-import { apiClient } from '../services/api/apiClient';
+import { competitionService } from '../services/competitions/competitionService';
+import { registrationService } from '../services/registrations/registrationService';
 
 export const useMemberViewModel = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -54,17 +55,9 @@ export const useMemberViewModel = () => {
   const createPaymentAndUpload = async (membresiaId: number, montoCOP: number, file: File) => {
     setUploading(true);
     try {
-      // 1. Crear pago
+      // 1. Crear pago y adjuntar soporte mediante paymentService
       const payment = await paymentService.create({ membresiaId, montoCOP });
-      
-      // 2. Subir comprobante
-      const formData = new FormData();
-      formData.append('pagoId', payment.id.toString());
-      formData.append('archivo', file);
-      
-      await apiClient.post('/api/receipts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await paymentService.uploadReceipt(payment.id, file);
 
       // Refrescar datos
       await fetchAllData();
@@ -81,8 +74,8 @@ export const useMemberViewModel = () => {
 
   const fetchAvailableCompetitions = async () => {
     try {
-      const response = await apiClient.get('/api/competitions');
-      setAvailableCompetitions(response.data);
+      const data = await competitionService.getAll();
+      setAvailableCompetitions(data);
     } catch (err) {
       console.error(err);
     }
@@ -91,9 +84,9 @@ export const useMemberViewModel = () => {
   const registerForCompetition = async (competenciaId: number) => {
     try {
       if (!profile) return false;
-      await apiClient.post('/api/registrations', {
+      await registrationService.create({
         competenciaId,
-        usuarioId: profile.id
+        usuarioId: profile.id,
       });
       await fetchAllData();
       return true;

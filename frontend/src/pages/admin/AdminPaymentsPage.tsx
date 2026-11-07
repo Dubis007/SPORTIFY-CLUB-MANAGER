@@ -170,7 +170,7 @@ export default function AdminPaymentsPage() {
             <DollarSign size={24} className="text-blue-400" /> Gestión Financiera de Pagos
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Auditoría de comprobantes, aprobación de membresías y exportación QuestPDF
+            Auditoría de comprobantes, aprobación de membresías y exportación de reportes
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -308,13 +308,15 @@ export default function AdminPaymentsPage() {
                           >
                             <FileText size={12} /> Colilla PDF
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadReceipt(payment.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700"
-                          >
-                            <Download size={12} /> Anexo
-                          </button>
+                          {payment.tieneComprobante && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadReceipt(payment.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700"
+                            >
+                              <Download size={12} /> Soporte
+                            </button>
+                          )}
                           {payment.tieneComprobante && payment.comprobanteUrl && (
                             <button
                               onClick={() => {

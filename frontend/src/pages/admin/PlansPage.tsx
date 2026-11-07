@@ -1,130 +1,299 @@
-﻿import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, CalendarDays, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  CalendarDays,
+  Tags,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { usePlansViewModel } from '../../viewmodels/usePlansViewModel';
+import ConfirmDialogModal, {
+  useConfirmDialog,
+} from '../../components/common/ConfirmDialogModal';
 
 export default function PlansPage() {
   const { plans, loading, error, createPlan, updatePlan, deletePlan } = usePlansViewModel();
-  
+
   const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', precioCOP: 0, duracionDias: 30, activo: true });
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    precioCOP: 0,
+    duracionDias: 30,
+    activo: true,
+  });
 
   const openCreateModal = () => {
     setEditingPlan(null);
-    setFormData({ nombre: '', descripcion: '', precioCOP: 0, duracionDias: 30, activo: true });
+    setFormData({
+      nombre: '',
+      descripcion: '',
+      precioCOP: 0,
+      duracionDias: 30,
+      activo: true,
+    });
     setShowModal(true);
   };
 
   const openEditModal = (plan: any) => {
     setEditingPlan(plan);
-    setFormData({ nombre: plan.nombre, descripcion: plan.descripcion, precioCOP: plan.precioCOP, duracionDias: plan.duracionDias, activo: plan.activo });
+    setFormData({
+      nombre: plan.nombre,
+      descripcion: plan.descripcion,
+      precioCOP: plan.precioCOP,
+      duracionDias: plan.duracionDias,
+      activo: plan.activo,
+    });
     setShowModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let success = false;
-    if (editingPlan) {
-      success = await updatePlan(editingPlan.id, formData);
-    } else {
-      success = await createPlan(formData);
-    }
-    
-    if (success) setShowModal(false);
-  };
+    setSaving(true);
+    const success = editingPlan
+      ? await updatePlan(editingPlan.id, formData)
+      : await createPlan(formData);
+    setSaving(false);
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro de desactivar este plan? (Los usuarios con este plan activo no se verán afectados, pero ya no se podrá adquirir).')) {
-      await deletePlan(id);
+    if (success) {
+      toast.success(editingPlan ? 'Plan actualizado.' : 'Nuevo plan creado.');
+      setShowModal(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount);
+  const { requestConfirm, confirmDialogProps } = useConfirmDialog();
+
+  const handleDelete = (id: number) => {
+    requestConfirm({
+      title: 'Desactivar plan de membresía',
+      description:
+        '¿Deseas desactivar este plan? Los deportistas que ya lo tienen activo conservarán su vigencia actual.',
+      confirmLabel: 'Desactivar plan',
+      variant: 'warning',
+      onConfirm: async () => {
+        const ok = await deletePlan(id);
+        if (ok !== false) toast.success('Plan desactivado.');
+      },
+    });
   };
 
-  if (loading && plans.length === 0) return <div className="p-8 text-center">Cargando planes...</div>;
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(amount);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800 pb-4 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Activity size={24} className="text-sportify-primary" /> Gestión de Planes de Membresía
+          <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400">
+            Catálogo Comercial
+          </span>
+          <h1 className="text-2xl font-bold text-slate-100 mt-0.5 flex items-center gap-2">
+            <Tags size={22} className="text-blue-400" /> Planes de Membresía
           </h1>
-          <p className="text-gray-600">Crea y administra los planes (1 Mes, Trimestral, Anual) disponibles para los atletas.</p>
+          <p className="text-slate-400 text-xs mt-1">
+            Configura las modalidades de suscripción (mensual, trimestral, anual) disponibles en el club.
+          </p>
         </div>
-        <button onClick={openCreateModal} className="flex items-center gap-2 px-4 py-2 bg-sportify-primary text-white font-semibold rounded-lg hover:bg-red-700 transition-colors">
-          <Plus size={20} /> Nuevo Plan
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm self-start sm:self-auto"
+        >
+          <Plus size={16} /> Nuevo Plan
         </button>
       </div>
 
-      {error && <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>}
+      {error && (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center gap-2">
+          <AlertTriangle size={16} className="shrink-0" /> {error}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => (
-          <div key={plan.id} className="bg-white rounded-xl shadow-sm border p-6 flex flex-col relative overflow-hidden">
-            {!plan.activo && <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">INACTIVO</div>}
-            
-            <h3 className="text-2xl font-black text-gray-800 mb-2 uppercase">{plan.nombre}</h3>
-            <p className="text-3xl font-bold text-sportify-primary mb-4">{formatCurrency(plan.precioCOP)}</p>
-            <p className="text-gray-600 text-sm mb-6 flex-1">{plan.descripcion}</p>
-            
-            <div className="flex items-center gap-2 text-gray-700 font-semibold mb-6">
-              <CalendarDays size={18} className="text-gray-400"/>
-              Válido por {plan.duracionDias} días
-            </div>
+      {loading && plans.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse" aria-busy="true">
+          {[1, 2, 3].map((k) => (
+            <div key={k} className="h-56 bg-slate-900 border border-slate-800 rounded-2xl" />
+          ))}
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-12 text-center">
+          <Tags size={30} className="mx-auto text-slate-600 mb-2" />
+          <p className="text-slate-300 font-medium text-sm">No hay planes configurados</p>
+          <p className="text-slate-500 text-xs mt-1">
+            Crea el primer plan de membresía para asignar suscripciones.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 flex flex-col relative overflow-hidden"
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <h3 className="text-lg font-bold text-slate-100 uppercase tracking-wide">
+                  {plan.nombre}
+                </h3>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    plan.activo
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                  }`}
+                >
+                  {plan.activo ? 'ACTIVO' : 'INACTIVO'}
+                </span>
+              </div>
 
-            <div className="flex gap-2 border-t pt-4">
-              <button onClick={() => openEditModal(plan)} className="flex-1 flex justify-center items-center gap-2 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg font-semibold transition-colors">
-                <Edit2 size={18} /> Editar
-              </button>
-              {plan.activo && (
-                <button onClick={() => handleDelete(plan.id)} className="flex-1 flex justify-center items-center gap-2 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-semibold transition-colors">
-                  <Trash2 size={18} /> Desactivar
+              <p className="text-3xl font-bold text-blue-400 mb-3">
+                {formatCurrency(plan.precioCOP)}
+              </p>
+              <p className="text-slate-400 text-xs mb-5 flex-1">{plan.descripcion}</p>
+
+              <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-5">
+                <CalendarDays size={15} className="text-blue-400" />
+                Vigencia de {plan.duracionDias} días
+              </div>
+
+              <div className="flex gap-2 border-t border-slate-800 pt-4">
+                <button
+                  type="button"
+                  onClick={() => openEditModal(plan)}
+                  className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-semibold transition-colors"
+                >
+                  <Edit2 size={14} /> Editar
                 </button>
-              )}
+                {plan.activo && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(plan.id)}
+                    className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 text-xs text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 rounded-xl font-semibold transition-colors"
+                  >
+                    <Trash2 size={14} /> Desactivar
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{editingPlan ? 'Editar Plan' : 'Nuevo Plan'}</h2>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h2 className="text-lg font-bold text-slate-100">
+                {editingPlan ? 'Editar Plan' : 'Nuevo Plan de Membresía'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="text-slate-400 hover:text-slate-200 p-1"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Plan</label>
-                <input required type="text" placeholder="Ej. Trimestral Premium" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Nombre del Plan
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. Trimestral Competitivo"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Precio (COP)
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    value={formData.precioCOP}
+                    onChange={(e) =>
+                      setFormData({ ...formData, precioCOP: Number(e.target.value) })
+                    }
+                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Duración (Días)
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    value={formData.duracionDias}
+                    onChange={(e) =>
+                      setFormData({ ...formData, duracionDias: Number(e.target.value) })
+                    }
+                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea required rows={3} placeholder="Beneficios del plan..." value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none resize-none" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Beneficios incluidos
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="Descripción breve de lo que incluye el plan..."
+                  value={formData.descripcion}
+                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none focus:border-blue-500 resize-none"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio (COP)</label>
-                  <input required type="number" min="0" value={formData.precioCOP} onChange={e => setFormData({...formData, precioCOP: Number(e.target.value)})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duración (Días)</label>
-                  <input required type="number" min="1" value={formData.duracionDias} onChange={e => setFormData({...formData, duracionDias: Number(e.target.value)})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sportify-primary outline-none" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-2">
-                <input type="checkbox" id="activo" checked={formData.activo} onChange={e => setFormData({...formData, activo: e.target.checked})} className="rounded text-sportify-primary focus:ring-sportify-primary" />
-                <label htmlFor="activo" className="text-sm font-medium text-gray-700">Plan habilitado para compra</label>
-              </div>
+              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={formData.activo}
+                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                  className="rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500"
+                />
+                Plan habilitado para nuevas suscripciones
+              </label>
 
-              <div className="flex justify-end gap-3 mt-6 border-t pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-sportify-primary text-white rounded-lg hover:bg-red-700">Guardar Plan</button>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition-colors"
+                >
+                  {saving ? 'Guardando...' : 'Guardar Plan'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDialogModal {...confirmDialogProps} />
     </div>
   );
 }

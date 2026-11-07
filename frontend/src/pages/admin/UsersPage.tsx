@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   Plus,
   Edit,
@@ -26,6 +27,9 @@ import {
 } from '../../viewmodels/useUsersViewModel';
 import { User, UserRole } from '../../models';
 import { CreateUserDto, UpdateUserDto } from '../../services/users/userService';
+import ConfirmDialogModal, {
+  useConfirmDialog,
+} from '../../components/common/ConfirmDialogModal';
 
 export default function UsersPage() {
   const {
@@ -93,35 +97,47 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleStatusToggle = async (id: number, currentStatus: boolean) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de ${currentStatus ? 'desactivar' : 'activar'} a este usuario?`
-      )
-    ) {
-      await toggleUserStatus(id, currentStatus);
-    }
+  const { requestConfirm, confirmDialogProps } = useConfirmDialog();
+
+  const handleStatusToggle = (id: number, currentStatus: boolean) => {
+    requestConfirm({
+      title: currentStatus ? 'Desactivar usuario' : 'Reactivar usuario',
+      description: `¿Deseas ${currentStatus ? 'desactivar' : 'activar'} el acceso de esta cuenta en el club?`,
+      confirmLabel: currentStatus ? 'Desactivar' : 'Activar',
+      variant: currentStatus ? 'warning' : 'primary',
+      onConfirm: async () => {
+        await toggleUserStatus(id, currentStatus);
+        toast.success(currentStatus ? 'Cuenta desactivada.' : 'Cuenta activada.');
+      },
+    });
   };
 
-  const handleResetPassword = async (user: User) => {
-    if (
-      window.confirm(`¿Restablecer la contraseña de ${user.nombre} a "Sportify2026!"?`)
-    ) {
-      const success = await resetPassword(user.id);
-      if (success) {
-        alert('Contraseña restablecida exitosamente.');
-      }
-    }
+  const handleResetPassword = (user: User) => {
+    requestConfirm({
+      title: 'Restablecer contraseña',
+      description: `Se restablecerá la clave temporal de ${user.nombre} ${user.apellido} a "Sportify2026!".`,
+      confirmLabel: 'Restablecer clave',
+      variant: 'warning',
+      onConfirm: async () => {
+        const success = await resetPassword(user.id);
+        if (success) {
+          toast.success('Contraseña restablecida exitosamente.');
+        }
+      },
+    });
   };
 
-  const handleDeleteUser = async (user: User) => {
-    if (
-      window.confirm(
-        `⚠️ ¡ATENCIÓN! ¿Estás seguro de ELIMINAR PERMANENTEMENTE a ${user.nombre} ${user.apellido}? Esta acción no se puede deshacer y borrará toda su información asociada.`
-      )
-    ) {
-      await deleteUser(user.id);
-    }
+  const handleDeleteUser = (user: User) => {
+    requestConfirm({
+      title: 'Eliminar usuario permanentemente',
+      description: `Esta acción eliminará de forma definitiva a ${user.nombre} ${user.apellido} y su información asociada.`,
+      confirmLabel: 'Sí, eliminar',
+      variant: 'danger',
+      onConfirm: async () => {
+        await deleteUser(user.id);
+        toast.success('Usuario eliminado.');
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -692,6 +708,8 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialogModal {...confirmDialogProps} />
     </div>
   );
 }
