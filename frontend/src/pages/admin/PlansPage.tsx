@@ -25,7 +25,7 @@ export default function PlansPage() {
     descripcion: '',
     precioCOP: 0,
     duracionDias: 30,
-    activo: true,
+    activo: false,
   });
 
   const openCreateModal = () => {
@@ -35,7 +35,7 @@ export default function PlansPage() {
       descripcion: '',
       precioCOP: 0,
       duracionDias: 30,
-      activo: true,
+      activo: false,
     });
     setShowModal(true);
   };
@@ -154,8 +154,11 @@ export default function PlansPage() {
                 </span>
               </div>
 
-              <p className="text-3xl font-bold text-blue-400 mb-3">
+              <p className="text-3xl font-bold text-blue-400 mb-1">
                 {formatCurrency(plan.precioCOP)}
+              </p>
+              <p className="text-[11px] text-slate-300 font-medium mb-3">
+                Tarifa total final • Sin cargos ocultos ni permanencia forzosa
               </p>
               <p className="text-slate-400 text-xs mb-5 flex-1">{plan.descripcion}</p>
 

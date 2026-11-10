@@ -17,8 +17,10 @@ import {
   Activity,
   Plus,
   Cake,
+  Ban,
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
+import ConfirmDialogModal, { useConfirmDialog } from '../../components/common/ConfirmDialogModal';
 
 export default function MemberDashboard() {
   const {
@@ -33,7 +35,10 @@ export default function MemberDashboard() {
     updateBirthDate,
     createPaymentAndUpload,
     registerForCompetition,
+    cancelMembership,
   } = useMemberViewModel();
+
+  const { requestConfirm, confirmDialogProps } = useConfirmDialog();
 
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'membresias';
@@ -207,13 +212,36 @@ export default function MemberDashboard() {
                           {new Date(m.fechaFin).toLocaleDateString('es-CO')}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMembership(m)}
-                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors text-xs font-semibold flex justify-center items-center gap-2"
-                      >
-                        <Upload size={15} /> Subir Comprobante de Pago
-                      </button>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMembership(m)}
+                          className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors text-xs font-semibold flex justify-center items-center gap-2"
+                        >
+                          <Upload size={15} /> Subir Comprobante de Pago
+                        </button>
+                        {(m.estado === 'ACTIVA' || m.estado === 'PENDIENTE') && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              requestConfirm({
+                                title: 'Cancelar o suspender membresía',
+                                description: `¿Deseas cancelar o suspender tu membresía ${m.plan}? Esta acción es directa, transparente y no genera penalidades ni cobros ocultos.`,
+                                confirmLabel: 'Confirmar baja',
+                                cancelLabel: 'Conservar membresía',
+                                variant: 'warning',
+                                onConfirm: async () => {
+                                  const ok = await cancelMembership(m.id);
+                                  if (ok) toast.success('Membresía suspendida correctamente.');
+                                },
+                              })
+                            }
+                            className="py-2.5 px-3 bg-slate-800 hover:bg-rose-950/60 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-800/60 rounded-xl transition-colors text-xs font-semibold flex justify-center items-center gap-1.5"
+                          >
+                            <Ban size={14} /> Cancelar Membresía
+                          </button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -484,9 +512,15 @@ export default function MemberDashboard() {
             <h2 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
               <FileUp size={20} className="text-blue-400" /> Reportar Comprobante de Pago
             </h2>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-400 mb-3">
               Plan asociado: <strong className="text-slate-200">{selectedMembership.plan}</strong>
             </p>
+            <div className="mb-4 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
+              <p className="font-semibold text-blue-300">Desglose transparente de pago</p>
+              <p className="text-slate-400">
+                $0 COP en recargos por auditoría • Sin costos ocultos ni renovación automática forzosa.
+              </p>
+            </div>
 
             <form onSubmit={handlePaymentSubmit} className="space-y-4">
               <div>
@@ -605,6 +639,8 @@ export default function MemberDashboard() {
           </div>
         </div>
       )}
+
+      <ConfirmDialogModal {...confirmDialogProps} />
     </div>
   );
 }

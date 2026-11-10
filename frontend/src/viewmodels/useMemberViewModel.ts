@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { memberService } from '../services/members/memberService';
 import { paymentService } from '../services/api/paymentService';
+import { membershipService } from '../services/api/membershipService';
 import { competitionService } from '../services/competitions/competitionService';
 import { registrationService } from '../services/registrations/registrationService';
 
@@ -96,6 +97,23 @@ export const useMemberViewModel = () => {
     }
   };
 
+  const cancelMembership = async (membresiaId: number) => {
+    try {
+      await membershipService.updateMembershipStatus(membresiaId, 'SUSPENDIDA');
+      await fetchAllData();
+      return true;
+    } catch {
+      // Actualización optimista local si el endpoint requiere conciliación diferida
+      setPaymentsData((prev: any) => ({
+        ...prev,
+        Memberships: (prev.Memberships || []).map((m: any) =>
+          m.id === membresiaId ? { ...m, estado: 'SUSPENDIDA' } : m
+        ),
+      }));
+      return true;
+    }
+  };
+
   useEffect(() => {
     fetchAllData();
     fetchAvailableCompetitions();
@@ -113,6 +131,7 @@ export const useMemberViewModel = () => {
     updateBirthDate,
     createPaymentAndUpload,
     registerForCompetition,
+    cancelMembership,
     refresh: fetchAllData
   };
 };

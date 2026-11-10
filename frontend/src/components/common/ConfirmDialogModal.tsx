@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AlertTriangle, ShieldAlert, CheckCircle2, X } from 'lucide-react';
 
 export type ConfirmDialogVariant = 'danger' | 'warning' | 'primary';
@@ -101,9 +101,14 @@ export default function ConfirmDialogModal({
 }: ConfirmDialogModalProps) {
   const titleId = useId();
   const descriptionId = useId();
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    // UX ética sin patrones oscuros: enfocar por defecto la acción segura ("Cancelar")
+    // para evitar confirmaciones destructivas accidentales al presionar Enter o Espacio.
+    cancelButtonRef.current?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !loading) {
         onClose();
@@ -156,10 +161,11 @@ export default function ConfirmDialogModal({
 
         <div className="mt-6 flex justify-end gap-2.5 border-t border-slate-800 pt-4">
           <button
+            ref={cancelButtonRef}
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40 transition-colors"
           >
             {cancelLabel}
           </button>

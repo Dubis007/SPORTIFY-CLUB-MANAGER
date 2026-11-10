@@ -22,6 +22,9 @@ describe('ConfirmDialogModal', () => {
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     expect(screen.getByText('Eliminar registro')).toBeInTheDocument();
 
+    // Verifica que el foco inicial recae en el botón seguro ("Cancelar") para evitar patrones oscuros
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus();
+
     fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
 
