@@ -6,6 +6,7 @@ using Sportify.Infrastructure.Authentication;
 using Sportify.Infrastructure.Persistence;
 using Sportify.Infrastructure.Reports;
 using Sportify.Infrastructure.Repositories;
+using Sportify.Infrastructure.Security;
 using Sportify.Infrastructure.Storage;
 
 namespace Sportify.Infrastructure;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         // Infrastructure Adapters & Services
+        services.AddSingleton<ISensitiveDataProtector, AesSensitiveDataProtector>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPdfReportRenderer, QuestPdfReportRenderer>();
         services.AddScoped<IFileStorageService, FileStorageService>();

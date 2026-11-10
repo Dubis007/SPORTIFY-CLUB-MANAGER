@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Sportify.Domain.Entities;
 using Sportify.Domain.Enums;
+using Sportify.Infrastructure.Security;
 
 namespace Sportify.Infrastructure.Persistence;
 
@@ -98,6 +99,9 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(p => p.Id);
             entity.Property(p => p.MontoCOP).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.ComentarioRechazo)
+                  .HasMaxLength(1000)
+                  .HasConversion<NullableEncryptedStringConverter>();
 
             entity.Property(p => p.Estado)
                   .HasConversion<string>()
@@ -142,6 +146,12 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(s => s.Id);
             entity.Property(s => s.Nombre).IsRequired().HasMaxLength(150);
+            entity.Property(s => s.Direccion)
+                  .HasMaxLength(500)
+                  .HasConversion<EncryptedStringConverter>();
+            entity.Property(s => s.Telefono)
+                  .HasMaxLength(500)
+                  .HasConversion<NullableEncryptedStringConverter>();
         });
 
         // ─── Entrenamiento ────────────────────────────────────────────────────
@@ -171,6 +181,9 @@ public class SportifyDbContext : DbContext
             entity.HasKey(a => a.Id);
             entity.HasIndex(a => new { a.UsuarioId, a.EntrenamientoId }).IsUnique();
             entity.HasQueryFilter(a => a.Entrenamiento.EliminadoEn == null);
+            entity.Property(a => a.Observaciones)
+                  .HasMaxLength(1000)
+                  .HasConversion<NullableEncryptedStringConverter>();
 
             entity.Property(a => a.Estado)
                   .HasConversion<string>()
