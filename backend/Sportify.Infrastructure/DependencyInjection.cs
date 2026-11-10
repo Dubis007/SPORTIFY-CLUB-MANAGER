@@ -37,6 +37,7 @@ public static class DependencyInjection
 
         // Infrastructure Adapters & Services
         services.AddSingleton<ISensitiveDataProtector, AesSensitiveDataProtector>();
+        services.AddScoped<ITenantRlsContext, TenantRlsContext>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPdfReportRenderer, QuestPdfReportRenderer>();
         services.AddScoped<IFileStorageService, FileStorageService>();

@@ -311,6 +311,7 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TenantRlsMiddleware>();
 app.UseRateLimiter();
 
 // Mapear Health Checks consistente en /api/health con salida JSON estructurada

@@ -7,7 +7,37 @@ namespace Sportify.Infrastructure.Persistence;
 
 public class SportifyDbContext : DbContext
 {
+    private int? _explicitTenantId;
+    private int? _explicitUserId;
+    private string? _explicitRole;
+    private bool _explicitRlsEnabled;
+
     public SportifyDbContext(DbContextOptions<SportifyDbContext> options) : base(options) { }
+
+    public int? CurrentTenantId => _explicitRlsEnabled ? _explicitTenantId : TenantRlsContext.Current?.TenantId;
+    public int? CurrentUserId => _explicitRlsEnabled ? _explicitUserId : TenantRlsContext.Current?.UserId;
+    public bool IsRlsActive => _explicitRlsEnabled || (TenantRlsContext.Current?.IsEnabled ?? false);
+    public bool IsMemberScoped =>
+        (_explicitRlsEnabled && string.Equals(_explicitRole, "MIEMBRO", StringComparison.OrdinalIgnoreCase)) ||
+        (TenantRlsContext.Current?.IsMemberScoped ?? false);
+
+    /// <summary>Activa el filtrado Row Level Security (RLS) por Sede/Tenant y/o Usuario para esta instancia.</summary>
+    public void ConfigureRls(int? tenantId, int? userId = null, string? role = null)
+    {
+        _explicitTenantId = tenantId;
+        _explicitUserId = userId;
+        _explicitRole = role;
+        _explicitRlsEnabled = true;
+    }
+
+    /// <summary>Restablece el estado de RLS a su configuración global por defecto.</summary>
+    public void ClearRls()
+    {
+        _explicitTenantId = null;
+        _explicitUserId = null;
+        _explicitRole = null;
+        _explicitRlsEnabled = false;
+    }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Rol> Roles => Set<Rol>();
@@ -40,6 +70,8 @@ public class SportifyDbContext : DbContext
             entity.Property(u => u.Activo).HasDefaultValue(true);
             entity.Property(u => u.IntentosFallidos).HasDefaultValue(0);
             entity.Property(u => u.CreadoEn).HasDefaultValueSql("(UTC_TIMESTAMP())");
+            entity.HasQueryFilter(u =>
+                !IsRlsActive || CurrentTenantId == null || u.SedeId == CurrentTenantId);
         });
 
         // ─── Rol ──────────────────────────────────────────────────────────────
@@ -79,6 +111,9 @@ public class SportifyDbContext : DbContext
         modelBuilder.Entity<Membresia>(entity =>
         {
             entity.HasKey(m => m.Id);
+            entity.HasQueryFilter(m =>
+                (!IsRlsActive || !IsMemberScoped || CurrentUserId == null || m.UsuarioId == CurrentUserId)
+                && (!IsRlsActive || CurrentTenantId == null || m.Usuario.SedeId == CurrentTenantId));
 
             entity.Property(m => m.Estado)
                   .HasConversion<string>()
@@ -109,7 +144,9 @@ public class SportifyDbContext : DbContext
                   .HasMaxLength(50);
 
             // Borrado logico: solo devuelve pagos no eliminados
-            entity.HasQueryFilter(p => p.EliminadoEn == null);
+            entity.HasQueryFilter(p => p.EliminadoEn == null
+                && (!IsRlsActive || !IsMemberScoped || CurrentUserId == null || p.UsuarioId == CurrentUserId)
+                && (!IsRlsActive || CurrentTenantId == null || p.Usuario.SedeId == CurrentTenantId));
 
             entity.HasOne(p => p.Usuario)
                   .WithMany(u => u.Pagos)
@@ -162,7 +199,8 @@ public class SportifyDbContext : DbContext
             entity.Property(e => e.Titulo).IsRequired().HasMaxLength(150);
 
             // Borrado logico
-            entity.HasQueryFilter(e => e.EliminadoEn == null);
+            entity.HasQueryFilter(e => e.EliminadoEn == null
+                && (!IsRlsActive || CurrentTenantId == null || e.SedeId == CurrentTenantId));
 
             entity.HasOne(e => e.Sede)
                   .WithMany(s => s.Entrenamientos)
@@ -181,7 +219,9 @@ public class SportifyDbContext : DbContext
         {
             entity.HasKey(a => a.Id);
             entity.HasIndex(a => new { a.UsuarioId, a.EntrenamientoId }).IsUnique();
-            entity.HasQueryFilter(a => a.Entrenamiento.EliminadoEn == null);
+            entity.HasQueryFilter(a => a.Entrenamiento.EliminadoEn == null
+                && (!IsRlsActive || !IsMemberScoped || CurrentUserId == null || a.UsuarioId == CurrentUserId)
+                && (!IsRlsActive || CurrentTenantId == null || a.Entrenamiento.SedeId == CurrentTenantId));
             entity.Property(a => a.Observaciones)
                   .HasMaxLength(1000)
                   .HasConversion<NullableEncryptedStringConverter>();
