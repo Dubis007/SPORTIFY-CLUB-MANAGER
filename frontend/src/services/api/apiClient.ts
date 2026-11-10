@@ -1,8 +1,9 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// En Docker/nube se define al compilar con VITE_API_URL; en desarrollo se usa la API local
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+// En Docker/nube se define al compilar con VITE_API_URL; en desarrollo se usa .env.development o la API local
+const rawApiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:5000').replace(/\/+$/, '');
+export const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,

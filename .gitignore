@@ -44,8 +44,23 @@ Thumbs.db
 
 publish/
 
-# Secretos locales de docker compose
+# Secretos locales y variables de entorno (jamás subir a GitHub)
 .env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.development.local
+frontend/.env.production
+frontend/.env.production.local
+frontend/.env.*.local
 
 # Respaldos de base de datos (scripts/backup-db.ps1)
 backups/

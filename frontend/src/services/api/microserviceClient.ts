@@ -3,7 +3,8 @@ import axios from 'axios';
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
 const MS1_BASE_URL = metaEnv?.VITE_MS1_AUTH_URL || 'http://localhost:5101';
 const MS2_BASE_URL = metaEnv?.VITE_MS2_REPORTS_URL || 'http://localhost:5102';
-const CORE_API_URL = metaEnv?.VITE_API_URL || 'http://localhost:5000/api';
+const rawCoreUrl = (metaEnv?.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const CORE_API_URL = rawCoreUrl.endsWith('/api') ? rawCoreUrl : `${rawCoreUrl}/api`;
 
 export interface MicroserviceHealthStatus {
   coreApi: { online: boolean; status: string; latencyMs: number };

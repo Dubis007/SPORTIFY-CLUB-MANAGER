@@ -1,0 +1,18 @@
+# Dependencias y artefactos de compilación
+node_modules/
+dist/
+build/
+coverage/
+
+# Archivos de entorno locales y secretos (jamás subir a GitHub)
+# Únicamente .env.example se versiona como plantilla pública sin llaves privadas
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+!.env.example

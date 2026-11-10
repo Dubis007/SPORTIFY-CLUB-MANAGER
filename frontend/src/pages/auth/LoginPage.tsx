@@ -2,18 +2,11 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ShieldCheck, Mail, Lock, AlertCircle, ArrowRight, KeyRound } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import { useLoginViewModel } from '../../viewmodels/useLoginViewModel';
 import { loginSchema } from '../../validations/schemas';
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
-
-const DEMO_ROLES = [
-  { label: 'Admin', email: 'admin@sportify.com', badge: 'ADMIN' },
-  { label: 'Contador', email: 'contador@sportify.com', badge: 'CONTADOR' },
-  { label: 'Entrenador', email: 'entrenador@sportify.com', badge: 'ENTRENADOR' },
-  { label: 'Miembro', email: 'miembro@sportify.com', badge: 'MIEMBRO' },
-];
 
 export default function LoginPage() {
   const { handleLogin, loading, error } = useLoginViewModel();
@@ -21,7 +14,6 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
@@ -29,11 +21,6 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginFormInputs) => {
     handleLogin(data.correo, data.contrasena);
-  };
-
-  const fillDemoAccount = (email: string) => {
-    setValue('correo', email, { shouldValidate: true });
-    setValue('contrasena', 'Admin123!', { shouldValidate: true });
   };
 
   return (
@@ -138,29 +125,6 @@ export default function LoginPage() {
               {!loading && <ArrowRight size={16} />}
             </button>
           </form>
-
-          {/* Selector Rápido de Credenciales por Rol para Inspección y QA */}
-          <div className="mt-7 pt-5 border-t border-slate-800/80">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
-              <KeyRound size={13} className="text-blue-400" />
-              <span>Acceso Rápido por Rol (Entorno Demo)</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMO_ROLES.map((role) => (
-                <button
-                  key={role.badge}
-                  type="button"
-                  onClick={() => fillDemoAccount(role.email)}
-                  className="text-left px-3 py-2 rounded-lg bg-slate-950/90 hover:bg-slate-800/80 border border-slate-800 hover:border-blue-500/40 transition-all group"
-                >
-                  <div className="text-xs font-semibold text-slate-200 group-hover:text-blue-400">
-                    {role.label}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">{role.email}</div>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
