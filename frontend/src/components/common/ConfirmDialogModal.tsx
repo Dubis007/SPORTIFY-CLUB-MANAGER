@@ -102,6 +102,7 @@ export default function ConfirmDialogModal({
   const titleId = useId();
   const descriptionId = useId();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,6 +113,24 @@ export default function ConfirmDialogModal({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !loading) {
         onClose();
+        return;
+      }
+
+      if (event.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -130,11 +149,15 @@ export default function ConfirmDialogModal({
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
+      <div
+        ref={dialogRef}
+        className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div
               className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${iconBox}`}
+              aria-hidden="true"
             >
               <Icon size={20} />
             </div>
@@ -142,7 +165,7 @@ export default function ConfirmDialogModal({
               <h2 id={titleId} className="text-base font-bold text-slate-100">
                 {title}
               </h2>
-              <p id={descriptionId} className="mt-1.5 text-xs text-slate-400 leading-relaxed">
+              <p id={descriptionId} className="mt-1.5 text-xs text-slate-300 leading-relaxed">
                 {description}
               </p>
             </div>
@@ -153,9 +176,9 @@ export default function ConfirmDialogModal({
             disabled={loading}
             onClick={onClose}
             aria-label="Cerrar confirmación"
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200 disabled:opacity-40"
+            className="rounded-lg p-1 text-slate-300 hover:bg-slate-800 hover:text-slate-100 disabled:opacity-40"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 

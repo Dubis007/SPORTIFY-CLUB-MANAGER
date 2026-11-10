@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, FileText, ExternalLink } from 'lucide-react';
 
 interface PdfViewerModalProps {
@@ -14,6 +14,21 @@ const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   pdfUrl,
   title = 'Visor de Comprobante Financiero',
 }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    closeButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -27,13 +42,13 @@ const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
         <div className="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-blue-600/15 text-blue-400 border border-blue-500/20">
-              <FileText className="h-5 w-5" />
+              <FileText className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
               <h3 id="pdf-modal-title" className="text-base font-bold text-slate-100">
                 {title}
               </h3>
-              <p className="text-xs text-slate-400">Documento de soporte auditado en Sportify ERP</p>
+              <p className="text-xs text-slate-300">Documento de soporte auditado en Sportify ERP</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -42,18 +57,19 @@ const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                 href={pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
               >
-                <ExternalLink className="h-3.5 w-3.5" /> Abrir en pestaña
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Abrir en pestaña
               </a>
             )}
             <button
+              ref={closeButtonRef}
               type="button"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 focus:outline-none"
+              className="rounded-lg p-1.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
               onClick={onClose}
               aria-label="Cerrar visor"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -66,7 +82,7 @@ const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
               title={title}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-slate-400 text-sm">
+            <div className="flex h-full items-center justify-center text-slate-300 text-sm">
               No se pudo cargar el documento adjunto
             </div>
           )}
@@ -75,7 +91,7 @@ const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
         <div className="mt-4 flex justify-end">
           <button
             type="button"
-            className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-colors"
+            className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             onClick={onClose}
           >
             Cerrar Visor

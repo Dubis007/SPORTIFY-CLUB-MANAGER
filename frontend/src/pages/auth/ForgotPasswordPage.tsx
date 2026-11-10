@@ -73,34 +73,38 @@ export default function ForgotPasswordPage() {
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
                 <div>
-                  <label htmlFor="correo" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                  <label htmlFor="correo" className="block text-xs font-semibold uppercase tracking-wider text-slate-200 mb-2">
                     Correo electrónico registrado
                   </label>
                   <div
                     className={`flex items-center bg-slate-950 border ${
-                      errors.correo ? 'border-rose-500/80' : 'border-slate-800'
-                    } rounded-xl overflow-hidden focus-within:border-blue-500`}
+                      errors.correo ? 'border-rose-500/80' : 'border-slate-700'
+                    } rounded-xl overflow-hidden focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-400/30`}
                   >
-                    <span className="pl-3.5 pr-2 text-slate-500">
+                    <span className="pl-3.5 pr-2 text-slate-400" aria-hidden="true">
                       <Mail size={16} />
                     </span>
                     <input
                       id="correo"
                       type="email"
                       autoComplete="email"
+                      aria-invalid={!!errors.correo}
                       placeholder="usuario@sportify.com"
-                      className="w-full px-2.5 py-2.5 bg-transparent text-sm text-slate-100 outline-none placeholder-slate-600"
+                      className="w-full px-2.5 py-2.5 bg-transparent text-sm text-slate-100 outline-none placeholder-slate-400"
                       {...register('correo')}
                     />
                   </div>
                   {errors.correo && (
-                    <p className="text-xs text-rose-400 mt-1.5 font-medium">{errors.correo.message}</p>
+                    <p className="text-xs text-rose-300 mt-1.5 font-medium">{errors.correo.message}</p>
                   )}
                 </div>
 
                 {error && (
-                  <div className="text-rose-300 text-xs bg-rose-500/10 p-3 rounded-xl border border-rose-500/30 flex items-center gap-2">
-                    <ShieldAlert size={16} className="shrink-0 text-rose-400" />
+                  <div
+                    role="alert"
+                    className="text-rose-300 text-xs bg-rose-500/10 p-3 rounded-xl border border-rose-500/30 flex items-center gap-2"
+                  >
+                    <ShieldAlert size={16} className="shrink-0 text-rose-400" aria-hidden="true" />
                     <span>{error}</span>
                   </div>
                 )}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ShieldCheck,
   Activity,
   LogOut,
   User as UserIcon,
@@ -104,6 +103,14 @@ export default function EnterpriseErpLayout({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+      {/* Enlace de salto al contenido principal para teclado y lectores de pantalla (WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:rounded-xl focus:bg-blue-600 focus:text-white focus:text-xs focus:font-semibold focus:shadow-lg"
+      >
+        Saltar al contenido principal
+      </a>
+
       {/* Backdrop móvil para cerrar menú cómodamente */}
       {mobileMenuOpen && (
         <button
@@ -124,22 +131,26 @@ export default function EnterpriseErpLayout({
         <div className="h-16 px-5 flex items-center justify-between border-b border-slate-800/90 bg-slate-950/40">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner shrink-0">
-              <ShieldCheck size={20} />
+              <img
+                src="/vite.svg"
+                alt="Logotipo institucional de Sportify Club"
+                className="w-5 h-5"
+              />
             </div>
             <div className="min-w-0">
               <span className="font-bold text-sm tracking-wider text-slate-100 block truncate">
                 SPORTIFY CLUB
               </span>
-              <p className="text-[11px] text-slate-400 font-medium truncate">{roleTitle}</p>
+              <p className="text-[11px] text-slate-300 font-medium truncate">{roleTitle}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-slate-400 hover:text-slate-200 p-1"
+            className="md:hidden text-slate-300 hover:text-slate-100 p-1 rounded-lg"
             aria-label="Cerrar menú lateral"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -150,7 +161,7 @@ export default function EnterpriseErpLayout({
         >
           {sections.map((section) => (
             <div key={section}>
-              <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 {section}
               </p>
               <div className="space-y-1">
@@ -163,26 +174,28 @@ export default function EnterpriseErpLayout({
                       <Link
                         key={item.to}
                         to={item.to}
+                        aria-current={active ? 'page' : undefined}
                         onClick={() => setMobileMenuOpen(false)}
                         className={`group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                           active
-                            ? 'bg-blue-600/15 text-blue-400 border-l-2 border-blue-500 shadow-sm'
-                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border-l-2 border-transparent'
+                            ? 'bg-blue-600/15 text-blue-300 border-l-2 border-blue-500 shadow-sm'
+                            : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 border-l-2 border-transparent'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <Icon
                             size={18}
+                            aria-hidden="true"
                             className={
                               active
                                 ? 'text-blue-400 shrink-0'
-                                : 'text-slate-500 group-hover:text-slate-300 shrink-0 transition-colors'
+                                : 'text-slate-400 group-hover:text-slate-200 shrink-0 transition-colors'
                             }
                           />
                           <span className="truncate">{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-800 text-slate-200 border border-slate-700">
                             {item.badge}
                           </span>
                         )}
@@ -201,28 +214,28 @@ export default function EnterpriseErpLayout({
             className="p-3.5 m-3 rounded-xl bg-slate-950/80 border border-slate-800/90 space-y-2"
           >
             <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 text-slate-400 font-medium">
-                <Lock size={13} className="text-emerald-400" /> Control de Sesión
+              <span className="flex items-center gap-1.5 text-slate-300 font-medium">
+                <Lock size={13} className="text-emerald-400" aria-hidden="true" /> Control de Sesión
               </span>
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                   health?.ms1Auth.online
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                 }`}
               >
                 {health?.ms1Auth.online ? 'VERIFICADA' : 'ACTIVA'}
               </span>
             </div>
-            <div className="text-[11px] text-slate-500 flex items-center justify-between">
+            <div className="text-[11px] text-slate-300 flex items-center justify-between">
               <span>Perfil: {roleAccentLabel}</span>
               <span>Sesiones: {sessionAudit?.activeSessionCount ?? 1}/2</span>
             </div>
           </div>
         ) : (
           <div className="p-3.5 m-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 text-slate-300 font-medium truncate">
-              <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+            <span className="flex items-center gap-1.5 text-slate-200 font-medium truncate">
+              <CheckCircle2 size={14} className="text-emerald-400 shrink-0" aria-hidden="true" />
               Sesión activa
             </span>
             <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-bold uppercase">
@@ -240,13 +253,13 @@ export default function EnterpriseErpLayout({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+              className="md:hidden p-2 rounded-lg text-slate-300 hover:text-slate-100 hover:bg-slate-800"
               aria-label="Abrir menú de navegación"
             >
-              <Menu size={20} />
+              <Menu size={20} aria-hidden="true" />
             </button>
             <div className="hidden sm:block min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 truncate">
                 {roleSubtitle}
               </p>
             </div>
@@ -260,58 +273,80 @@ export default function EnterpriseErpLayout({
                 className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-800 text-xs"
                 title="Estado de servicios del sistema"
               >
-                <Activity size={14} className="text-blue-400" />
-                <span className="text-slate-400 font-medium">Servicios:</span>
+                <Activity size={14} className="text-blue-400" aria-hidden="true" />
+                <span className="text-slate-300 font-medium">Servicios:</span>
 
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-300">
+                <span
+                  aria-label={`Core API: ${health?.coreApi.online ? 'En línea' : 'Fuera de línea'}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-200"
+                >
                   <span
+                    aria-hidden="true"
                     className={`w-1.5 h-1.5 rounded-full ${
                       health?.coreApi.online ? 'bg-emerald-400' : 'bg-amber-400'
                     }`}
                   />
                   Core API
+                  <span className="sr-only">
+                    {health?.coreApi.online ? '(En línea)' : '(Fuera de línea)'}
+                  </span>
                 </span>
 
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-300">
-                  <Server size={11} className="text-blue-400" />
+                <span
+                  aria-label={`Servicio Auth: ${health?.ms1Auth.online ? 'En línea' : 'Fuera de línea'}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-200"
+                >
+                  <Server size={11} className="text-blue-400" aria-hidden="true" />
                   <span
+                    aria-hidden="true"
                     className={`w-1.5 h-1.5 rounded-full ${
                       health?.ms1Auth.online ? 'bg-emerald-400' : 'bg-amber-400'
                     }`}
                   />
                   Auth
+                  <span className="sr-only">
+                    {health?.ms1Auth.online ? '(En línea)' : '(Fuera de línea)'}
+                  </span>
                 </span>
 
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-300">
-                  <BarChart3 size={11} className="text-emerald-400" />
+                <span
+                  aria-label={`Servicio Reportes: ${health?.ms2Reports.online ? 'En línea' : 'Fuera de línea'}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-200"
+                >
+                  <BarChart3 size={11} className="text-emerald-400" aria-hidden="true" />
                   <span
+                    aria-hidden="true"
                     className={`w-1.5 h-1.5 rounded-full ${
                       health?.ms2Reports.online ? 'bg-emerald-400' : 'bg-amber-400'
                     }`}
                   />
                   Reportes
+                  <span className="sr-only">
+                    {health?.ms2Reports.online ? '(En línea)' : '(Fuera de línea)'}
+                  </span>
                 </span>
               </div>
             )}
 
             {/* Identidad del Usuario Activo + Cerrar Sesión */}
             <div className="flex items-center gap-2.5 pl-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
-                <UserIcon size={15} />
+              <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200">
+                <UserIcon size={15} aria-hidden="true" />
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-xs font-semibold text-slate-200 leading-tight">
+                <p className="text-xs font-semibold text-slate-100 leading-tight">
                   {user?.nombre} {user?.apellido}
                 </p>
-                <p className="text-[11px] text-slate-400 leading-tight">{user?.correo}</p>
+                <p className="text-[11px] text-slate-300 leading-tight">{user?.correo}</p>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/90 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700/80 hover:border-rose-800/60 transition-colors"
+                aria-label="Cerrar sesión"
+                className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/90 hover:bg-rose-950/60 text-slate-200 hover:text-rose-300 border border-slate-700/80 hover:border-rose-800/60 transition-colors"
                 title="Cerrar sesión"
               >
-                <LogOut size={14} />
+                <LogOut size={14} aria-hidden="true" />
                 <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
@@ -319,7 +354,11 @@ export default function EnterpriseErpLayout({
         </header>
 
         {/* Área de Contenido Principal */}
-        <main className="erp-main-canvas flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="erp-main-canvas flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto focus:outline-none"
+        >
           <Outlet />
         </main>
       </div>

@@ -382,22 +382,25 @@ export default function AccountantDashboard() {
                         <td className="p-4 text-right space-x-2 whitespace-nowrap">
                           <button
                             type="button"
+                            aria-label={`Ver colilla PDF del pago #${payment.id}`}
                             onClick={() => handleOpenVoucherPdf(payment.id)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30"
                           >
-                            <FileText size={12} /> Colilla PDF
+                            <FileText size={12} aria-hidden="true" /> Colilla PDF
                           </button>
                           <button
                             type="button"
+                            aria-label={`Descargar soporte del pago #${payment.id}`}
                             onClick={() => handleDownloadReceipt(payment.id)}
                             className={`${payment.tieneComprobante ? 'inline-flex' : 'hidden'} items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700`}
                           >
-                            <Download size={12} /> Soporte
+                            <Download size={12} aria-hidden="true" /> Soporte
                           </button>
 
                           {payment.tieneComprobante && payment.comprobanteUrl && (
                             <button
                               type="button"
+                              aria-label={`Ver comprobante PDF del pago #${payment.id}`}
                               onClick={() => {
                                 setSelectedPdfUrl(
                                   `${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
@@ -406,7 +409,7 @@ export default function AccountantDashboard() {
                               }}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30"
                             >
-                              <Eye size={12} /> Ver PDF
+                              <Eye size={12} aria-hidden="true" /> Ver PDF
                             </button>
                           )}
 
@@ -662,24 +665,30 @@ export default function AccountantDashboard() {
 
       {/* Modal de Rechazo */}
       {rejectingPayment && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="accountant-reject-title"
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        >
           <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-3 text-rose-400">
-              <AlertTriangle size={22} />
-              <h2 className="text-lg font-bold text-slate-100">Rechazar Pago #{rejectingPayment.id}</h2>
+              <AlertTriangle size={22} aria-hidden="true" />
+              <h2 id="accountant-reject-title" className="text-lg font-bold text-slate-100">Rechazar Pago #{rejectingPayment.id}</h2>
             </div>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-300 mb-4">
               Especifica la causal de rechazo para el comprobante de{' '}
-              <strong className="text-slate-200">{rejectingPayment.nombreUsuario}</strong> (mínimo 10 caracteres).
+              <strong className="text-slate-100">{rejectingPayment.nombreUsuario}</strong> (mínimo 10 caracteres).
             </p>
             <form onSubmit={handleReject} className="space-y-4">
               <textarea
                 required
+                aria-label="Causal de rechazo del comprobante"
                 minLength={10}
                 rows={3}
                 value={comentario}
                 onChange={(e) => setComentario(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none resize-none"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-blue-500 resize-none"
                 placeholder="Ej: El soporte bancario adjunto es ilegible o no coincide con el valor..."
               />
               <div className="flex justify-end gap-2.5">

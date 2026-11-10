@@ -239,13 +239,14 @@ export default function AdminPaymentsPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-slate-900/70 p-3.5 rounded-xl border border-slate-800">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
                 type="text"
+                aria-label="Buscar por usuario o ID de pago"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar por usuario o ID de pago..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 placeholder-slate-400 outline-none focus:border-blue-500"
               />
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -303,22 +304,26 @@ export default function AdminPaymentsPage() {
                         <td className="p-4 text-right space-x-2 whitespace-nowrap">
                           <button
                             type="button"
+                            aria-label={`Ver colilla PDF del pago #${payment.id}`}
                             onClick={() => handleOpenVoucherPdf(payment.id)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30"
                           >
-                            <FileText size={12} /> Colilla PDF
+                            <FileText size={12} aria-hidden="true" /> Colilla PDF
                           </button>
                           {payment.tieneComprobante && (
                             <button
                               type="button"
+                              aria-label={`Descargar soporte del pago #${payment.id}`}
                               onClick={() => handleDownloadReceipt(payment.id)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700"
                             >
-                              <Download size={12} /> Soporte
+                              <Download size={12} aria-hidden="true" /> Soporte
                             </button>
                           )}
                           {payment.tieneComprobante && payment.comprobanteUrl && (
                             <button
+                              type="button"
+                              aria-label={`Ver comprobante del pago #${payment.id}`}
                               onClick={() => {
                                 setSelectedPdfUrl(
                                   `${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
@@ -327,18 +332,22 @@ export default function AdminPaymentsPage() {
                               }}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30"
                             >
-                              <Eye size={12} /> Ver Comprobante
+                              <Eye size={12} aria-hidden="true" /> Ver Comprobante
                             </button>
                           )}
                           {payment.estado === 'PENDIENTE' && (
                             <>
                               <button
+                                type="button"
+                                aria-label={`Aprobar pago #${payment.id} de ${payment.nombreUsuario}`}
                                 onClick={() => handleApprove(payment.id)}
                                 className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
                               >
                                 Aprobar
                               </button>
                               <button
+                                type="button"
+                                aria-label={`Rechazar pago #${payment.id} de ${payment.nombreUsuario}`}
                                 onClick={() => setRejectingPayment(payment)}
                                 className="px-3 py-1 bg-rose-600 text-white hover:bg-rose-500 rounded-lg text-xs font-semibold"
                               >
@@ -373,12 +382,13 @@ export default function AdminPaymentsPage() {
           </h3>
           <form onSubmit={handleManualPaymentSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label htmlFor="manual-payment-member" className="block text-xs font-semibold uppercase text-slate-300 mb-1">
                 Miembro
               </label>
               <select
+                id="manual-payment-member"
                 required
-                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none"
+                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
                 value={manualPayment.usuarioId}
                 onChange={(e) =>
                   setManualPayment({ ...manualPayment, usuarioId: e.target.value })
@@ -393,11 +403,12 @@ export default function AdminPaymentsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label htmlFor="manual-payment-membership" className="block text-xs font-semibold uppercase text-slate-300 mb-1">
                 Membresía a Pagar (Opcional)
               </label>
               <select
-                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none"
+                id="manual-payment-membership"
+                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
                 value={manualPayment.membresiaId}
                 onChange={(e) =>
                   setManualPayment({ ...manualPayment, membresiaId: e.target.value })
@@ -415,10 +426,11 @@ export default function AdminPaymentsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label htmlFor="manual-payment-amount" className="block text-xs font-semibold uppercase text-slate-300 mb-1">
                 Monto (COP)
               </label>
               <input
+                id="manual-payment-amount"
                 type="number"
                 required
                 min="1000"
@@ -426,7 +438,7 @@ export default function AdminPaymentsPage() {
                 onChange={(e) =>
                   setManualPayment({ ...manualPayment, montoCOP: e.target.value })
                 }
-                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none"
+                className="w-full border border-slate-800 bg-slate-950 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-blue-500"
                 placeholder="120000"
               />
             </div>
@@ -441,19 +453,25 @@ export default function AdminPaymentsPage() {
       )}
 
       {rejectingPayment && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-payment-title"
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        >
           <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2 mb-3">
-              <AlertTriangle size={22} /> Rechazar Pago #{rejectingPayment.id}
+            <h2 id="reject-payment-title" className="text-lg font-bold text-rose-400 flex items-center gap-2 mb-3">
+              <AlertTriangle size={22} aria-hidden="true" /> Rechazar Pago #{rejectingPayment.id}
             </h2>
             <form onSubmit={handleReject} className="space-y-4">
               <textarea
                 required
+                aria-label="Motivo del rechazo del pago"
                 minLength={10}
                 rows={3}
                 value={comentario}
                 onChange={(e) => setComentario(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-blue-500"
                 placeholder="Motivo del rechazo (mínimo 10 caracteres)..."
               />
               <div className="flex justify-end gap-2.5">

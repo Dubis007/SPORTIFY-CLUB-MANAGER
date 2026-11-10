@@ -85,6 +85,10 @@ describe('EnterpriseErpLayout — Interfaces Independientes Centradas por Rol', 
     expect(screen.getByTestId('admin-session-telemetry')).toBeInTheDocument();
     expect(screen.getByText('Dashboard Ejecutivo')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+
+    // Accesibilidad (A11y): Verifica Skip Link y atributo alt en el logotipo institucional
+    expect(screen.getByRole('link', { name: /Saltar al contenido principal/i })).toBeInTheDocument();
+    expect(screen.getByAltText('Logotipo institucional de Sportify Club')).toBeInTheDocument();
   });
 
   it('oculta telemetría técnica y expone solo herramientas contables con pestañas activas para CONTADOR', () => {
