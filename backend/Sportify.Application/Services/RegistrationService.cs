@@ -13,12 +13,12 @@ public class RegistrationService : IRegistrationService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<object>> GetAllAsync()
+    public async Task<IEnumerable<RegistrationDto>> GetAllAsync()
     {
         return await _repository.GetAllAsync();
     }
 
-    public async Task<object> GetOptionsAsync()
+    public async Task<RegistrationOptionsDto> GetOptionsAsync()
     {
         return await _repository.GetOptionsAsync();
     }

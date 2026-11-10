@@ -31,22 +31,32 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task<object> GetOptionsAsync()
+    public async Task<PaymentOptionsDto> GetOptionsAsync()
     {
         var members = await _paymentRepository.GetMembersForOptionsAsync();
-        var membersObj = members.Select(u => new { u.Id, u.Nombre, u.Apellido });
+        var membersDto = members.Select(u => new PaymentMemberOptionDto
+        {
+            Id = u.Id,
+            Nombre = u.Nombre,
+            Apellido = u.Apellido
+        }).ToList();
 
         var memberships = await _paymentRepository.GetMembershipsForOptionsAsync();
-        var membershipsObj = memberships.Select(m => new {
-            m.Id,
-            m.UsuarioId,
-            m.Estado,
+        var membershipsDto = memberships.Select(m => new PaymentMembershipOptionDto
+        {
+            Id = m.Id,
+            UsuarioId = m.UsuarioId,
+            Estado = m.Estado,
             Plan = m.PlanMembresia?.Nombre,
-            m.FechaInicio,
-            m.FechaFin
-        });
+            FechaInicio = m.FechaInicio,
+            FechaFin = m.FechaFin
+        }).ToList();
 
-        return new { Members = membersObj, Memberships = membershipsObj };
+        return new PaymentOptionsDto
+        {
+            Members = membersDto,
+            Memberships = membershipsDto
+        };
     }
 
     private async Task<Membresia?> ValidateMembershipAndPriceAsync(int usuarioId, int? membresiaId, decimal montoCOP)
@@ -107,7 +117,7 @@ public class PaymentService : IPaymentService
         return MapToDto(pago);
     }
 
-    public async Task<object> ManualWithReceiptAsync(ManualPaymentWithReceiptDto dto)
+    public async Task<PaymentReceiptResponseDto> ManualWithReceiptAsync(ManualPaymentWithReceiptDto dto)
     {
         if (dto.Archivo == null || dto.Archivo.Length == 0)
             throw new ArgumentException("Se requiere un archivo PDF/Imagen válido.", nameof(dto.Archivo));
@@ -138,7 +148,7 @@ public class PaymentService : IPaymentService
         };
         await _paymentRepository.CreateComprobanteAsync(comprobante);
 
-        return new { message = "Comprobante subido exitosamente y pago en estado PENDIENTE." };
+        return new PaymentReceiptResponseDto { Message = "Comprobante subido exitosamente y pago en estado PENDIENTE." };
     }
 
     /// <inheritdoc/>

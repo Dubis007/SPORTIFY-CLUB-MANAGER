@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Sportify.Application.DTOs.Registrations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 using Sportify.Infrastructure.Persistence;
@@ -14,40 +15,55 @@ public class RegistrationRepository : IRegistrationRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<object>> GetAllAsync()
+    public async Task<IEnumerable<RegistrationDto>> GetAllAsync()
     {
         return await _context.InscripcionesCompetencia
+            .AsNoTracking()
             .Include(i => i.Competencia)
             .Include(i => i.Usuario)
-            .Select(i => new {
-                i.Id,
-                i.CompetenciaId,
-                i.UsuarioId,
-                i.Estado,
-                i.FechaInscripcion,
+            .Select(i => new RegistrationDto
+            {
+                Id = i.Id,
+                CompetenciaId = i.CompetenciaId,
+                UsuarioId = i.UsuarioId,
+                Estado = i.Estado,
+                FechaInscripcion = i.FechaInscripcion,
                 UsuarioNombre = i.Usuario.Nombre + " " + i.Usuario.Apellido,
                 CompetenciaNombre = i.Competencia.Nombre
             })
             .ToListAsync();
     }
 
-    public async Task<object> GetOptionsAsync()
+    public async Task<RegistrationOptionsDto> GetOptionsAsync()
     {
         var competitions = await _context.Competencias
+            .AsNoTracking()
             .Where(c => c.EliminadoEn == null)
-            .Select(c => new { c.Id, c.Nombre, c.FechaInicio })
+            .Select(c => new RegistrationCompetitionOptionDto
+            {
+                Id = c.Id,
+                Nombre = c.Nombre,
+                FechaInicio = c.FechaInicio
+            })
             .OrderBy(c => c.FechaInicio)
             .ToListAsync();
 
         var members = await _context.Usuarios
+            .AsNoTracking()
             .Include(u => u.UsuarioRoles)
             .ThenInclude(ur => ur.Rol)
             .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "MIEMBRO"))
-            .Select(u => new { u.Id, u.Nombre, u.Apellido })
+            .Select(u => new RegistrationMemberOptionDto
+            {
+                Id = u.Id,
+                Nombre = u.Nombre,
+                Apellido = u.Apellido
+            })
             .OrderBy(u => u.Nombre)
             .ToListAsync();
 
-        return new {
+        return new RegistrationOptionsDto
+        {
             Competitions = competitions,
             Members = members
         };
