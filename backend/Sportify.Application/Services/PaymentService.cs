@@ -49,8 +49,39 @@ public class PaymentService : IPaymentService
         return new { Members = membersObj, Memberships = membershipsObj };
     }
 
+    private async Task<Membresia?> ValidateMembershipAndPriceAsync(int usuarioId, int? membresiaId, decimal montoCOP)
+    {
+        if (montoCOP <= 0)
+            throw new ArgumentException("El monto del pago debe ser mayor a cero.", nameof(montoCOP));
+
+        if (!membresiaId.HasValue)
+            return null;
+
+        var membresia = await _paymentRepository.GetMembresiaByIdAsync(membresiaId.Value);
+        if (membresia is null)
+            return null;
+
+        if (membresia.UsuarioId != 0 && usuarioId != 0 && membresia.UsuarioId != usuarioId)
+        {
+            throw new UnauthorizedAccessException(
+                "No se permite registrar o asociar pagos sobre una membresía perteneciente a otro usuario.");
+        }
+
+        if (membresia.PlanMembresia is not null &&
+            membresia.PlanMembresia.PrecioCOP > 0 &&
+            montoCOP != membresia.PlanMembresia.PrecioCOP)
+        {
+            throw new InvalidOperationException(
+                $"El monto enviado ({montoCOP:N0} COP) no coincide con el precio oficial del plan ({membresia.PlanMembresia.PrecioCOP:N0} COP).");
+        }
+
+        return membresia;
+    }
+
     public async Task<PaymentDto> ManualRegisterAsync(int aprobadorId, ManualPaymentDto dto)
     {
+        var membresia = await ValidateMembershipAndPriceAsync(dto.UsuarioId, dto.MembresiaId, dto.MontoCOP);
+
         var pago = new Pago
         {
             UsuarioId = dto.UsuarioId,
@@ -66,8 +97,7 @@ public class PaymentService : IPaymentService
 
         if (dto.MembresiaId.HasValue)
         {
-            var membresia = await _paymentRepository.GetMembresiaByIdAsync(dto.MembresiaId.Value);
-            if (membresia != null && membresia.Estado != EstadoMembresia.ACTIVA)
+        if (membresia != null && membresia.Estado != EstadoMembresia.ACTIVA)
             {
                 membresia.Estado = EstadoMembresia.ACTIVA;
                 await _paymentRepository.UpdateMembresiaAsync(membresia);
@@ -81,6 +111,8 @@ public class PaymentService : IPaymentService
     {
         if (dto.Archivo == null || dto.Archivo.Length == 0)
             throw new ArgumentException("Se requiere un archivo PDF/Imagen válido.", nameof(dto.Archivo));
+
+        await ValidateMembershipAndPriceAsync(dto.UsuarioId, dto.MembresiaId, dto.MontoCOP);
 
         var fileName = await _fileStorageService.SaveFileAsync(dto.Archivo, "receipts");
         var relativePath = Path.Combine("receipts", fileName).Replace("\\", "/");
@@ -115,6 +147,8 @@ public class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task<PaymentDto> CreateAsync(int usuarioId, CreatePaymentDto dto)
     {
+        await ValidateMembershipAndPriceAsync(usuarioId, dto.MembresiaId, dto.MontoCOP);
+
         var pago = new Pago
         {
             UsuarioId = usuarioId,

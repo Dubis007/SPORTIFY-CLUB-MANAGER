@@ -14,17 +14,48 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Ocurrio un error no controlado: {Message}", exception.Message);
+        var (statusCode, title, detail) = exception switch
+        {
+            UnauthorizedAccessException ex => (
+                StatusCodes.Status401Unauthorized,
+                "Acceso no autorizado",
+                ex.Message),
+            KeyNotFoundException ex => (
+                StatusCodes.Status404NotFound,
+                "Recurso no encontrado",
+                ex.Message),
+            ArgumentException ex => (
+                StatusCodes.Status400BadRequest,
+                "Solicitud inválida",
+                ex.Message),
+            InvalidOperationException ex => (
+                StatusCodes.Status400BadRequest,
+                "Violación de regla de negocio",
+                ex.Message),
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                "Error interno del servidor",
+                "Ocurrio un error inesperado al procesar la solicitud. Por favor contacte al soporte si el problema persiste.")
+        };
+
+        if (statusCode == StatusCodes.Status500InternalServerError)
+        {
+            _logger.LogError(exception, "Ocurrio un error no controlado: {Message}", exception.Message);
+        }
+        else
+        {
+            _logger.LogWarning("Excepción controlada ({StatusCode}): {Message}", statusCode, exception.Message);
+        }
 
         var problemDetails = new ProblemDetails
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "Error interno del servidor",
-            Detail = "Ocurrio un error inesperado al procesar la solicitud. Por favor contacte al soporte si el problema persiste.",
+            Status = statusCode,
+            Title = title,
+            Detail = detail,
             Instance = httpContext.Request.Path
         };
 
-        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
         return true;

@@ -74,4 +74,53 @@ public class PaymentServiceTests
         _repositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
         _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Pago>()), Times.Never);
     }
+
+    [Fact]
+    public async Task CreateAsync_MontoManipuladoDistintoAlPlan_LanzaInvalidOperationException()
+    {
+        var membresia = new Membresia
+        {
+            Id = 5,
+            UsuarioId = 7,
+            PlanMembresia = new PlanMembresia { Id = 2, Nombre = "Plan Premium", PrecioCOP = 120_000m }
+        };
+        _repositoryMock.Setup(r => r.GetMembresiaByIdAsync(5)).ReturnsAsync(membresia);
+
+        var dto = new CreatePaymentDto { MembresiaId = 5, MontoCOP = 1_000m };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.CreateAsync(usuarioId: 7, dto));
+
+        _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<Pago>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_MembresiaDeOtroUsuario_LanzaUnauthorizedAccessException()
+    {
+        var membresiaAjena = new Membresia
+        {
+            Id = 5,
+            UsuarioId = 99,
+            PlanMembresia = new PlanMembresia { Id = 2, Nombre = "Plan Premium", PrecioCOP = 120_000m }
+        };
+        _repositoryMock.Setup(r => r.GetMembresiaByIdAsync(5)).ReturnsAsync(membresiaAjena);
+
+        var dto = new CreatePaymentDto { MembresiaId = 5, MontoCOP = 120_000m };
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _service.CreateAsync(usuarioId: 7, dto));
+
+        _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<Pago>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_MontoMenorOIgualACero_LanzaArgumentException()
+    {
+        var dto = new CreatePaymentDto { MembresiaId = 5, MontoCOP = 0m };
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.CreateAsync(usuarioId: 7, dto));
+
+        _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<Pago>()), Times.Never);
+    }
 }

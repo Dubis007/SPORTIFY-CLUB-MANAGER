@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sportify.Application.Interfaces;
 
@@ -27,7 +28,11 @@ public class ReceiptsController : ControllerBase
         if (archivo is null || archivo.Length == 0)
             return BadRequest(new { message = "No se proporciono ningun archivo." });
 
-        var nombreArchivo = await _receiptService.SaveReceiptAsync(pagoId, archivo);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("sub")?.Value;
+        int? restrictToUserId = int.TryParse(userIdClaim, out var uid) ? uid : null;
+
+        var nombreArchivo = await _receiptService.SaveReceiptAsync(pagoId, archivo, restrictToUserId);
         return Ok(new { message = "Comprobante subido exitosamente.", nombreArchivo });
     }
 

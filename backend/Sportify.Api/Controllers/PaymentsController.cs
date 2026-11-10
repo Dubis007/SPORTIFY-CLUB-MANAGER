@@ -60,7 +60,7 @@ public class PaymentsController : ControllerBase
     }
     
     [HttpPost("manual")]
-    [Authorize(Roles = "CONTADOR")]
+    [Authorize(Roles = "ADMIN,CONTADOR")]
     public async Task<IActionResult> ManualRegister([FromBody] ManualPaymentDto dto)
     {
         var aprobadorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -76,6 +76,18 @@ public class PaymentsController : ControllerBase
     [Authorize(Roles = "MIEMBRO,CONTADOR,ADMIN")]
     public async Task<IActionResult> ManualWithReceipt([FromForm] ManualPaymentWithReceiptDto dto)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("sub")?.Value;
+        if (!int.TryParse(userIdClaim, out var currentUserId))
+            return Unauthorized();
+
+        // Bloquear manipulación de UsuarioId cuando quien invoca es un MIEMBRO
+        var isStaff = User.IsInRole("ADMIN") || User.IsInRole("CONTADOR");
+        if (!isStaff || dto.UsuarioId <= 0)
+        {
+            dto.UsuarioId = currentUserId;
+        }
+
         try
         {
             var result = await _paymentService.ManualWithReceiptAsync(dto);
@@ -85,10 +97,18 @@ public class PaymentsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
     }
 
     [HttpPatch("{id:int}/approve")]
-    [Authorize(Roles = "CONTADOR")]
+    [Authorize(Roles = "ADMIN,CONTADOR")]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Approve(int id)
@@ -103,7 +123,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPatch("{id:int}/reject")]
-    [Authorize(Roles = "CONTADOR")]
+    [Authorize(Roles = "ADMIN,CONTADOR")]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectPaymentDto dto)

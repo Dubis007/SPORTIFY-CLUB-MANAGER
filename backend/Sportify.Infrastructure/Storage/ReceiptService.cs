@@ -17,12 +17,17 @@ public class ReceiptService : IReceiptService
         _fileStorageService = fileStorageService;
     }
 
-    public async Task<string> SaveReceiptAsync(int pagoId, IFormFile archivo)
+    public async Task<string> SaveReceiptAsync(int pagoId, IFormFile archivo, int? restrictToUserId = null)
     {
         var pago = await _context.Pagos
             .Include(p => p.Comprobante)
             .FirstOrDefaultAsync(p => p.Id == pagoId)
             ?? throw new KeyNotFoundException($"Pago con ID {pagoId} no encontrado.");
+
+        if (restrictToUserId.HasValue && pago.UsuarioId != restrictToUserId.Value)
+        {
+            throw new UnauthorizedAccessException("No tiene autorización para adjuntar comprobantes a pagos de otros usuarios.");
+        }
 
         var fileName = await _fileStorageService.SaveFileAsync(archivo, "receipts");
         var relativePath = Path.Combine("receipts", fileName).Replace("\\", "/");
