@@ -9,6 +9,8 @@ public class Usuario
     public string ContrasenaHash { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
     public bool SolicitaCambioClave { get; set; } = false;
+    public int IntentosFallidos { get; set; } = 0;
+    public DateTime? BloqueadoHasta { get; set; }
     public int? SedeId { get; set; }
     public DateTime? FechaNacimiento { get; set; }
     public DateTime CreadoEn { get; set; } = DateTime.UtcNow;

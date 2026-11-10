@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Sportify.Application.DTOs.Auth;
 using Sportify.Application.Interfaces;
 
@@ -6,6 +7,7 @@ namespace Sportify.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("AuthRateLimit")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -25,7 +27,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Solicita recuperacion de contrasena (envia PIN por email).</summary>
+    /// <summary>Solicita recuperacion de contrasena (envia PIN por email con vigencia de 15 minutos).</summary>
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)

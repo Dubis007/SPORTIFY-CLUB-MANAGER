@@ -117,6 +117,8 @@ public class UserService : IUserService
 
         user.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(defaultPassword);
         user.SolicitaCambioClave = false;
+        user.IntentosFallidos = 0;
+        user.BloqueadoHasta = null;
         user.ActualizadoEn = DateTime.UtcNow;
 
         await _userRepository.UpdateAsync(user);

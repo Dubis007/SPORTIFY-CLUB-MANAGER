@@ -1,13 +1,17 @@
-using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 using Sportify.Application.DTOs.Auth;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
 
 namespace Sportify.Application.Services;
 
-/// <summary>Implementación del servicio de autenticación.</summary>
+/// <summary>Implementación del servicio de autenticación con bloqueo por intentos fallidos y caducidad de tokens.</summary>
 public class AuthService : IAuthService
 {
+    public const int MaxFailedLoginAttempts = 5;
+    public const int AccountLockoutMinutes = 15;
+    public const int RecoveryTokenExpirationMinutes = 15;
+
     private readonly IUserRepository _userRepository;
     private readonly IJwtTokenService _jwtTokenService;
 
@@ -25,17 +29,55 @@ public class AuthService : IAuthService
         if (usuario is null)
             throw new UnauthorizedAccessException("Credenciales inválidas");
 
-        if (!BCrypt.Net.BCrypt.Verify(dto.Contrasena, usuario.ContrasenaHash))
-            throw new UnauthorizedAccessException("Credenciales inválidas");
-
         if (!usuario.Activo)
             throw new UnauthorizedAccessException("La cuenta se encuentra desactivada");
+
+        var now = DateTime.UtcNow;
+
+        // Verificar si la cuenta está bloqueada por intentos fallidos previos
+        if (usuario.BloqueadoHasta.HasValue && usuario.BloqueadoHasta.Value > now)
+        {
+            throw new UnauthorizedAccessException(
+                "La cuenta se encuentra bloqueada temporalmente tras superar el límite de 5 intentos fallidos. Intente más tarde.");
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(dto.Contrasena, usuario.ContrasenaHash))
+        {
+            if (usuario.BloqueadoHasta.HasValue && usuario.BloqueadoHasta.Value <= now)
+            {
+                usuario.IntentosFallidos = 0;
+                usuario.BloqueadoHasta = null;
+            }
+
+            usuario.IntentosFallidos++;
+            usuario.ActualizadoEn = now;
+
+            if (usuario.IntentosFallidos >= MaxFailedLoginAttempts)
+            {
+                usuario.BloqueadoHasta = now.AddMinutes(AccountLockoutMinutes);
+                await _userRepository.UpdateAsync(usuario);
+                throw new UnauthorizedAccessException(
+                    "La cuenta ha sido bloqueada temporalmente tras 5 intentos fallidos de inicio de sesión.");
+            }
+
+            await _userRepository.UpdateAsync(usuario);
+            throw new UnauthorizedAccessException("Credenciales inválidas");
+        }
+
+        // Restablecer contador tras inicio de sesión exitoso
+        if (usuario.IntentosFallidos > 0 || usuario.BloqueadoHasta.HasValue)
+        {
+            usuario.IntentosFallidos = 0;
+            usuario.BloqueadoHasta = null;
+            usuario.ActualizadoEn = now;
+            await _userRepository.UpdateAsync(usuario);
+        }
 
         // Obtiene el primer rol del usuario
         var rol = usuario.UsuarioRoles?.FirstOrDefault()?.Rol?.Nombre ?? "MIEMBRO";
 
         var token = _jwtTokenService.GenerateToken(usuario.Id, usuario.Correo, rol);
-        var expiracion = DateTime.UtcNow.AddHours(8);
+        var expiracion = now.AddHours(8);
 
         return new LoginResponseDto
         {
@@ -57,14 +99,38 @@ public class AuthService : IAuthService
     {
         var usuario = await _userRepository.GetByEmailAsync(dto.Correo);
 
-        // No revelamos si el correo existe o no (seguridad)
+        // No revelamos si el correo existe o no (prevención de enumeración de cuentas)
         if (usuario is null)
             return;
 
-        // Opción A: Encender la alarma para que el administrador la vea
+        var now = DateTime.UtcNow;
+
+        // Invalidar cualquier token activo previo del usuario
+        var tokensPrevios = await _userRepository.GetActiveTokensAsync(usuario.Id);
+        if (tokensPrevios is not null)
+        {
+            foreach (var previo in tokensPrevios)
+            {
+                previo.Usado = true;
+                await _userRepository.UpdateResetTokenAsync(previo);
+            }
+        }
+
+        // Generar PIN criptográficamente seguro de 6 dígitos con vigencia estricta de 15 minutos
+        var pin = RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString("D6");
+        var resetToken = new PasswordResetToken
+        {
+            UsuarioId = usuario.Id,
+            CodigoHash = BCrypt.Net.BCrypt.HashPassword(pin),
+            CreadoEn = now,
+            Expiracion = now.AddMinutes(RecoveryTokenExpirationMinutes),
+            Usado = false
+        };
+
+        await _userRepository.AddResetTokenAsync(resetToken);
+
         usuario.SolicitaCambioClave = true;
-        usuario.ActualizadoEn = DateTime.UtcNow;
-        
+        usuario.ActualizadoEn = now;
         await _userRepository.UpdateAsync(usuario);
     }
 
@@ -77,8 +143,10 @@ public class AuthService : IAuthService
         var usuario = await _userRepository.GetByEmailAsync(dto.Correo)
             ?? throw new InvalidOperationException("Correo no registrado");
 
+        var now = DateTime.UtcNow;
         var tokensActivos = await _userRepository.GetActiveTokensAsync(usuario.Id);
-        var tokenValido = tokensActivos.FirstOrDefault();
+        var tokenValido = tokensActivos?
+            .FirstOrDefault(t => !t.Usado && t.Expiracion > now);
 
         if (tokenValido is null)
             throw new InvalidOperationException("No existe un PIN activo o ha expirado. Solicite uno nuevo.");
@@ -86,11 +154,15 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(dto.Pin, tokenValido.CodigoHash))
             throw new InvalidOperationException("El PIN ingresado no es válido");
 
-        // Actualiza la contraseña del usuario
+        // Actualiza la contraseña y desbloquea la cuenta si estaba bloqueada
         usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(dto.NuevaContrasena);
+        usuario.SolicitaCambioClave = false;
+        usuario.IntentosFallidos = 0;
+        usuario.BloqueadoHasta = null;
+        usuario.ActualizadoEn = now;
         await _userRepository.UpdateAsync(usuario);
 
-        // Marca el token como usado
+        // Marca el token como usado para evitar reutilización
         tokenValido.Usado = true;
         await _userRepository.UpdateResetTokenAsync(tokenValido);
     }

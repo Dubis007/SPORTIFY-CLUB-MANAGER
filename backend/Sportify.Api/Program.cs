@@ -171,6 +171,20 @@ using (var scope = app.Services.CreateScope())
                 alterUsersCmd.CommandText = "ALTER TABLE Usuarios ADD COLUMN FechaNacimiento DATETIME NULL;";
                 alterUsersCmd.ExecuteNonQuery();
             }
+
+            if (!ColumnExists(schemaConn, "Usuarios", "IntentosFallidos"))
+            {
+                using var alterFailedCmd = schemaConn.CreateCommand();
+                alterFailedCmd.CommandText = "ALTER TABLE Usuarios ADD COLUMN IntentosFallidos INT NOT NULL DEFAULT 0;";
+                alterFailedCmd.ExecuteNonQuery();
+            }
+
+            if (!ColumnExists(schemaConn, "Usuarios", "BloqueadoHasta"))
+            {
+                using var alterLockCmd = schemaConn.CreateCommand();
+                alterLockCmd.CommandText = "ALTER TABLE Usuarios ADD COLUMN BloqueadoHasta DATETIME NULL;";
+                alterLockCmd.ExecuteNonQuery();
+            }
         }
         catch
         {
