@@ -37,11 +37,12 @@ public class UserRepository : IUserRepository
 
     public async Task<Usuario?> GetByEmailAsync(string email)
     {
+        var normalizedEmail = (email ?? string.Empty).Trim();
         return await _context.Usuarios
             .Include(u => u.Sede)
             .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
-            .FirstOrDefaultAsync(u => u.Correo == email);
+            .FirstOrDefaultAsync(u => u.Correo == normalizedEmail);
     }
 
     public async Task<Usuario> CreateAsync(Usuario usuario, string rolNombre = "MIEMBRO")

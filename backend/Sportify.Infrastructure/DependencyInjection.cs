@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sportify.Application.Interfaces;
 using Sportify.Infrastructure.Authentication;
 using Sportify.Infrastructure.Persistence;
+using Sportify.Infrastructure.Persistence.Interceptors;
 using Sportify.Infrastructure.Reports;
 using Sportify.Infrastructure.Repositories;
 using Sportify.Infrastructure.Security;
@@ -17,6 +18,7 @@ public static class DependencyInjection
     {
         services.AddDbContextPool<SportifyDbContext>(options =>
             options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!)
+                   .AddInterceptors(new ParameterizedQueryGuardInterceptor())
                    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
         // Repositories
