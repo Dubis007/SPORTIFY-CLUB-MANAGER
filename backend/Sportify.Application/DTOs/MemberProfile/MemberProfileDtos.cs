@@ -64,6 +64,8 @@ public class AttendanceDto
 
 public class CompetitionDto
 {
+    /// <summary>Identificador de la inscripción; el deportista lo usa para aceptar o rechazar su convocatoria.</summary>
+    public int InscripcionId { get; set; }
     public int CompetenciaId { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public DateTime FechaInicio { get; set; }

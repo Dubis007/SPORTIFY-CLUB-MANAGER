@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { memberService, MemberPaymentsData } from '../services/members/memberService';
 import { paymentService } from '../services/api/paymentService';
-import { competitionService } from '../services/competitions/competitionService';
-import { registrationService } from '../services/registrations/registrationService';
 
 export const useMemberViewModel = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -70,28 +68,19 @@ export const useMemberViewModel = () => {
     }
   };
 
-  const [availableCompetitions, setAvailableCompetitions] = useState<any[]>([]);
-
-  const fetchAvailableCompetitions = async () => {
+  // Convocatoria a torneo: el personal convoca y el deportista decide. Aceptar la confirma; rechazar la cancela.
+  const respondToInvitation = async (inscripcionId: number, accept: boolean) => {
+    setError(null);
     try {
-      const data = await competitionService.getAll();
-      setAvailableCompetitions(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const registerForCompetition = async (competenciaId: number) => {
-    try {
-      if (!profile) return false;
-      await registrationService.create({
-        competenciaId,
-        usuarioId: profile.id,
-      });
+      if (accept) {
+        await memberService.acceptInvitation(inscripcionId);
+      } else {
+        await memberService.declineInvitation(inscripcionId);
+      }
       await fetchAllData();
       return true;
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al inscribirse a la competencia.');
+      setError(err.response?.data?.message || 'No se pudo registrar tu respuesta a la convocatoria.');
       return false;
     }
   };
@@ -111,7 +100,6 @@ export const useMemberViewModel = () => {
 
   useEffect(() => {
     fetchAllData();
-    fetchAvailableCompetitions();
   }, []);
 
   return {
@@ -121,11 +109,10 @@ export const useMemberViewModel = () => {
     loading,
     uploading,
     error,
-    availableCompetitions,
     changePassword,
     updateBirthDate,
     createPaymentAndUpload,
-    registerForCompetition,
+    respondToInvitation,
     cancelMembership,
     refresh: fetchAllData
   };

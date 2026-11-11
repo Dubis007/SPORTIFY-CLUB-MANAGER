@@ -113,6 +113,7 @@ public class MemberProfileService : IMemberProfileService
 
         var competitions = competitionsDomain.Select(i => new CompetitionDto
         {
+            InscripcionId = i.Id,
             CompetenciaId = i.CompetenciaId,
             Nombre = i.Competencia?.Nombre ?? string.Empty,
             FechaInicio = i.Competencia?.FechaInicio ?? DateTime.MinValue,

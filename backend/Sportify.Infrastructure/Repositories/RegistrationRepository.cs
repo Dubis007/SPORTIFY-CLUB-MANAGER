@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Sportify.Application.DTOs.Registrations;
 using Sportify.Application.Interfaces;
 using Sportify.Domain.Entities;
+using Sportify.Domain.Enums;
 using Sportify.Infrastructure.Persistence;
 
 namespace Sportify.Infrastructure.Repositories;
@@ -73,6 +74,19 @@ public class RegistrationRepository : IRegistrationRepository
     {
         return await _context.InscripcionesCompetencia
             .AnyAsync(i => i.UsuarioId == usuarioId && i.CompetenciaId == competenciaId);
+    }
+
+    public async Task<bool> HasActiveMembershipAsync(int usuarioId)
+    {
+        // RN-03: se evalúa la membresía más reciente del deportista (mayor fecha de vencimiento).
+        var estadoMasReciente = await _context.Membresias
+            .AsNoTracking()
+            .Where(m => m.UsuarioId == usuarioId)
+            .OrderByDescending(m => m.FechaFin)
+            .Select(m => (EstadoMembresia?)m.Estado)
+            .FirstOrDefaultAsync();
+
+        return estadoMasReciente == EstadoMembresia.ACTIVA;
     }
 
     public async Task<InscripcionCompetencia?> GetByIdAsync(int id)

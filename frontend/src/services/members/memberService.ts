@@ -56,4 +56,16 @@ export const memberService = {
     const response = await apiClient.post(`/api/members/me/memberships/${membresiaId}/cancel`);
     return response.data;
   },
+
+  /** Acepta una convocatoria propia a un torneo: la inscripción pasa a CONFIRMADA (exige membresía activa). */
+  acceptInvitation: async (inscripcionId: number) => {
+    const response = await apiClient.post(`/api/members/me/registrations/${inscripcionId}/accept`);
+    return response.data;
+  },
+
+  /** Rechaza una convocatoria propia a un torneo: la inscripción pasa a CANCELADA. */
+  declineInvitation: async (inscripcionId: number) => {
+    const response = await apiClient.post(`/api/members/me/registrations/${inscripcionId}/decline`);
+    return response.data;
+  },
 };

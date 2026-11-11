@@ -15,9 +15,9 @@ import {
   Target,
   Medal,
   Activity,
-  Plus,
   Cake,
   Ban,
+  MailCheck,
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
 import { escapeSafeText } from '../../utils/xssSanitizer';
@@ -29,14 +29,13 @@ export default function MemberDashboard() {
     profile,
     paymentsData,
     activitiesData,
-    availableCompetitions,
     loading,
     error,
     uploading,
     changePassword,
     updateBirthDate,
     createPaymentAndUpload,
-    registerForCompetition,
+    respondToInvitation,
     cancelMembership,
   } = useMemberViewModel();
 
@@ -45,7 +44,37 @@ export default function MemberDashboard() {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'membresias';
 
-  const [showCompModal, setShowCompModal] = useState(false);
+  // El personal convoca; la inscripción queda PENDIENTE hasta que el deportista la acepta o la rechaza.
+  const competitions: any[] = activitiesData.competitions ?? [];
+  const pendingInvitations = competitions.filter((c) => c.estadoInscripcion === 'PENDIENTE');
+  const myCompetitions = competitions.filter((c) => c.estadoInscripcion !== 'PENDIENTE');
+
+  const handleAcceptInvitation = async (invitation: any) => {
+    const ok = await respondToInvitation(invitation.inscripcionId, true);
+    if (ok) {
+      toast.success(`Convocatoria aceptada: quedaste inscrito en ${invitation.nombre}.`);
+    } else {
+      toast.error('No se pudo aceptar la convocatoria.');
+    }
+  };
+
+  const handleDeclineInvitation = (invitation: any) => {
+    requestConfirm({
+      title: 'Rechazar convocatoria',
+      description: `¿Deseas rechazar la convocatoria a ${invitation.nombre}? No quedarás inscrito en el torneo.`,
+      confirmLabel: 'Rechazar convocatoria',
+      cancelLabel: 'Volver',
+      variant: 'warning',
+      onConfirm: async () => {
+        const ok = await respondToInvitation(invitation.inscripcionId, false);
+        if (ok) {
+          toast.success('Convocatoria rechazada.');
+        } else {
+          toast.error('No se pudo rechazar la convocatoria.');
+        }
+      },
+    });
+  };
 
   const [selectedMembership, setSelectedMembership] = useState<any | null>(null);
   const [monto, setMonto] = useState<string>('');
@@ -300,14 +329,57 @@ export default function MemberDashboard() {
       {/* SECCIÓN 2: MIS ACTIVIDADES Y TORNEOS */}
       {activeTab === 'actividades' && (
         <div className="space-y-6">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowCompModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-colors shadow-sm"
-            >
-              <Plus size={16} /> Inscribirse a Competencia
-            </button>
+          <div
+            className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden"
+            data-testid="member-pending-invitations"
+          >
+            <div className="p-4 border-b border-slate-800 bg-slate-950/50">
+              <h2 className="font-bold text-slate-100 text-sm flex items-center gap-2">
+                <MailCheck size={17} className="text-amber-400" /> Convocatorias Pendientes
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Tu entrenador o la administración te convocan a los torneos. Quedas inscrito solo cuando aceptas.
+              </p>
+            </div>
+            {pendingInvitations.length === 0 ? (
+              <p className="p-6 text-center text-slate-400 text-sm">
+                No tienes convocatorias pendientes por responder.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-800">
+                {pendingInvitations.map((c) => (
+                  <li
+                    key={c.inscripcionId}
+                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div>
+                      <h4 className="font-bold text-slate-100 text-sm">{c.nombre}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {new Date(c.fechaInicio).toLocaleDateString('es-CO')} · {c.ubicacion}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleAcceptInvitation(c)}
+                        aria-label={`Aceptar convocatoria a ${c.nombre}`}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      >
+                        <Check size={14} aria-hidden="true" /> Aceptar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeclineInvitation(c)}
+                        aria-label={`Rechazar convocatoria a ${c.nombre}`}
+                        className="px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-800/60 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      >
+                        <X size={14} aria-hidden="true" /> Rechazar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -318,12 +390,12 @@ export default function MemberDashboard() {
                 </h2>
               </div>
               <ul className="divide-y divide-slate-800 flex-1 overflow-y-auto max-h-80">
-                {activitiesData.competitions?.length === 0 ? (
+                {myCompetitions.length === 0 ? (
                   <p className="p-6 text-center text-slate-400 text-sm">
                     No estás inscrito en competencias.
                   </p>
                 ) : (
-                  activitiesData.competitions?.map((c: any, i: number) => (
+                  myCompetitions.map((c: any, i: number) => (
                     <li key={i} className="p-4 hover:bg-slate-800/40">
                       <div className="flex justify-between items-start mb-1.5">
                         <h4 className="font-bold text-slate-100 text-sm">{c.nombre}</h4>
@@ -597,74 +669,6 @@ export default function MemberDashboard() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Inscribirse a Competencia */}
-      {showCompModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h2 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
-              <Medal size={20} className="text-blue-400" /> Inscribirse a Competencia
-            </h2>
-            <p className="text-slate-400 text-xs mb-4">
-              Selecciona una convocatoria activa para registrar tu participación.
-            </p>
-
-            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-              {availableCompetitions.length === 0 ? (
-                <p className="text-center text-slate-400 py-4 text-xs">
-                  No hay competencias disponibles en este momento.
-                </p>
-              ) : (
-                availableCompetitions.map((comp) => {
-                  const yaInscrito = activitiesData.competitions?.some(
-                    (c: any) => c.competenciaId === comp.id
-                  );
-                  return (
-                    <div
-                      key={comp.id}
-                      className="p-4 border border-slate-800 bg-slate-950 rounded-xl"
-                    >
-                      <h4 className="font-bold text-slate-100 text-sm">{comp.nombre}</h4>
-                      <p className="text-xs text-slate-400 mb-3">
-                        {new Date(comp.fechaInicio).toLocaleDateString('es-CO')} · {comp.ubicacion}
-                      </p>
-                      {yaInscrito ? (
-                        <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-                          Inscripción activa
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const success = await registerForCompetition(comp.id);
-                            if (success) {
-                              toast.success('Inscripción confirmada.');
-                              setShowCompModal(false);
-                            }
-                          }}
-                          className="text-xs px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-semibold w-full"
-                        >
-                          Confirmar Inscripción
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="flex justify-end mt-5">
-              <button
-                type="button"
-                onClick={() => setShowCompModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl"
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         </div>
       )}

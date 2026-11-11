@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import MemberDashboard from './MemberDashboard';
@@ -17,19 +17,13 @@ vi.mock('../../services/members/memberService', () => ({
     changePassword: vi.fn(),
     updateBirthDate: vi.fn(),
     cancelMembership: vi.fn(),
+    acceptInvitation: vi.fn(),
+    declineInvitation: vi.fn(),
   },
 }));
 
 vi.mock('../../services/api/paymentService', () => ({
   paymentService: { create: vi.fn(), uploadReceipt: vi.fn() },
-}));
-
-vi.mock('../../services/competitions/competitionService', () => ({
-  competitionService: { getAll: vi.fn().mockResolvedValue([]) },
-}));
-
-vi.mock('../../services/registrations/registrationService', () => ({
-  registrationService: { create: vi.fn() },
 }));
 
 const renderAt = (tab: string) =>
@@ -61,7 +55,24 @@ describe('MemberDashboard — membresías y pagos del deportista', () => {
     vi.mocked(memberService.getActivities).mockResolvedValue({
       upcomingTrainings: [],
       attendances: [],
-      competitions: [],
+      competitions: [
+        {
+          inscripcionId: 7,
+          competenciaId: 9,
+          nombre: 'Copa Regional',
+          fechaInicio: '2026-12-05T09:00:00',
+          ubicacion: 'Coliseo Central',
+          estadoInscripcion: 'PENDIENTE',
+        },
+        {
+          inscripcionId: 3,
+          competenciaId: 2,
+          nombre: 'Torneo Relámpago',
+          fechaInicio: '2026-11-16T09:00:00',
+          ubicacion: 'Sede Principal Norte',
+          estadoInscripcion: 'CONFIRMADA',
+        },
+      ],
     });
   });
 
@@ -117,5 +128,51 @@ describe('MemberDashboard — membresías y pagos del deportista', () => {
     });
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('separa las convocatorias pendientes de las competencias ya inscritas', async () => {
+    renderAt('actividades');
+
+    const pending = await screen.findByTestId('member-pending-invitations');
+    expect(within(pending).getByText('Copa Regional')).toBeInTheDocument();
+    expect(within(pending).queryByText('Torneo Relámpago')).not.toBeInTheDocument();
+    expect(within(pending).getByRole('button', { name: 'Aceptar convocatoria a Copa Regional' })).toBeInTheDocument();
+    expect(within(pending).getByRole('button', { name: 'Rechazar convocatoria a Copa Regional' })).toBeInTheDocument();
+
+    // La autoinscripción directa ya no existe: el deportista solo responde convocatorias.
+    expect(screen.queryByRole('button', { name: /Inscribirse a Competencia/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Torneo Relámpago')).toBeInTheDocument();
+  });
+
+  it('acepta una convocatoria y confirma la inscripción', async () => {
+    vi.mocked(memberService.acceptInvitation).mockResolvedValue({ id: 7, estado: 'CONFIRMADA' });
+    renderAt('actividades');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Aceptar convocatoria a Copa Regional' }));
+
+    await waitFor(() => {
+      expect(memberService.acceptInvitation).toHaveBeenCalledWith(7);
+    });
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Convocatoria aceptada: quedaste inscrito en Copa Regional.');
+    });
+  });
+
+  it('pide confirmación antes de rechazar una convocatoria', async () => {
+    vi.mocked(memberService.declineInvitation).mockResolvedValue({ id: 7, estado: 'CANCELADA' });
+    renderAt('actividades');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rechazar convocatoria a Copa Regional' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(memberService.declineInvitation).not.toHaveBeenCalled();
+
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Rechazar convocatoria' }));
+
+    await waitFor(() => {
+      expect(memberService.declineInvitation).toHaveBeenCalledWith(7);
+    });
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Convocatoria rechazada.');
+    });
   });
 });

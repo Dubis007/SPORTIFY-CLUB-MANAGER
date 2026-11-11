@@ -67,19 +67,21 @@ export default function RegistrationsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const payload = {
+    const target = {
       usuarioId: parseInt(formData.usuarioId, 10),
       competenciaId: parseInt(formData.competenciaId, 10),
-      estado: formData.estado,
     };
 
+    // Al convocar no se envía estado: el servidor la deja PENDIENTE hasta que el deportista responda.
     const success = editingRegistration
-      ? await updateRegistration(editingRegistration.id, payload)
-      : await createRegistration(payload);
+      ? await updateRegistration(editingRegistration.id, { ...target, estado: formData.estado })
+      : await createRegistration(target);
     setSaving(false);
 
     if (success) {
-      toast.success(editingRegistration ? 'Inscripción actualizada.' : 'Deportista inscrito.');
+      toast.success(
+        editingRegistration ? 'Inscripción actualizada.' : 'Convocatoria enviada al deportista.'
+      );
       setShowModal(false);
     }
   };
@@ -108,7 +110,7 @@ export default function RegistrationsPage() {
             <ClipboardCheck size={22} className="text-blue-400" /> Inscripciones a Competencias
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Inscribe deportistas con membresía activa y gestiona su estado de participación.
+            Convoca deportistas a los torneos. La inscripción se confirma cuando el deportista acepta desde su portal.
           </p>
         </div>
         <button
@@ -116,7 +118,7 @@ export default function RegistrationsPage() {
           onClick={handleAddNew}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto"
         >
-          <UserPlus size={16} /> Inscribir Deportista
+          <UserPlus size={16} /> Convocar Deportista
         </button>
       </div>
 
@@ -213,7 +215,7 @@ export default function RegistrationsPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <h3 className="text-lg font-bold text-slate-100">
-                {editingRegistration ? 'Actualizar Inscripción' : 'Inscribir Deportista'}
+                {editingRegistration ? 'Actualizar Inscripción' : 'Convocar Deportista'}
               </h3>
               <button
                 type="button"
@@ -265,21 +267,32 @@ export default function RegistrationsPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
-                  value={formData.estado}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                >
-                  <option value="PENDIENTE">PENDIENTE</option>
-                  <option value="CONFIRMADA">CONFIRMADA</option>
-                  <option value="PAGO">PAGO</option>
-                  <option value="CANCELADA">CANCELADA</option>
-                </select>
-              </div>
+              {editingRegistration ? (
+                <div>
+                  <label
+                    htmlFor="registration-status"
+                    className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                  >
+                    Estado
+                  </label>
+                  <select
+                    id="registration-status"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
+                    value={formData.estado}
+                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                  >
+                    <option value="PENDIENTE">PENDIENTE</option>
+                    <option value="CONFIRMADA">CONFIRMADA</option>
+                    <option value="PAGO">PAGO</option>
+                    <option value="CANCELADA">CANCELADA</option>
+                  </select>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                  La convocatoria queda <strong className="text-amber-300">PENDIENTE</strong> hasta que el
+                  deportista la acepte o la rechace desde su portal.
+                </p>
+              )}
 
               <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
                 <button
@@ -294,7 +307,7 @@ export default function RegistrationsPage() {
                   disabled={saving}
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors"
                 >
-                  {saving ? 'Guardando...' : 'Guardar'}
+                  {saving ? 'Guardando...' : editingRegistration ? 'Guardar' : 'Enviar Convocatoria'}
                 </button>
               </div>
             </form>

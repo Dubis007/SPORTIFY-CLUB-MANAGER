@@ -13,11 +13,16 @@ public class MembersController : ControllerBase
 {
     private readonly IMemberProfileService _memberProfileService;
     private readonly IMembershipService _membershipService;
+    private readonly IRegistrationService _registrationService;
 
-    public MembersController(IMemberProfileService memberProfileService, IMembershipService membershipService)
+    public MembersController(
+        IMemberProfileService memberProfileService,
+        IMembershipService membershipService,
+        IRegistrationService registrationService)
     {
         _memberProfileService = memberProfileService;
         _membershipService = membershipService;
+        _registrationService = registrationService;
     }
 
     private int GetUserId()
@@ -70,6 +75,22 @@ public class MembersController : ControllerBase
         var userId = GetUserId();
         var membership = await _membershipService.CancelOwnMembershipAsync(id, userId);
         return Ok(membership);
+    }
+
+    /// <summary>Acepta una convocatoria propia a un torneo: la inscripción queda CONFIRMADA (exige membresía activa, RN-03).</summary>
+    [HttpPost("me/registrations/{id:int}/accept")]
+    public async Task<IActionResult> AcceptInvitation(int id)
+    {
+        var registration = await _registrationService.RespondToInvitationAsync(id, GetUserId(), accept: true);
+        return Ok(registration);
+    }
+
+    /// <summary>Rechaza una convocatoria propia a un torneo: la inscripción queda CANCELADA.</summary>
+    [HttpPost("me/registrations/{id:int}/decline")]
+    public async Task<IActionResult> DeclineInvitation(int id)
+    {
+        var registration = await _registrationService.RespondToInvitationAsync(id, GetUserId(), accept: false);
+        return Ok(registration);
     }
 }
 
