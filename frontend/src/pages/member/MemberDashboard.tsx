@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
 import { escapeSafeText } from '../../utils/xssSanitizer';
+import { MAX_UPLOAD_FILE_SIZE_MB, validateUploadFile } from '../../utils/fileValidation';
 import ConfirmDialogModal, { useConfirmDialog } from '../../components/common/ConfirmDialogModal';
 
 export default function MemberDashboard() {
@@ -60,6 +61,12 @@ export default function MemberDashboard() {
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMembership || !monto || !file) return;
+
+    const fileCheck = validateUploadFile(file);
+    if (!fileCheck.valid) {
+      toast.error(fileCheck.error || 'Archivo inválido.');
+      return;
+    }
 
     const montoNum = parseFloat(monto);
     if (isNaN(montoNum) || montoNum < 1000) {
@@ -541,15 +548,32 @@ export default function MemberDashboard() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
-                  Archivo de Soporte (PDF / Imagen)
+                  Archivo de Soporte (JPG, PNG o PDF — máx. {MAX_UPLOAD_FILE_SIZE_MB} MB)
                 </label>
                 <input
                   type="file"
                   required
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={(e) => {
+                    const selected = e.target.files ? e.target.files[0] : null;
+                    if (!selected) {
+                      setFile(null);
+                      return;
+                    }
+                    const validation = validateUploadFile(selected);
+                    if (!validation.valid) {
+                      toast.error(validation.error || 'Archivo no permitido.');
+                      e.target.value = '';
+                      setFile(null);
+                      return;
+                    }
+                    setFile(selected);
+                  }}
                   className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 outline-none"
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Formatos permitidos: .jpg, .jpeg, .png, .pdf • Peso máximo: {MAX_UPLOAD_FILE_SIZE_MB} MB.
+                </p>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2">

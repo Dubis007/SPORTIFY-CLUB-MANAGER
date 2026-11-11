@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Sportify.Application.DTOs.Common;
 using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 
 namespace Sportify.Api.Controllers;
 
@@ -74,8 +75,13 @@ public class PaymentsController : ControllerBase
 
     [HttpPost("manual-with-receipt")]
     [Authorize(Roles = "MIEMBRO,CONTADOR,ADMIN")]
+    [RequestSizeLimit(FileUploadValidator.DefaultMaxFileSizeBytes)]
     public async Task<IActionResult> ManualWithReceipt([FromForm] ManualPaymentWithReceiptDto dto)
     {
+        var fileValidation = FileUploadValidator.Validate(dto.Archivo);
+        if (!fileValidation.IsValid)
+            return BadRequest(new { message = fileValidation.ErrorMessage });
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                        ?? User.FindFirst("sub")?.Value;
         if (!int.TryParse(userIdClaim, out var currentUserId))

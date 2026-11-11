@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 
 namespace Sportify.Api.Controllers;
 
@@ -17,16 +18,17 @@ public class ReceiptsController : ControllerBase
         _receiptService = receiptService;
     }
 
-    /// <summary>Sube un comprobante de pago (multipart/form-data). [MIEMBRO]</summary>
+    /// <summary>Sube un comprobante de pago validando formato (.jpg/.jpeg/.png/.pdf) y límite de 2 MB. [MIEMBRO]</summary>
     [HttpPost]
     [Authorize(Roles = "MIEMBRO")]
-    [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB limite HTTP
+    [RequestSizeLimit(FileUploadValidator.DefaultMaxFileSizeBytes)] // 2 MB límite estricto en controlador
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Upload([FromForm] int pagoId, IFormFile archivo)
     {
-        if (archivo is null || archivo.Length == 0)
-            return BadRequest(new { message = "No se proporciono ningun archivo." });
+        var validation = FileUploadValidator.Validate(archivo);
+        if (!validation.IsValid)
+            return BadRequest(new { message = validation.ErrorMessage });
 
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                        ?? User.FindFirst("sub")?.Value;

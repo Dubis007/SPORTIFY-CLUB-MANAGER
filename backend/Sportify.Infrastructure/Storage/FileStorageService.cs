@@ -17,28 +17,19 @@ public class FileStorageService : IFileStorageService
     {
         var basePath = _configuration["StorageSettings:ComprobantesPath"]
             ?? throw new InvalidOperationException("StorageSettings:ComprobantesPath no esta configurado.");
-        var maxFileSizeMBStr = _configuration["StorageSettings:MaxFileSizeMB"] ?? "5";
+        var maxFileSizeMBStr = _configuration["StorageSettings:MaxFileSizeMB"] ?? "2";
         var allowedExtensionsStr = _configuration["StorageSettings:AllowedExtensions"] ?? ".jpg,.jpeg,.png,.pdf";
 
         if (!double.TryParse(maxFileSizeMBStr, out var maxFileSizeMB))
-            maxFileSizeMB = 5;
+            maxFileSizeMB = 2;
 
         var allowedExtensions = allowedExtensionsStr
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(e => e.Trim().ToLowerInvariant())
             .ToHashSet();
 
-        // Validar extension
-        var originalExtension = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? string.Empty;
-        if (!allowedExtensions.Contains(originalExtension))
-            throw new InvalidOperationException(
-                $"Extension '{originalExtension}' no permitida. Extensiones validas: {allowedExtensionsStr}");
-
-        // Validar tamano en bytes
-        var maxBytes = (long)(maxFileSizeMB * 1024 * 1024);
-        if (file.Length > maxBytes)
-            throw new InvalidOperationException(
-                $"El archivo excede el tamano maximo permitido de {maxFileSizeMB} MB.");
+        Sportify.Application.Security.FileUploadValidator.EnsureValid(file, maxFileSizeMB, allowedExtensions);
+        var originalExtension = Path.GetExtension(Path.GetFileName(file.FileName))?.ToLowerInvariant() ?? string.Empty;
 
         // Generar nombre unico
         var uniqueFileName = $"{Guid.NewGuid()}{originalExtension}";

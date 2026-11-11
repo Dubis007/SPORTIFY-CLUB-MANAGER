@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient';
 import { Payment, PagedResult, PaymentSummary } from '../../models';
+import { validateUploadFile } from '../../utils/fileValidation';
 
 export interface RejectPaymentDto {
   comentario: string;
@@ -55,6 +56,10 @@ export const paymentService = {
   },
 
   uploadReceipt: async (pagoId: number, file: File): Promise<void> => {
+    const check = validateUploadFile(file);
+    if (!check.valid) {
+      throw new Error(check.error);
+    }
     const formData = new FormData();
     formData.append('pagoId', pagoId.toString());
     formData.append('archivo', file);
