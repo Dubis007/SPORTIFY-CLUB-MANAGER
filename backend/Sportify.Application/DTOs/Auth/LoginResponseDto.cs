@@ -6,6 +6,9 @@ public class LoginResponseDto
     /// <summary>JWT generado para la sesión.</summary>
     public string Token { get; set; } = string.Empty;
 
+    /// <summary>Token anti-CSRF firmado criptográficamente para proteger mutaciones de estado.</summary>
+    public string CsrfToken { get; set; } = string.Empty;
+
     /// <summary>Fecha y hora de expiración del token.</summary>
     public DateTime TokenExpira { get; set; }
 

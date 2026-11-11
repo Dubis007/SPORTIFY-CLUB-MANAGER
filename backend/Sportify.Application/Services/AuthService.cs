@@ -77,11 +77,17 @@ public class AuthService : IAuthService
         var rol = usuario.UsuarioRoles?.FirstOrDefault()?.Rol?.Nombre ?? "MIEMBRO";
 
         var token = _jwtTokenService.GenerateToken(usuario.Id, usuario.Correo, rol);
+        var csrfToken = _jwtTokenService.GenerateCsrfToken(usuario.Id);
+        if (string.IsNullOrWhiteSpace(csrfToken))
+        {
+            csrfToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+        }
         var expiracion = now.AddHours(8);
 
         return new LoginResponseDto
         {
             Token = token,
+            CsrfToken = csrfToken,
             TokenExpira = expiracion,
             Usuario = new UsuarioInfoDto
             {

@@ -102,7 +102,7 @@ builder.Services.AddCors(options =>
         policy => policy
             .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
-            .AllowAnyHeader()
+            .AllowAnyHeader().WithExposedHeaders("X-CSRF-TOKEN")
             .AllowCredentials());
 });
 
@@ -313,7 +313,7 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<TenantRlsMiddleware>();
+app.UseMiddleware<CsrfValidationMiddleware>(); app.UseMiddleware<TenantRlsMiddleware>();
 app.UseRateLimiter();
 
 // Mapear Health Checks consistente en /api/health con salida JSON estructurada

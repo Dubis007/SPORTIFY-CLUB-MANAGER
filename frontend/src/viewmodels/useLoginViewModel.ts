@@ -15,7 +15,7 @@ export function useLoginViewModel() {
     setError(null);
     try {
       const response = await authService.login(correo, contrasena);
-      login(response.token, response.usuario);
+      login(response.token, response.usuario, response.csrfToken);
       
       navigate(ROLE_HOME_ROUTES[response.usuario.rol] ?? ROLE_HOME_ROUTES[UserRole.MIEMBRO]);
     } catch (err: any) {

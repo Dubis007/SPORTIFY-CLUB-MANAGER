@@ -1,6 +1,11 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { sanitizePayloadObject } from '../../utils/xssSanitizer';
+import {
+  getStoredCsrfToken,
+  isStateChangingMethod,
+  setStoredCsrfToken,
+} from '../../utils/csrfTokenManager';
 
 // En Docker/nube se define al compilar con VITE_API_URL; en desarrollo se usa .env.development o la API local
 const rawApiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:5000').replace(/\/+$/, '');
@@ -27,6 +32,15 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // En peticiones mutadoras (POST, PUT, PATCH, DELETE), enviar token anti-CSRF si existe
+  if (isStateChangingMethod(config.method)) {
+    const csrfToken = getStoredCsrfToken();
+    if (csrfToken) {
+      config.headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+  }
+
   if (config.data && typeof config.data === 'object') {
     config.data = sanitizePayloadObject(config.data);
   }
@@ -37,6 +51,14 @@ apiClient.interceptors.response.use(
   (response) => {
     // Una respuesta exitosa (p. ej. el login) habilita de nuevo la redirección por 401
     handlingUnauthorized = false;
+
+    const headerCsrf =
+      response.headers?.['x-csrf-token'] ??
+      (response.data && typeof response.data === 'object' ? response.data.csrfToken : undefined);
+    if (typeof headerCsrf === 'string' && headerCsrf.trim().length > 0) {
+      setStoredCsrfToken(headerCsrf);
+    }
+
     return response;
   },
   (error) => {

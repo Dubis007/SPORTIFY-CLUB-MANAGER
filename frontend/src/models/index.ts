@@ -51,6 +51,8 @@ export interface Membership {
 
 export interface LoginResponse {
   token: string;
+  csrfToken?: string;
+  tokenExpira?: string;
   usuario: User;
 }
 
