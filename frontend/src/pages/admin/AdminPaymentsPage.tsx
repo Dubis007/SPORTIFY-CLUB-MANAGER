@@ -395,7 +395,7 @@ export default function AdminPaymentsPage() {
                 }
               >
                 <option value="">Seleccione el miembro...</option>
-                {options.Members?.map((m) => (
+                {options.members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.nombre} {m.apellido}
                   </option>
@@ -416,7 +416,7 @@ export default function AdminPaymentsPage() {
               >
                 <option value="">Ninguna - Cobro adicional</option>
                 {manualPayment.usuarioId &&
-                  options.Memberships?.filter(
+                  options.memberships.filter(
                     (mem) => mem.usuarioId.toString() === manualPayment.usuarioId
                   ).map((mem) => (
                     <option key={mem.id} value={mem.id}>

@@ -2,8 +2,9 @@ import { apiClient } from './apiClient';
 import { Payment, PagedResult, PaymentSummary } from '../../models';
 import { validateUploadFile } from '../../utils/fileValidation';
 
+/** Coincide con `RejectPaymentDto.ComentarioRechazo` del backend (RN-05, mínimo 10 caracteres). */
 export interface RejectPaymentDto {
-  comentario: string;
+  comentarioRechazo: string;
 }
 
 export interface PaymentMemberOption {
@@ -19,9 +20,10 @@ export interface PaymentMembershipOption {
   estado: string;
 }
 
+/** La API serializa en camelCase: `GET /api/payments/options` devuelve `{ members, memberships }`. */
 export interface PaymentOptionsDto {
-  Members: PaymentMemberOption[];
-  Memberships: PaymentMembershipOption[];
+  members: PaymentMemberOption[];
+  memberships: PaymentMembershipOption[];
 }
 
 export const paymentService = {
@@ -36,8 +38,11 @@ export const paymentService = {
   },
 
   getOptions: async (): Promise<PaymentOptionsDto> => {
-    const response = await apiClient.get<PaymentOptionsDto>('/api/payments/options');
-    return response.data;
+    const response = await apiClient.get<Partial<PaymentOptionsDto>>('/api/payments/options');
+    return {
+      members: response.data?.members ?? [],
+      memberships: response.data?.memberships ?? [],
+    };
   },
 
   approve: async (id: number): Promise<Payment> => {

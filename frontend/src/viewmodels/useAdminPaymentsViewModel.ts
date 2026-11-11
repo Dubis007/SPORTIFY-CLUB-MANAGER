@@ -9,7 +9,7 @@ export type PaymentStatusFilter = 'TODOS' | 'PENDIENTE' | 'APROBADO' | 'RECHAZAD
 export const useAdminPaymentsViewModel = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<PaymentSummary>({ pendientes: 0, totalAprobadoCOP: 0 });
-  const [options, setOptions] = useState<PaymentOptionsDto>({ Members: [], Memberships: [] });
+  const [options, setOptions] = useState<PaymentOptionsDto>({ members: [], memberships: [] });
 
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -80,7 +80,7 @@ export const useAdminPaymentsViewModel = () => {
 
   const rejectPayment = async (id: number, comentario: string): Promise<boolean> => {
     try {
-      const updated = await paymentService.reject(id, { comentario });
+      const updated = await paymentService.reject(id, { comentarioRechazo: comentario });
       setPayments((prev) => prev.map((p) => (p.id === id ? updated : p)));
       await fetchSummary();
       return true;

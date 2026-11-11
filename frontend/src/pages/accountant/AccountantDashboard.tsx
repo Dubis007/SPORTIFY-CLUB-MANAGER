@@ -471,7 +471,7 @@ export default function AccountantDashboard() {
                 {...register('usuarioId')}
               >
                 <option value="">Seleccione el miembro que realiza el pago...</option>
-                {options.Members?.map((m: any) => (
+                {options.members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.nombre} {m.apellido} (ID #{m.id})
                   </option>
@@ -492,9 +492,9 @@ export default function AccountantDashboard() {
               >
                 <option value="">Ninguna - Cobro por concepto general</option>
                 {watchedUserId &&
-                  options.Memberships?.filter(
-                    (mem: any) => mem.usuarioId.toString() === watchedUserId
-                  ).map((mem: any) => (
+                  options.memberships.filter(
+                    (mem) => mem.usuarioId.toString() === watchedUserId
+                  ).map((mem) => (
                     <option key={mem.id} value={mem.id}>
                       Plan {mem.plan} · Estado: {mem.estado}
                     </option>

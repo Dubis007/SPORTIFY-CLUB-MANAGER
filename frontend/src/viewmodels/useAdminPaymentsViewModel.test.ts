@@ -54,9 +54,10 @@ describe('useAdminPaymentsViewModel', () => {
       pendientes: 1,
       totalAprobadoCOP: 50000,
     });
+    // Mismo contrato camelCase que devuelve GET /api/payments/options
     vi.mocked(paymentService.getOptions).mockResolvedValue({
-      Members: [{ id: 4, nombre: 'Mario', apellido: 'Miembro' }],
-      Memberships: [{ id: 1, usuarioId: 4, plan: 'Premium', estado: 'ACTIVA' }],
+      members: [{ id: 4, nombre: 'Mario', apellido: 'Miembro' }],
+      memberships: [{ id: 1, usuarioId: 4, plan: 'Premium', estado: 'ACTIVA' }],
     });
   });
 
@@ -69,7 +70,8 @@ describe('useAdminPaymentsViewModel', () => {
 
     expect(result.current.summary.pendientes).toBe(1);
     expect(result.current.summary.totalAprobadoCOP).toBe(50000);
-    expect(result.current.options.Members).toHaveLength(1);
+    expect(result.current.options.members).toHaveLength(1);
+    expect(result.current.options.memberships[0].usuarioId).toBe(4);
   });
 
   it('filtra pagos por estado y término de búsqueda', async () => {
@@ -117,5 +119,9 @@ describe('useAdminPaymentsViewModel', () => {
     });
     expect(rejected).toBe(true);
     expect(result.current.payments.find((p) => p.id === 101)?.estado).toBe('RECHAZADO');
+    // El backend exige el campo `comentarioRechazo` (RejectPaymentDto); con otro nombre responde 400.
+    expect(paymentService.reject).toHaveBeenCalledWith(101, {
+      comentarioRechazo: 'Comprobante ilegible en revisión',
+    });
   });
 });

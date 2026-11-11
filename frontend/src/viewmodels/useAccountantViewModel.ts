@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { paymentService } from '../services/api/paymentService';
+import { paymentService, PaymentOptionsDto } from '../services/api/paymentService';
 import { profileService } from '../services/profile/profileService';
 import { Payment, PaymentSummary } from '../models';
 
@@ -8,7 +8,7 @@ const DEFAULT_PAGE_SIZE = 10;
 export const useAccountantViewModel = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<PaymentSummary>({ pendientes: 0, totalAprobadoCOP: 0 });
-  const [options, setOptions] = useState<any>({ Members: [], Memberships: [] });
+  const [options, setOptions] = useState<PaymentOptionsDto>({ members: [], memberships: [] });
   const [profile, setProfile] = useState<any>(null);
 
   const [page, setPage] = useState<number>(1);
@@ -69,7 +69,7 @@ export const useAccountantViewModel = () => {
 
   const rejectPayment = async (id: number, comentario: string) => {
     try {
-      const updated = await paymentService.reject(id, { comentario });
+      const updated = await paymentService.reject(id, { comentarioRechazo: comentario });
       setPayments(prev => prev.map(p => p.id === id ? updated : p));
       fetchSummary();
       return true;
