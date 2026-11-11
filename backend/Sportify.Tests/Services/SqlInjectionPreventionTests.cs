@@ -30,6 +30,28 @@ public class SqlInjectionPreventionTests
     }
 
     [Fact]
+    public void ValidateCommandSafety_LoteEfCoreParametrizadoConVariosDelete_PasaSinBloqueo()
+    {
+        // Lote real que genera EF Core al eliminar un usuario junto con sus roles en un mismo SaveChanges.
+        const string efBatch =
+            "DELETE FROM `UsuarioRoles`\nWHERE `Id` = @p0;\nSELECT ROW_COUNT();\n\nDELETE FROM `Usuarios`\nWHERE `Id` = @p1;\nSELECT ROW_COUNT();";
+
+        var exception = Record.Exception(() =>
+            ParameterizedQueryGuardInterceptor.ValidateCommandSafety(efBatch, parameterCount: 2));
+
+        Assert.Null(exception);
+    }
+
+    [Theory]
+    [InlineData("SELECT Id FROM Pagos WHERE Id = 1; DELETE FROM Usuarios", 0)]
+    [InlineData("SELECT * FROM Usuarios WHERE Nombre = 'x'; DELETE FROM Usuarios WHERE Id = @p0", 1)]
+    public void ValidateCommandSafety_DeleteApiladoNoParametrizado_SigueBloqueado(string maliciousSql, int parameterCount)
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            ParameterizedQueryGuardInterceptor.ValidateCommandSafety(maliciousSql, parameterCount));
+    }
+
+    [Fact]
     public void PaginationParams_MaliciousNegativeOrHugeValues_ClampsToSafeBounds()
     {
         var pagination = new PaginationParams

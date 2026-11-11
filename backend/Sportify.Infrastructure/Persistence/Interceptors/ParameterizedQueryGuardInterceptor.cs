@@ -11,11 +11,15 @@ namespace Sportify.Infrastructure.Persistence.Interceptors;
 public sealed partial class ParameterizedQueryGuardInterceptor : DbCommandInterceptor
 {
     private static readonly Regex SqlInjectionPattern = CreateSqlInjectionRegex();
+    private static readonly Regex StackedDeletePattern = CreateStackedDeleteRegex();
 
     [GeneratedRegex(
-        @"(;\s*(DROP|TRUNCATE|DELETE\s+FROM|ALTER)\s+)|(\bUNION\s+(ALL\s+)?SELECT\b)|('\s*OR\s+'?1'?\s*=\s*'?1)|(\b(SLEEP|BENCHMARK|LOAD_FILE)\s*\()|(--\s*$)",
+        @"(;\s*(DROP|TRUNCATE|ALTER)\s+)|(\bUNION\s+(ALL\s+)?SELECT\b)|('\s*OR\s+'?1'?\s*=\s*'?1)|(\b(SLEEP|BENCHMARK|LOAD_FILE)\s*\()|(--\s*$)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Multiline)]
     private static partial Regex CreateSqlInjectionRegex();
+
+    [GeneratedRegex(@";\s*DELETE\s+FROM\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex CreateStackedDeleteRegex();
 
     /// <summary>
     /// Verifica que el comando SQL no contenga vectores de inyección SQL concatenados.
@@ -25,12 +29,24 @@ public sealed partial class ParameterizedQueryGuardInterceptor : DbCommandInterc
         if (string.IsNullOrWhiteSpace(commandText))
             return;
 
-        if (SqlInjectionPattern.IsMatch(commandText))
+        var stackedDeleteInjection =
+            StackedDeletePattern.IsMatch(commandText) && !IsParameterizedBatch(commandText, parameterCount);
+
+        if (SqlInjectionPattern.IsMatch(commandText) || stackedDeleteInjection)
         {
             throw new InvalidOperationException(
                 "Ejecución SQL bloqueada por seguridad: se detectó un patrón potencial de inyección SQL no parametrizado.");
         }
     }
+
+    /// <summary>
+    /// EF Core agrupa varias sentencias DML de un mismo SaveChanges en un solo comando
+    /// (p. ej. <c>DELETE FROM UsuarioRoles WHERE Id = @p0; ... DELETE FROM Usuarios WHERE Id = @p1</c>).
+    /// Ese lote es legítimo: todos sus valores viajan como parámetros y el texto no contiene literales.
+    /// Un DELETE apilado solo se considera inyección cuando el comando no es un lote parametrizado.
+    /// </summary>
+    private static bool IsParameterizedBatch(string commandText, int parameterCount) =>
+        parameterCount > 0 && !commandText.Contains('\'');
 
     public override InterceptionResult<DbDataReader> ReaderExecuting(
         DbCommand command,
