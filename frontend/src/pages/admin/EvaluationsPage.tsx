@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useEvaluationsViewModel } from '../../viewmodels/useEvaluationsViewModel';
 import { Evaluation } from '../../models';
+import { escapeSafeText } from '../../utils/xssSanitizer';
 import Pagination from '../../components/Pagination';
 import ConfirmDialogModal, {
   useConfirmDialog,
@@ -191,7 +192,7 @@ export default function EvaluationsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-xs text-slate-300 max-w-xs truncate">
-                        {e.comentarios || <span className="text-slate-500">Sin comentarios</span>}
+                        {e.comentarios ? escapeSafeText(e.comentarios) : <span className="text-slate-500">Sin comentarios</span>}
                       </td>
                       <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">
                         {new Date(e.evaluadoEn).toLocaleDateString('es-CO')}

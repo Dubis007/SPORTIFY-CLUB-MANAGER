@@ -20,6 +20,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
+import { escapeSafeText } from '../../utils/xssSanitizer';
 import ConfirmDialogModal, { useConfirmDialog } from '../../components/common/ConfirmDialogModal';
 
 export default function MemberDashboard() {
@@ -386,7 +387,7 @@ export default function MemberDashboard() {
                         </p>
                         {a.observaciones && (
                           <p className="text-xs text-slate-300 mt-1 italic">
-                            “{a.observaciones}”
+                            “{escapeSafeText(a.observaciones)}”
                           </p>
                         )}
                       </div>

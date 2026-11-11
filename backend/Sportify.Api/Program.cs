@@ -57,7 +57,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddApplication();
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options => options.Filters.Add<Sportify.Api.Filters.XssInputValidationFilter>())
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());

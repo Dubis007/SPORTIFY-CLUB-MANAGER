@@ -1,5 +1,6 @@
 using Sportify.Application.DTOs.Competitions;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 using Sportify.Domain.Entities;
 
 namespace Sportify.Application.Services;
@@ -23,11 +24,11 @@ public class CompetitionService : ICompetitionService
     {
         var entity = new Competencia
         {
-            Nombre = dto.Nombre,
-            Descripcion = dto.Descripcion,
+            Nombre = XssSanitizer.ValidateAndSanitize(dto.Nombre, nameof(dto.Nombre)),
+            Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty,
             FechaInicio = dto.FechaInicio,
             FechaFin = dto.FechaFin,
-            Ubicacion = dto.Ubicacion,
+            Ubicacion = XssSanitizer.ValidateAndSanitize(dto.Ubicacion, nameof(dto.Ubicacion)),
             CreadoEn = DateTime.UtcNow
         };
 
@@ -40,11 +41,11 @@ public class CompetitionService : ICompetitionService
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null || existing.EliminadoEn != null) return null;
 
-        existing.Nombre = dto.Nombre;
-        existing.Descripcion = dto.Descripcion;
+        existing.Nombre = XssSanitizer.ValidateAndSanitize(dto.Nombre, nameof(dto.Nombre));
+        existing.Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty;
         existing.FechaInicio = dto.FechaInicio;
         existing.FechaFin = dto.FechaFin;
-        existing.Ubicacion = dto.Ubicacion;
+        existing.Ubicacion = XssSanitizer.ValidateAndSanitize(dto.Ubicacion, nameof(dto.Ubicacion));
 
         await _repository.UpdateAsync(existing);
         return MapToDto(existing);

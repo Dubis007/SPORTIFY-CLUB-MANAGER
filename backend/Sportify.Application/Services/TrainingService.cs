@@ -1,5 +1,6 @@
 using Sportify.Application.DTOs.Trainings;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 using Sportify.Domain.Entities;
 using Sportify.Domain.Enums;
 
@@ -26,8 +27,8 @@ public class TrainingService : ITrainingService
         {
             SedeId = dto.SedeId,
             EntrenadorId = dto.EntrenadorId,
-            Titulo = dto.Titulo,
-            Descripcion = dto.Descripcion,
+            Titulo = XssSanitizer.ValidateAndSanitize(dto.Titulo, nameof(dto.Titulo)),
+            Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty,
             FechaHora = dto.FechaHora,
             FechaFin = dto.FechaFin,
             CapacidadMaxima = dto.CapacidadMaxima > 0 ? dto.CapacidadMaxima : 20,
@@ -44,8 +45,8 @@ public class TrainingService : ITrainingService
         var existing = await _repository.GetByIdActiveAsync(id);
         if (existing == null) return null;
 
-        existing.Titulo = dto.Titulo;
-        existing.Descripcion = dto.Descripcion;
+        existing.Titulo = XssSanitizer.ValidateAndSanitize(dto.Titulo, nameof(dto.Titulo));
+        existing.Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty;
         existing.FechaHora = dto.FechaHora;
         existing.FechaFin = dto.FechaFin;
         existing.SedeId = dto.SedeId;
@@ -107,7 +108,7 @@ public class TrainingService : ITrainingService
         if (string.Equals(training.Estado, "CERRADO", StringComparison.OrdinalIgnoreCase))
             return (false, "El entrenamiento está cerrado y no admite cambios de asistencia.");
 
-        var cleanObservaciones = string.IsNullOrWhiteSpace(observaciones) ? null : observaciones.Trim();
+        var cleanObservaciones = XssSanitizer.ValidateAndSanitizeOptional(observaciones, nameof(observaciones));
         var asistioEfectivo = estado is EstadoAsistencia.PRESENTE or EstadoAsistencia.TARDE;
         var existingAttendance = await _repository.GetAsistenciaAsync(id, usuarioId);
 

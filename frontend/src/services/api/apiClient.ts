@@ -1,5 +1,6 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { sanitizePayloadObject } from '../../utils/xssSanitizer';
 
 // En Docker/nube se define al compilar con VITE_API_URL; en desarrollo se usa .env.development o la API local
 const rawApiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:5000').replace(/\/+$/, '');
@@ -25,6 +26,9 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.data && typeof config.data === 'object') {
+    config.data = sanitizePayloadObject(config.data);
   }
   return config;
 });

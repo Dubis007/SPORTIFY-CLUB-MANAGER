@@ -1,6 +1,7 @@
 using Sportify.Application.DTOs.Common;
 using Sportify.Application.DTOs.Evaluations;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 using Sportify.Domain.Entities;
 
 namespace Sportify.Application.Services;
@@ -57,8 +58,8 @@ public class EvaluationService : IEvaluationService
             InscripcionId = dto.InscripcionId,
             Puntaje = dto.Puntaje,
             Posicion = dto.Posicion,
-            Desempeno = dto.Desempeno,
-            Comentarios = dto.Comentarios,
+            Desempeno = XssSanitizer.ValidateAndSanitizeOptional(dto.Desempeno, nameof(dto.Desempeno)),
+            Comentarios = XssSanitizer.ValidateAndSanitizeOptional(dto.Comentarios, nameof(dto.Comentarios)),
             EvaluadoPorId = currentUserId > 0 ? currentUserId : 1,
             EvaluadoEn = DateTime.UtcNow
         };
@@ -74,8 +75,8 @@ public class EvaluationService : IEvaluationService
 
         existing.Puntaje = dto.Puntaje;
         existing.Posicion = dto.Posicion;
-        existing.Desempeno = dto.Desempeno;
-        existing.Comentarios = dto.Comentarios;
+        existing.Desempeno = XssSanitizer.ValidateAndSanitizeOptional(dto.Desempeno, nameof(dto.Desempeno));
+        existing.Comentarios = XssSanitizer.ValidateAndSanitizeOptional(dto.Comentarios, nameof(dto.Comentarios));
 
         await _repository.UpdateAsync(existing);
         return MapToDto(existing);
