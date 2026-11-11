@@ -106,8 +106,10 @@ export default function UsersPage() {
       confirmLabel: currentStatus ? 'Desactivar' : 'Activar',
       variant: currentStatus ? 'warning' : 'primary',
       onConfirm: async () => {
-        await toggleUserStatus(id, currentStatus);
-        toast.success(currentStatus ? 'Cuenta desactivada.' : 'Cuenta activada.');
+        const success = await toggleUserStatus(id, currentStatus);
+        if (success) {
+          toast.success(currentStatus ? 'Cuenta desactivada.' : 'Cuenta activada.');
+        }
       },
     });
   };
@@ -134,8 +136,10 @@ export default function UsersPage() {
       confirmLabel: 'Sí, eliminar',
       variant: 'danger',
       onConfirm: async () => {
-        await deleteUser(user.id);
-        toast.success('Usuario eliminado.');
+        const success = await deleteUser(user.id);
+        if (success) {
+          toast.success('Usuario eliminado.');
+        }
       },
     });
   };

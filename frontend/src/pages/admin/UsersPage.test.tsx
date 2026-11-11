@@ -5,6 +5,11 @@ import { userService } from '../../services/users/userService';
 import { locationService } from '../../services/api/locationService';
 import { buildUsersExcelCsv } from '../../viewmodels/useUsersViewModel';
 import { UserRole } from '../../models';
+import toast from 'react-hot-toast';
+
+vi.mock('react-hot-toast', () => ({
+  default: { success: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock('../../services/users/userService', () => ({
   userService: {
@@ -135,6 +140,44 @@ describe('UsersPage & Directory Excel Export (TAREA-P2-06B)', () => {
     fireEvent.click(screen.getByText('Restablecer filtros'));
     expect(screen.getByText('Ana Administradora')).toBeInTheDocument();
     expect(screen.getByText('Mario Gómez')).toBeInTheDocument();
+  });
+
+  it('no anuncia la eliminación ni quita la fila cuando el servidor rechaza el borrado', async () => {
+    vi.mocked(userService.deleteUser).mockRejectedValue({
+      response: { status: 500, data: { message: 'No fue posible eliminar el usuario.' } },
+    });
+
+    render(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Mario Gómez')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByTitle('Eliminar usuario permanentemente')[3]);
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('No fue posible eliminar el usuario.')).toBeInTheDocument();
+    });
+    expect(userService.deleteUser).toHaveBeenCalledWith(4);
+    expect(screen.getByText('Mario Gómez')).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('quita la fila cuando el borrado se confirma en el servidor', async () => {
+    vi.mocked(userService.deleteUser).mockResolvedValue(undefined);
+
+    render(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Mario Gómez')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByTitle('Eliminar usuario permanentemente')[3]);
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Mario Gómez')).not.toBeInTheDocument();
+    });
+    expect(toast.success).toHaveBeenCalledWith('Usuario eliminado.');
   });
 
   it('genera y descarga CSV con BOM UTF-8 compatible con Microsoft Excel en español', async () => {
