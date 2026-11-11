@@ -44,7 +44,7 @@ Thumbs.db
 
 publish/
 
-# Secretos locales y variables de entorno (jamás subir a GitHub)
+# Secretos locales, variables de entorno y cadenas de conexión a MySQL (jamás subir a GitHub)
 .env
 .env.local
 .env.development
@@ -54,21 +54,28 @@ publish/
 .env.production
 .env.production.local
 .env.*.local
-frontend/.env
-frontend/.env.local
-frontend/.env.development
-frontend/.env.development.local
-frontend/.env.production
-frontend/.env.production.local
-frontend/.env.*.local
+**/.env
+**/.env.*
+!**/.env.example
+!.env.example
+
+# Archivos de configuración de .NET con cadenas de conexión reales o secretos locales
+appsettings.Local.json
+**/appsettings.Local.json
+**/appsettings.Secrets.json
+**/appsettings.Production.json
+**/secrets.json
+**/connectionstrings.json
+*.pfx
+*.pem
+*.key
+*.p12
 
 # Respaldos de base de datos (scripts/backup-db.ps1)
 backups/
+*.sql.gz
+*.bak
 
 # Reportes de cobertura
 coverage/
 TestResults/
-
-node_modules/
-dist/
-build/

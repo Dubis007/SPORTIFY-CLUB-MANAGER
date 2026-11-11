@@ -17,6 +17,8 @@ using Sportify.Api.Middlewares;
 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "comprobantes", "receipts"));
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
 
 // --- ESCALABILIDAD Y RENDIMIENTO ---
 
