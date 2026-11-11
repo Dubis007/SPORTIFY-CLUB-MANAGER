@@ -40,9 +40,9 @@ public class MembersController : ControllerBase
         var success = await _memberProfileService.ChangePasswordAsync(userId, req.CurrentPassword, req.NewPassword);
 
         if (!success)
-            return BadRequest(new { message = "La contrasea actual es incorrecta o el usuario no existe." });
+            return BadRequest(new { message = "La contraseña actual es incorrecta o el usuario no existe." });
 
-        return Ok(new { message = "Contrasea actualizada exitosamente." });
+        return Ok(new { message = "Contraseña actualizada exitosamente." });
     }
 
     [HttpGet("me/payments")]

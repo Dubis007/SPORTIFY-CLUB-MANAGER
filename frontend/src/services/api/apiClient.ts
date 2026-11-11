@@ -1,6 +1,7 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { sanitizePayloadObject } from '../../utils/xssSanitizer';
+import { normalizeApiErrorData } from '../../utils/apiError';
 import {
   getStoredCsrfToken,
   isStateChangingMethod,
@@ -62,6 +63,11 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // El backend informa los errores de negocio como ProblemDetails ({ detail }); las pantallas leen `message`
+    if (error.response) {
+      error.response.data = normalizeApiErrorData(error.response.data);
+    }
+
     const status: number | undefined = error.response?.status;
     const url: string = error.config?.url ?? '';
 
