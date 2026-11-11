@@ -47,6 +47,8 @@ En desarrollo local todo sigue funcionando igual porque los valores por defecto 
 
 Todos usan `restart: unless-stopped`. Los secretos se leen de un archivo `.env` (ignorado por git); la plantilla es `.env.example`.
 
+> **Actualización 2026-11-11.** El archivo de composición ahora incluye también los microservicios `ms1` (5101) y `ms2` (5102), y los puertos publicados se configuran en `.env` (`DB_PORT`, `API_PORT`, `WEB_PORT`, `MS1_PORT`, `MS2_PORT`). La guía para levantarlo desde Ubuntu está en [07_docker_wsl_ubuntu.md](07_docker_wsl_ubuntu.md).
+
 Al arrancar, la API aplica las migraciones de EF Core y carga los datos semilla (lógica ya existente en `Program.cs`), por lo que no hay que crear la base de datos a mano.
 
 ### Pasos para ejecutarlo

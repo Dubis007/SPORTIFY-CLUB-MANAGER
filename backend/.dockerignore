@@ -5,3 +5,5 @@
 Sportify.Tests/
 *.pdf
 Sportify.Api/wwwroot/comprobantes/
+# Los microservicios Node tienen su propia imagen (backend/microservice/Dockerfile)
+microservice/

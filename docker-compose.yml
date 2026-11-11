@@ -1,5 +1,6 @@
-# Sportify Club Manager: entorno completo (BD + API + frontend)
+# Sportify Club Manager: entorno completo (BD + API + microservicios + frontend)
 # Uso: copiar .env.example a .env y ejecutar `docker compose up -d --build`
+# Guía paso a paso para WSL 2 / Ubuntu: docs/ciclo-vida/07_docker_wsl_ubuntu.md
 services:
   db:
     image: mysql:8.4
@@ -9,7 +10,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: sportify_db
     ports:
-      - "3307:3306"
+      # Puerto del equipo configurable: 3306 y 3307 suelen estar ocupados por XAMPP o por un MySQL local
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -31,24 +33,73 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=sportify_db;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD};"
       JwtSettings__Secret: ${JWT_SECRET}
-      Cors__AllowedOrigins__0: http://localhost:8081
+      EncryptionSettings__MasterKey: ${SPORTIFY_AES_MASTER_KEY}
+      Cors__AllowedOrigins__0: http://localhost:${WEB_PORT:-8081}
+      # Dentro de la red de Docker los microservicios se resuelven por nombre de servicio
+      Microservices__Ms1AuthUrl: http://ms1:5101
+      Microservices__Ms2ReportsUrl: http://ms2:5102
     ports:
-      - "8080:8080"
+      - "${API_PORT:-8080}:8080"
     volumes:
       - comprobantes:/app/wwwroot/comprobantes
+
+  # Microservicio 1: validación de JWT y control de sesiones concurrentes
+  ms1:
+    build: ./backend/microservice
+    image: sportify-microservices:local
+    container_name: sportify-ms1
+    restart: unless-stopped
+    command: ["npx", "tsx", "microservicio1/endpoint.ts"]
+    depends_on:
+      - api
+    environment:
+      # Debe ser el mismo secreto con el que la API firma los JWT
+      JWT_SECRET: ${JWT_SECRET}
+      CORE_API_URL: http://api:8080
+      MS1_PORT: "5101"
+    ports:
+      - "${MS1_PORT:-5101}:5101"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5101/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Microservicio 2: agregación analítica y KPIs ejecutivos
+  ms2:
+    build: ./backend/microservice
+    image: sportify-microservices:local
+    container_name: sportify-ms2
+    restart: unless-stopped
+    command: ["npx", "tsx", "microservicio2/endpoint.ts"]
+    depends_on:
+      - api
+    environment:
+      CORE_API_URL: http://api:8080
+      MS2_PORT: "5102"
+    ports:
+      - "${MS2_PORT:-5102}:5102"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5102/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   web:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8080
+        # URLs que usa el navegador: apuntan a los puertos publicados en el equipo, no a la red interna
+        VITE_API_URL: http://localhost:${API_PORT:-8080}
+        VITE_MS1_AUTH_URL: http://localhost:${MS1_PORT:-5101}
+        VITE_MS2_REPORTS_URL: http://localhost:${MS2_PORT:-5102}
     image: sportify-web:local
     container_name: sportify-web
     restart: unless-stopped
     depends_on:
       - api
     ports:
-      - "8081:80"
+      - "${WEB_PORT:-8081}:80"
 
 volumes:
   db_data:

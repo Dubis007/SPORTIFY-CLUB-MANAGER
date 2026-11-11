@@ -3,3 +3,7 @@ dist/
 coverage/
 .vite/
 *.log
+# Las variables locales nunca entran a la imagen: las URLs públicas llegan como ARG de build
+.env
+.env.*
+!.env.example

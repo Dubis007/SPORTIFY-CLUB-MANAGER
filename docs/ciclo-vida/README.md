@@ -63,6 +63,7 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
 4. [Implementación](04_implementacion.md): Render Blueprint, Aiven MySQL, Deploy Hooks.
 5. [Operación](05_operacion.md): recuperación automática, despliegues seguros, keep-alive, respaldo y rollback.
 6. [Monitoreo](06_monitoreo.md): health checks, UptimeRobot, logs, métricas y retroalimentación.
+7. [Docker en WSL 2 / Ubuntu](07_docker_wsl_ubuntu.md): guía para levantar el sistema completo, incluidos los microservicios, desde Ubuntu.
 
 ## Archivos agregados o modificados
 
@@ -71,6 +72,7 @@ Este directorio documenta **qué herramientas se incorporaron al proyecto para c
 | `backend/Dockerfile`, `backend/.dockerignore` | Construcción / Monitoreo (`HEALTHCHECK`) |
 | `frontend/Dockerfile`, `frontend/nginx.conf`, `frontend/.dockerignore` | Construcción |
 | `docker-compose.yml`, `.env.example`, `.gitignore` | Construcción / Implementación |
+| `backend/microservice/Dockerfile`, `backend/microservice/.dockerignore` | Construcción (imagen de los microservicios, 2026-11-11) |
 | `frontend/eslint.config.js` | Construcción |
 | `frontend/src/services/api/apiClient.ts`, `frontend/src/vite-env.d.ts` | Construcción (URL de API configurable) |
 | `backend/Sportify.Api/Program.cs` | Construcción (CORS configurable) |

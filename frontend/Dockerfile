@@ -6,9 +6,13 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-# Vite incrusta la URL de la API en el bundle al compilar
+# Vite incrusta en el bundle, al compilar, las URLs públicas que usará el navegador
 ARG VITE_API_URL=http://localhost:8080
-ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_MS1_AUTH_URL=http://localhost:5101
+ARG VITE_MS2_REPORTS_URL=http://localhost:5102
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_MS1_AUTH_URL=$VITE_MS1_AUTH_URL \
+    VITE_MS2_REPORTS_URL=$VITE_MS2_REPORTS_URL
 RUN npm run build
 
 # ---------- Etapa 2: servidor web ----------

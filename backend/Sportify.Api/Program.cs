@@ -339,24 +339,28 @@ app.MapHealthChecks("/api/health", new HealthCheckOptions
 });
 
 // Endpoint puente interservicios hacia microservicio1 (:5101) y microservicio2 (:5102)
-app.MapGet("/api/microservices/status", async (IHttpClientFactory httpClientFactory) =>
+app.MapGet("/api/microservices/status", async (IHttpClientFactory httpClientFactory, IConfiguration configuration) =>
 {
     var client = httpClientFactory.CreateClient();
     client.Timeout = TimeSpan.FromSeconds(2);
+
+    // En local son localhost; en Docker se resuelven por nombre de servicio (Microservices__Ms1AuthUrl=http://ms1:5101)
+    var ms1Url = (configuration["Microservices:Ms1AuthUrl"] ?? "http://localhost:5101").TrimEnd('/');
+    var ms2Url = (configuration["Microservices:Ms2ReportsUrl"] ?? "http://localhost:5102").TrimEnd('/');
 
     var ms1Online = false;
     var ms2Online = false;
 
     try
     {
-        var res1 = await client.GetAsync("http://localhost:5101/health");
+        var res1 = await client.GetAsync($"{ms1Url}/health");
         ms1Online = res1.IsSuccessStatusCode;
     }
     catch { }
 
     try
     {
-        var res2 = await client.GetAsync("http://localhost:5102/health");
+        var res2 = await client.GetAsync($"{ms2Url}/health");
         ms2Online = res2.IsSuccessStatusCode;
     }
     catch { }
