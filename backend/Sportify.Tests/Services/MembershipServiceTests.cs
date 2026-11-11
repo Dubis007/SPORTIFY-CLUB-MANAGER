@@ -84,4 +84,64 @@ public class MembershipServiceTests
         Assert.Equal("SUSPENDIDA", updated.Estado);
         mockRepo.Verify(r => r.UpdateAsync(entity), Times.Once);
     }
+
+    private static Membresia BuildMembership(int id, int usuarioId, EstadoMembresia estado) => new()
+    {
+        Id = id,
+        UsuarioId = usuarioId,
+        PlanMembresiaId = 2,
+        Estado = estado,
+        Usuario = new Usuario { Id = usuarioId, Nombre = "Mario", Apellido = "Gómez" },
+        PlanMembresia = new PlanMembresia { Nombre = "Plan Mensual" }
+    };
+
+    [Theory]
+    [InlineData(EstadoMembresia.ACTIVA)]
+    [InlineData(EstadoMembresia.PENDIENTE)]
+    public async Task CancelOwnMembershipAsync_TitularConMembresiaVigente_LaDejaSuspendida(EstadoMembresia estadoInicial)
+    {
+        var entity = BuildMembership(id: 10, usuarioId: 4, estadoInicial);
+        var mockRepo = new Mock<IMembershipRepository>();
+        mockRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(entity);
+
+        var service = new MembershipService(mockRepo.Object);
+        var result = await service.CancelOwnMembershipAsync(membershipId: 10, userId: 4);
+
+        Assert.Equal("SUSPENDIDA", result.Estado);
+        Assert.Equal(EstadoMembresia.SUSPENDIDA, entity.Estado);
+        mockRepo.Verify(r => r.UpdateAsync(entity), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelOwnMembershipAsync_MembresiaDeOtroSocio_RespondeNoEncontradaYNoModifica()
+    {
+        var entity = BuildMembership(id: 10, usuarioId: 99, EstadoMembresia.ACTIVA);
+        var mockRepo = new Mock<IMembershipRepository>();
+        mockRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(entity);
+
+        var service = new MembershipService(mockRepo.Object);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.CancelOwnMembershipAsync(membershipId: 10, userId: 4));
+
+        Assert.Equal(EstadoMembresia.ACTIVA, entity.Estado);
+        mockRepo.Verify(r => r.UpdateAsync(It.IsAny<Membresia>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(EstadoMembresia.SUSPENDIDA)]
+    [InlineData(EstadoMembresia.VENCIDA)]
+    public async Task CancelOwnMembershipAsync_MembresiaNoVigente_LanzaInvalidOperation(EstadoMembresia estadoInicial)
+    {
+        var entity = BuildMembership(id: 10, usuarioId: 4, estadoInicial);
+        var mockRepo = new Mock<IMembershipRepository>();
+        mockRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(entity);
+
+        var service = new MembershipService(mockRepo.Object);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CancelOwnMembershipAsync(membershipId: 10, userId: 4));
+
+        mockRepo.Verify(r => r.UpdateAsync(It.IsAny<Membresia>()), Times.Never);
+    }
 }

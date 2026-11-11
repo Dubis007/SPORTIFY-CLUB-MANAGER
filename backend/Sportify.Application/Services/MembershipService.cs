@@ -87,6 +87,26 @@ public class MembershipService : IMembershipService
         return MapToDto(membresia);
     }
 
+    /// <inheritdoc/>
+    public async Task<MembershipDto> CancelOwnMembershipAsync(int membershipId, int userId)
+    {
+        var membresia = await _repository.GetByIdWithDetailsAsync(membershipId);
+
+        // Misma respuesta si no existe o si es de otro socio: no se revela la existencia de membresías ajenas.
+        if (membresia == null || membresia.UsuarioId != userId)
+            throw new KeyNotFoundException("Membresía no encontrada.");
+
+        if (membresia.Estado != EstadoMembresia.ACTIVA && membresia.Estado != EstadoMembresia.PENDIENTE)
+            throw new InvalidOperationException("Solo se pueden cancelar membresías activas o pendientes.");
+
+        // La baja voluntaria deja la membresía SUSPENDIDA: administración puede reactivarla sin perder el historial.
+        membresia.Estado = EstadoMembresia.SUSPENDIDA;
+        membresia.ActualizadoEn = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(membresia);
+        return MapToDto(membresia);
+    }
+
     private static MembershipDto MapToDto(Membresia m)
     {
         return new MembershipDto

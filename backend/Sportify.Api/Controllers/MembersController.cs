@@ -12,10 +12,12 @@ namespace Sportify.Api.Controllers;
 public class MembersController : ControllerBase
 {
     private readonly IMemberProfileService _memberProfileService;
+    private readonly IMembershipService _membershipService;
 
-    public MembersController(IMemberProfileService memberProfileService)
+    public MembersController(IMemberProfileService memberProfileService, IMembershipService membershipService)
     {
         _memberProfileService = memberProfileService;
+        _membershipService = membershipService;
     }
 
     private int GetUserId()
@@ -59,6 +61,15 @@ public class MembersController : ControllerBase
         var userId = GetUserId();
         var activitiesDto = await _memberProfileService.GetActivitiesAsync(userId);
         return Ok(activitiesDto);
+    }
+
+    /// <summary>Cancela una membresía propia activa o pendiente. El titular se toma siempre del JWT.</summary>
+    [HttpPost("me/memberships/{id:int}/cancel")]
+    public async Task<IActionResult> CancelMyMembership(int id)
+    {
+        var userId = GetUserId();
+        var membership = await _membershipService.CancelOwnMembershipAsync(id, userId);
+        return Ok(membership);
     }
 }
 

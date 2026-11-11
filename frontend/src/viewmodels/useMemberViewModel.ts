@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { memberService } from '../services/members/memberService';
+import { memberService, MemberPaymentsData } from '../services/members/memberService';
 import { paymentService } from '../services/api/paymentService';
-import { membershipService } from '../services/api/membershipService';
 import { competitionService } from '../services/competitions/competitionService';
 import { registrationService } from '../services/registrations/registrationService';
 
 export const useMemberViewModel = () => {
   const [profile, setProfile] = useState<any>(null);
-  const [paymentsData, setPaymentsData] = useState<any>({ Memberships: [], Payments: [] });
+  const [paymentsData, setPaymentsData] = useState<MemberPaymentsData>({ memberships: [], payments: [] });
   const [activitiesData, setActivitiesData] = useState<any>({ UpcomingTrainings: [], Attendances: [], Competitions: [] });
   const [loading, setLoading] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -97,20 +96,16 @@ export const useMemberViewModel = () => {
     }
   };
 
+  // Baja voluntaria: solo se informa éxito cuando el servidor confirmó el cambio de estado.
   const cancelMembership = async (membresiaId: number) => {
+    setError(null);
     try {
-      await membershipService.updateMembershipStatus(membresiaId, 'SUSPENDIDA');
+      await memberService.cancelMembership(membresiaId);
       await fetchAllData();
       return true;
-    } catch {
-      // Actualización optimista local si el endpoint requiere conciliación diferida
-      setPaymentsData((prev: any) => ({
-        ...prev,
-        Memberships: (prev.Memberships || []).map((m: any) =>
-          m.id === membresiaId ? { ...m, estado: 'SUSPENDIDA' } : m
-        ),
-      }));
-      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'No se pudo cancelar la membresía. Intenta de nuevo.');
+      return false;
     }
   };
 

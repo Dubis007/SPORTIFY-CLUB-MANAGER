@@ -198,13 +198,13 @@ export default function MemberDashboard() {
               </h2>
             </div>
             <div>
-              {paymentsData.Memberships?.length === 0 ? (
+              {paymentsData.memberships.length === 0 ? (
                 <p className="p-6 text-center text-slate-400 text-sm">
                   No tienes membresías registradas.
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-800">
-                  {paymentsData.Memberships?.map((m: any) => (
+                  {paymentsData.memberships.map((m) => (
                     <li key={m.id} className="p-5 hover:bg-slate-800/40 transition-colors">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-bold text-slate-100 text-base">{m.plan}</h4>
@@ -233,14 +233,18 @@ export default function MemberDashboard() {
                             type="button"
                             onClick={() =>
                               requestConfirm({
-                                title: 'Cancelar o suspender membresía',
-                                description: `¿Deseas cancelar o suspender tu membresía ${m.plan}? Esta acción es directa, transparente y no genera penalidades ni cobros ocultos.`,
+                                title: 'Cancelar membresía',
+                                description: `¿Deseas cancelar tu membresía ${m.plan}? Quedará suspendida de inmediato, sin penalidades ni cobros ocultos. Administración puede reactivarla si lo solicitas.`,
                                 confirmLabel: 'Confirmar baja',
                                 cancelLabel: 'Conservar membresía',
                                 variant: 'warning',
                                 onConfirm: async () => {
                                   const ok = await cancelMembership(m.id);
-                                  if (ok) toast.success('Membresía suspendida correctamente.');
+                                  if (ok) {
+                                    toast.success('Membresía cancelada correctamente.');
+                                  } else {
+                                    toast.error('No se pudo cancelar la membresía.');
+                                  }
                                 },
                               })
                             }
@@ -264,13 +268,13 @@ export default function MemberDashboard() {
               </h2>
             </div>
             <div>
-              {paymentsData.Payments?.length === 0 ? (
+              {paymentsData.payments.length === 0 ? (
                 <p className="p-6 text-center text-slate-400 text-sm">
                   No tienes pagos registrados.
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-800">
-                  {paymentsData.Payments?.map((p: any) => (
+                  {paymentsData.payments.map((p) => (
                     <li key={p.id} className="p-5 hover:bg-slate-800/40 transition-colors">
                       <div className="flex justify-between items-start mb-1">
                         <h4 className="font-bold text-slate-100 text-base">
