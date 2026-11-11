@@ -3,11 +3,19 @@ using Microsoft.AspNetCore.Http;
 namespace Sportify.Application.Security;
 
 /// <summary>
-/// Validador estricto de archivos cargados (extensión, MIME, tamaño máximo de 2 MB y prevención de doble extensión / Path Traversal).
+/// Validador estricto de archivos cargados (extensión, MIME, tamaño máximo de 5 MB y prevención de doble extensión / Path Traversal).
 /// </summary>
 public static class FileUploadValidator
 {
-    public const long DefaultMaxFileSizeBytes = 2 * 1024 * 1024; // 2 MB
+    public const double DefaultMaxFileSizeMb = 5.0;
+    public const long DefaultMaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB (RF-06)
+
+    /// <summary>
+    /// Tope del cuerpo de la petición multipart. Deja 1 MB de margen sobre el archivo para los
+    /// encabezados del formulario, de modo que un archivo algo mayor a 5 MB llegue al validador
+    /// y reciba un 400 legible en lugar de que el servidor corte la conexión.
+    /// </summary>
+    public const long MaxRequestBodyBytes = DefaultMaxFileSizeBytes + (1024 * 1024);
 
     private static readonly HashSet<string> DefaultAllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -33,7 +41,7 @@ public static class FileUploadValidator
 
     public static (bool IsValid, string ErrorMessage) Validate(
         IFormFile? file,
-        double maxFileSizeMb = 2.0,
+        double maxFileSizeMb = DefaultMaxFileSizeMb,
         IEnumerable<string>? allowedExtensions = null)
     {
         if (file is null || file.Length == 0)
@@ -71,7 +79,7 @@ public static class FileUploadValidator
 
     public static void EnsureValid(
         IFormFile? file,
-        double maxFileSizeMb = 2.0,
+        double maxFileSizeMb = DefaultMaxFileSizeMb,
         IEnumerable<string>? allowedExtensions = null)
     {
         var (isValid, errorMessage) = Validate(file, maxFileSizeMb, allowedExtensions);

@@ -19,10 +19,13 @@ public class FileUploadValidationTests
         return fileMock.Object;
     }
 
-    [Fact]
-    public void Validate_ArchivoJpgValidoMenorA2MB_RetornaTrue()
+    [Theory]
+    [InlineData(512 * 1024)]
+    [InlineData(3 * 1024 * 1024)]
+    [InlineData(5 * 1024 * 1024)]
+    public void Validate_ArchivoJpgValidoDeHasta5MB_RetornaTrue(long lengthBytes)
     {
-        var file = CreateMockFormFile("comprobante_pago.jpg", 512 * 1024, "image/jpeg");
+        var file = CreateMockFormFile("comprobante_pago.jpg", lengthBytes, "image/jpeg");
 
         var (isValid, error) = FileUploadValidator.Validate(file);
 
@@ -31,14 +34,21 @@ public class FileUploadValidationTests
     }
 
     [Fact]
-    public void Validate_ArchivoMayorA2MB_RetornaFalseYMensajeDeLimite()
+    public void Validate_ArchivoMayorA5MB_RetornaFalseYMensajeDeLimite()
     {
-        var file = CreateMockFormFile("comprobante_pesado.jpg", (2 * 1024 * 1024) + 1024, "image/jpeg");
+        var file = CreateMockFormFile("comprobante_pesado.jpg", (5 * 1024 * 1024) + 1024, "image/jpeg");
 
         var (isValid, error) = FileUploadValidator.Validate(file);
 
         Assert.False(isValid);
-        Assert.Contains("2 MB", error);
+        Assert.Contains("5 MB", error);
+    }
+
+    [Fact]
+    public void LimiteDePeticion_DejaMargenSobreElArchivoParaResponder400Legible()
+    {
+        Assert.Equal(5 * 1024 * 1024, FileUploadValidator.DefaultMaxFileSizeBytes);
+        Assert.True(FileUploadValidator.MaxRequestBodyBytes > FileUploadValidator.DefaultMaxFileSizeBytes);
     }
 
     [Theory]
@@ -56,7 +66,7 @@ public class FileUploadValidationTests
     }
 
     [Fact]
-    public async Task ReceiptsController_Upload_ArchivoExcede2MB_RechazaCon400AntesDeGuardar()
+    public async Task ReceiptsController_Upload_ArchivoExcede5MB_RechazaCon400AntesDeGuardar()
     {
         var receiptServiceMock = new Mock<IReceiptService>();
         var controller = new ReceiptsController(receiptServiceMock.Object)
@@ -74,7 +84,7 @@ public class FileUploadValidationTests
             }
         };
 
-        var oversizedFile = CreateMockFormFile("soporte.jpg", 3 * 1024 * 1024, "image/jpeg");
+        var oversizedFile = CreateMockFormFile("soporte.jpg", 6 * 1024 * 1024, "image/jpeg");
 
         var result = await controller.Upload(pagoId: 1, archivo: oversizedFile);
 

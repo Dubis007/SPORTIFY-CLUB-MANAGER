@@ -17,11 +17,11 @@ public class FileStorageService : IFileStorageService
     {
         var basePath = _configuration["StorageSettings:ComprobantesPath"]
             ?? throw new InvalidOperationException("StorageSettings:ComprobantesPath no esta configurado.");
-        var maxFileSizeMBStr = _configuration["StorageSettings:MaxFileSizeMB"] ?? "2";
+        var maxFileSizeMBStr = _configuration["StorageSettings:MaxFileSizeMB"] ?? "5";
         var allowedExtensionsStr = _configuration["StorageSettings:AllowedExtensions"] ?? ".jpg,.jpeg,.png,.pdf";
 
         if (!double.TryParse(maxFileSizeMBStr, out var maxFileSizeMB))
-            maxFileSizeMB = 2;
+            maxFileSizeMB = Sportify.Application.Security.FileUploadValidator.DefaultMaxFileSizeMb;
 
         var allowedExtensions = allowedExtensionsStr
             .Split(',', StringSplitOptions.RemoveEmptyEntries)

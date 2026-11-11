@@ -1,10 +1,10 @@
 /**
- * Validación de formato y peso máximo (2 MB) en el selector de archivos del frontend.
+ * Validación de formato y peso máximo (5 MB, RF-06) en el selector de archivos del frontend.
  * Esta validación se replica obligatoriamente en los controladores de C# (FileUploadValidator).
  */
 
-export const MAX_UPLOAD_FILE_SIZE_MB = 2;
-export const MAX_UPLOAD_FILE_SIZE_BYTES = MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024; // 2 MB
+export const MAX_UPLOAD_FILE_SIZE_MB = 5;
+export const MAX_UPLOAD_FILE_SIZE_BYTES = MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024; // 5 MB
 
 export const ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf'] as const;
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'] as const;

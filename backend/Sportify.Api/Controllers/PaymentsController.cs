@@ -75,7 +75,7 @@ public class PaymentsController : ControllerBase
 
     [HttpPost("manual-with-receipt")]
     [Authorize(Roles = "MIEMBRO,CONTADOR,ADMIN")]
-    [RequestSizeLimit(FileUploadValidator.DefaultMaxFileSizeBytes)]
+    [RequestSizeLimit(FileUploadValidator.MaxRequestBodyBytes)]
     public async Task<IActionResult> ManualWithReceipt([FromForm] ManualPaymentWithReceiptDto dto)
     {
         var fileValidation = FileUploadValidator.Validate(dto.Archivo);

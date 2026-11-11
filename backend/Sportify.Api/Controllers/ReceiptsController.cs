@@ -18,10 +18,10 @@ public class ReceiptsController : ControllerBase
         _receiptService = receiptService;
     }
 
-    /// <summary>Sube un comprobante de pago validando formato (.jpg/.jpeg/.png/.pdf) y límite de 2 MB. [MIEMBRO]</summary>
+    /// <summary>Sube un comprobante de pago validando formato (.jpg/.jpeg/.png/.pdf) y límite de 5 MB. [MIEMBRO]</summary>
     [HttpPost]
     [Authorize(Roles = "MIEMBRO")]
-    [RequestSizeLimit(FileUploadValidator.DefaultMaxFileSizeBytes)] // 2 MB límite estricto en controlador
+    [RequestSizeLimit(FileUploadValidator.MaxRequestBodyBytes)] // 5 MB de archivo + margen del formulario multipart
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Upload([FromForm] int pagoId, IFormFile archivo)
