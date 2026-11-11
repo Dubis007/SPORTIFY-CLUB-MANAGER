@@ -19,7 +19,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("stats")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(typeof(DashboardStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats()
     {

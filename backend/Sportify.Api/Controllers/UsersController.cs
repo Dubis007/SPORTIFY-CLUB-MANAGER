@@ -39,7 +39,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Obtiene un usuario por ID.</summary>
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id)
@@ -51,7 +51,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Crea un nuevo usuario.</summary>
     [HttpPost]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
@@ -62,7 +62,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Actualiza los datos de un usuario.</summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
@@ -73,7 +73,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Elimina un usuario del sistema (Hard Delete).</summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
@@ -84,7 +84,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Activa o desactiva un usuario (borrado lógico).</summary>
     [HttpPatch("{id:int}/status")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetStatus(int id, [FromBody] bool activo)
@@ -95,7 +95,7 @@ public class UsersController : ControllerBase
 
     /// <summary>Resetea la contraseña de un usuario por defecto y apaga la alarma.</summary>
     [HttpPost("{id:int}/reset-password")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Roles = "ADMIN,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResetPassword(int id)
     {

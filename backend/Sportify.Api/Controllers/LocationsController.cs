@@ -7,7 +7,7 @@ namespace Sportify.Api.Controllers;
 
 [ApiController]
 [Route("api/locations")]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Roles = "ADMIN,Admin")]
 public class LocationsController : ControllerBase
 {
     private readonly ILocationService _locationService;

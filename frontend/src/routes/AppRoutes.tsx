@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
-import { RoleRoute } from './RoleRoute';
+import { AdminRouteGuard, RoleRoute } from './RoleRoute';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, ROLE_HOME_ROUTES } from '../models';
 import AdminLayout from '../layouts/AdminLayout';
@@ -44,8 +44,8 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to={getHomeRedirect()} replace />} />
 
       <Route element={<ProtectedRoute />}>
-        {/* Rutas Admin */}
-        <Route element={<RoleRoute roles={[UserRole.ADMIN]} />}>
+        {/* Rutas Admin protegidas con AdminRouteGuard */}
+        <Route element={<AdminRouteGuard />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/users" element={<UsersPage />} />

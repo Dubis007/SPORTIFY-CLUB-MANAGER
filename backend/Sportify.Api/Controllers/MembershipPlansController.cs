@@ -7,7 +7,7 @@ namespace Sportify.Api.Controllers;
 
 [ApiController]
 [Route("api/plans")]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Roles = "ADMIN,Admin")]
 public class MembershipPlansController : ControllerBase
 {
     private readonly IMembershipPlanService _planService;

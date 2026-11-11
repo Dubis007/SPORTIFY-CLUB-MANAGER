@@ -1,7 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Sportify.Application.Interfaces;
 using Sportify.Application.DTOs.Memberships;
+using Sportify.Application.Interfaces;
 
 namespace Sportify.Api.Controllers;
 
@@ -24,9 +25,9 @@ public class MembershipsController : ControllerBase
         var plans = await _membershipService.GetPlansAsync();
         return Ok(plans);
     }
-    
+
     [HttpGet]
-    [Authorize(Roles = "ADMIN,CONTADOR")]
+    [Authorize(Roles = "ADMIN,Admin,CONTADOR")]
     public async Task<IActionResult> GetAll()
     {
         var memberships = await _membershipService.GetAllMembershipsAsync();
@@ -34,15 +35,23 @@ public class MembershipsController : ControllerBase
     }
 
     [HttpGet("user/{userId:int}")]
-    [Authorize(Roles = "ADMIN,MIEMBRO")]
+    [Authorize(Roles = "ADMIN,Admin,MIEMBRO")]
     public async Task<IActionResult> GetByUser(int userId)
     {
+        var isAdmin = User.IsInRole("ADMIN") || User.IsInRole("Admin");
+        if (!isAdmin)
+        {
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (!int.TryParse(claimId, out var currentUserId) || currentUserId != userId)
+                return Forbid();
+        }
+
         var memberships = await _membershipService.GetMembershipsByUserAsync(userId);
         return Ok(memberships);
     }
 
     [HttpPost]
-    [Authorize(Roles = "ADMIN,CONTADOR")]
+    [Authorize(Roles = "ADMIN,Admin,CONTADOR")]
     public async Task<IActionResult> Create([FromBody] CreateMembershipDto dto)
     {
         try
@@ -61,7 +70,7 @@ public class MembershipsController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    [Authorize(Roles = "ADMIN,CONTADOR")]
+    [Authorize(Roles = "ADMIN,Admin,CONTADOR")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateMembershipStatusDto dto)
     {
         var membership = await _membershipService.UpdateMembershipStatusAsync(id, dto);
