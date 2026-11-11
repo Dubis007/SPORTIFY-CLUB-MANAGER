@@ -113,8 +113,10 @@ export default function AccountantDashboard() {
   }, [payments]);
 
   const handleApprove = async (id: number) => {
-    await approvePayment(id);
-    toast.success(`Pago #${id} aprobado y membresía actualizada.`);
+    const success = await approvePayment(id);
+    if (success) {
+      toast.success(`Pago #${id} aprobado y membresía actualizada.`);
+    }
   };
 
   const handleReject = async (e: React.FormEvent) => {
