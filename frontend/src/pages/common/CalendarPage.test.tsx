@@ -57,6 +57,7 @@ describe('CalendarPage', () => {
       {
         id: 1,
         sedeId: 1,
+        sedeNombre: 'Sede Principal Norte',
         entrenadorId: 3,
         titulo: 'Sesión Velocidad Patinaje',
         descripcion: 'Trabajo de series en pista',
@@ -85,6 +86,10 @@ describe('CalendarPage', () => {
       expect(screen.getAllByText('Sesión Velocidad Patinaje').length).toBeGreaterThan(0);
     });
     expect(screen.getAllByText('Copa Departamental Otoño').length).toBeGreaterThan(0);
+
+    // El entrenamiento muestra el nombre de la sede, no su identificador interno
+    expect(screen.getAllByText(/Sede Principal Norte/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Sede #1/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByText('Copa Departamental Otoño')[0]);
 

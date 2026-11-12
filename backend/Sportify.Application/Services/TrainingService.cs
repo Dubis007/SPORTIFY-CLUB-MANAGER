@@ -141,6 +141,7 @@ public class TrainingService : ITrainingService
     {
         Id = e.Id,
         SedeId = e.SedeId,
+        SedeNombre = e.Sede?.Nombre,
         EntrenadorId = e.EntrenadorId,
         Titulo = e.Titulo,
         Descripcion = e.Descripcion,

@@ -6,6 +6,9 @@ public class TrainingDto
 {
     public int Id { get; set; }
     public int SedeId { get; set; }
+
+    /// <summary>Nombre de la sede donde se entrena, para mostrarlo en el calendario en lugar del identificador.</summary>
+    public string? SedeNombre { get; set; }
     public int EntrenadorId { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string Descripcion { get; set; } = string.Empty;

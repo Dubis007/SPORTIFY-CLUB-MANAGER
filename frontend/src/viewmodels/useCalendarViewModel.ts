@@ -134,7 +134,8 @@ export const useCalendarViewModel = (initialDate?: Date) => {
       description: t.descripcion,
       startDate: t.fechaHora,
       endDate: t.fechaFin || t.fechaHora,
-      location: `Sede #${t.sedeId}`,
+      // Se muestra el nombre de la sede; el identificador interno no le dice nada a quien consulta el calendario
+      location: t.sedeNombre?.trim() || 'Sede por confirmar',
       status: t.estado,
       capacity: t.capacidadMaxima,
     }));

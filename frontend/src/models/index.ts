@@ -77,6 +77,8 @@ export interface Training {
   id: number;
   entrenadorId: number;
   sedeId: number;
+  /** Nombre de la sede; llega vacío si el entrenamiento se acaba de crear o la sede ya no existe. */
+  sedeNombre?: string | null;
   titulo: string;
   descripcion: string;
   fechaHora: string;

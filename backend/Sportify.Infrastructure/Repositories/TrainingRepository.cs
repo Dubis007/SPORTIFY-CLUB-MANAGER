@@ -18,6 +18,7 @@ public class TrainingRepository : ITrainingRepository
     {
         return await _context.Entrenamientos
             .Include(e => e.Asistencias)
+            .Include(e => e.Sede)
             .Where(e => e.EliminadoEn == null)
             .ToListAsync();
     }
@@ -25,6 +26,7 @@ public class TrainingRepository : ITrainingRepository
     public async Task<Entrenamiento?> GetByIdActiveAsync(int id)
     {
         return await _context.Entrenamientos
+            .Include(e => e.Sede)
             .FirstOrDefaultAsync(e => e.Id == id && e.EliminadoEn == null);
     }
 

@@ -144,4 +144,36 @@ public class TrainingServiceTests
         Assert.Equal("CERRADO", closed!.Estado);
         mockRepo.Verify(r => r.UpdateAsync(training), Times.Once);
     }
+
+    [Fact]
+    public async Task GetAllAsync_EntregaElNombreDeLaSedeParaElCalendario()
+    {
+        var mockRepo = new Mock<ITrainingRepository>();
+        mockRepo.Setup(r => r.GetAllActiveAsync()).ReturnsAsync(new List<Entrenamiento>
+        {
+            new()
+            {
+                Id = 1,
+                SedeId = 1,
+                Sede = new Sede { Id = 1, Nombre = "Sede Principal Norte" },
+                Titulo = "Funcional",
+                FechaHora = new DateTime(2026, 11, 20, 16, 0, 0, DateTimeKind.Utc)
+            },
+            // Una sede que ya no se puede cargar no rompe el listado: el nombre llega vacío
+            new()
+            {
+                Id = 2,
+                SedeId = 9,
+                Sede = null,
+                Titulo = "Técnica",
+                FechaHora = new DateTime(2026, 11, 19, 16, 0, 0, DateTimeKind.Utc)
+            }
+        });
+
+        var service = new TrainingService(mockRepo.Object);
+        var list = (await service.GetAllAsync()).ToList();
+
+        Assert.Equal("Sede Principal Norte", list.Single(t => t.Id == 1).SedeNombre);
+        Assert.Null(list.Single(t => t.Id == 2).SedeNombre);
+    }
 }
