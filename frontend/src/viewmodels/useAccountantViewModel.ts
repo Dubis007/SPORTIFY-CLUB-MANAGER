@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { paymentService, PaymentOptionsDto } from '../services/api/paymentService';
+import { paymentService, PaymentOptionsDto, ReceiptFile } from '../services/api/paymentService';
 import { profileService } from '../services/profile/profileService';
 import { Payment, PaymentSummary } from '../models';
 
@@ -114,6 +114,24 @@ export const useAccountantViewModel = () => {
     }
   };
 
+  // El comprobante se descarga con la sesión del usuario; no existe una URL pública del archivo.
+  const getReceiptPreview = async (pagoId: number): Promise<ReceiptFile | null> => {
+    try {
+      return await paymentService.getReceiptFile(pagoId);
+    } catch {
+      return null;
+    }
+  };
+
+  const downloadAttachment = async (pagoId: number): Promise<boolean> => {
+    try {
+      await paymentService.downloadReceiptAttachment(pagoId);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const changePassword = async (data: any) => {
     try {
       await profileService.changePassword(data);
@@ -151,6 +169,8 @@ export const useAccountantViewModel = () => {
     registerManualPayment,
     downloadReport,
     getVoucherPreviewUrl,
+    getReceiptPreview,
+    downloadAttachment,
     changePassword,
     refresh: () => {
       fetchInitialData();

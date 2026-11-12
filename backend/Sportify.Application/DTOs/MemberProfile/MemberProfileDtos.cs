@@ -35,6 +35,9 @@ public class PaymentDto
     public string Estado { get; set; } = string.Empty;
     public DateTime FechaPago { get; set; }
     public string Plan { get; set; } = string.Empty;
+
+    /// <summary>Indica si el deportista adjuntó un comprobante que puede volver a consultar.</summary>
+    public bool TieneComprobante { get; set; }
 }
 
 public class MemberActivitiesDto

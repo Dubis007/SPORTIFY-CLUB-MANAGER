@@ -36,8 +36,8 @@ export interface Payment {
   fechaAprobacion?: string;
   nombreAprobador?: string;
   comentarioRechazo?: string;
+  /** El archivo se pide con sesión a `GET /api/receipts/{id}/preview`; no tiene URL pública. */
   tieneComprobante: boolean;
-  comprobanteUrl?: string;
 }
 
 export interface Membership {

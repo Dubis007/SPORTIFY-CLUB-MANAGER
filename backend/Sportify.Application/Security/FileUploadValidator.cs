@@ -77,6 +77,22 @@ public static class FileUploadValidator
         return (true, string.Empty);
     }
 
+    /// <summary>
+    /// Tipo de contenido con el que se entrega un archivo almacenado. Sale de la extensión, que el servidor
+    /// ya validó al guardar, y no del MIME que declaró el cliente al subirlo.
+    /// </summary>
+    public static string ResolveContentType(string? fileNameOrPath)
+    {
+        var ext = Path.GetExtension(fileNameOrPath ?? string.Empty).ToLowerInvariant();
+        return ext switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
+    }
+
     public static void EnsureValid(
         IFormFile? file,
         double maxFileSizeMb = DefaultMaxFileSizeMb,

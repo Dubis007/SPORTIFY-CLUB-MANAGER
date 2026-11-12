@@ -13,12 +13,14 @@ using Sportify.Application;
 using Sportify.Infrastructure;
 using Sportify.Api.Middlewares;
 
-// Garantizar existencia de directorios estáticos antes de inicializar WebApplicationBuilder (previene DirectoryNotFoundException en despliegue limpio)
-Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "comprobantes", "receipts"));
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
+
+// Los comprobantes se guardan fuera de wwwroot y solo se entregan por GET /api/receipts/{id}/preview, que exige sesión.
+// La carpeta se crea al arrancar para que un despliegue limpio no falle en la primera subida.
+Directory.CreateDirectory(Path.Combine(
+    Sportify.Infrastructure.Storage.FileStorageService.ResolveBasePath(builder.Configuration), "receipts"));
 
 // --- ESCALABILIDAD Y RENDIMIENTO ---
 
@@ -290,7 +292,13 @@ using (var scope = app.Services.CreateScope())
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("Content-Security-Policy", $"frame-ancestors 'self' {string.Join(' ', allowedOrigins)}");
+    // Las respuestas de la API son internas y con datos autenticados: no se pueden incrustar desde otro origen
+    // (<img>, <script>, <iframe> sin CORS). El frontend no se ve afectado porque las pide con CORS.
+    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "same-origin");
+    // Ya no hace falta permitir que el frontend enmarque respuestas de la API: los documentos se muestran
+    // desde un blob descargado con sesión, así que ninguna página puede incrustar la API en un iframe
+    context.Response.Headers.Append("Content-Security-Policy", "frame-ancestors 'none'");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     await next();
 });
@@ -298,7 +306,7 @@ app.Use(async (context, next) =>
 // Registrar Global Exception Handler (.NET 8+)
 app.UseExceptionHandler();
 
-// Habilitar compression (Debe ir antes de archivos estaticos)
+// Habilitar compression
 app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
@@ -307,7 +315,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseStaticFiles();
+// La API no sirve archivos estáticos: los comprobantes subidos solo salen por su endpoint autenticado.
 
 app.UseCors("AllowFrontend");
 

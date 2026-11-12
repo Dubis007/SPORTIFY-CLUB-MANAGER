@@ -13,6 +13,7 @@ vi.mock('../services/api/paymentService', () => ({
     reject: vi.fn(),
     registerManual: vi.fn(),
     downloadReceiptAttachment: vi.fn(),
+    getReceiptFile: vi.fn(),
     getPaymentVoucherBlobUrl: vi.fn(),
     downloadPaymentsReport: vi.fn(),
   },
@@ -27,7 +28,6 @@ const samplePayments: Payment[] = [
     estado: 'PENDIENTE',
     fechaPago: '2026-10-15T10:00:00Z',
     tieneComprobante: true,
-    comprobanteUrl: '/comprobantes/receipts/p101.pdf',
   },
   {
     id: 102,
@@ -123,5 +123,23 @@ describe('useAdminPaymentsViewModel', () => {
     expect(paymentService.reject).toHaveBeenCalledWith(101, {
       comentarioRechazo: 'Comprobante ilegible en revisión',
     });
+  });
+
+  it('abre el comprobante descargándolo con sesión y devuelve null si el servidor no lo entrega', async () => {
+    vi.mocked(paymentService.getReceiptFile).mockResolvedValueOnce({
+      url: 'blob:http://localhost/recibo-101',
+      mimeType: 'application/pdf',
+      fileName: 'Comprobante_Pago_101.pdf',
+    });
+
+    const { result } = renderHook(() => useAdminPaymentsViewModel());
+    await waitFor(() => expect(result.current.payments).toHaveLength(2));
+
+    const file = await result.current.getReceiptPreview(101);
+    expect(paymentService.getReceiptFile).toHaveBeenCalledWith(101);
+    expect(file?.fileName).toBe('Comprobante_Pago_101.pdf');
+
+    vi.mocked(paymentService.getReceiptFile).mockRejectedValueOnce({ response: { status: 404 } });
+    expect(await result.current.getReceiptPreview(102)).toBeNull();
   });
 });

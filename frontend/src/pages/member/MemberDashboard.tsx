@@ -18,11 +18,14 @@ import {
   Cake,
   Ban,
   MailCheck,
+  Eye,
 } from 'lucide-react';
 import { useMemberViewModel } from '../../viewmodels/useMemberViewModel';
 import { escapeSafeText } from '../../utils/xssSanitizer';
 import { MAX_UPLOAD_FILE_SIZE_MB, validateUploadFile } from '../../utils/fileValidation';
 import ConfirmDialogModal, { useConfirmDialog } from '../../components/common/ConfirmDialogModal';
+import DocumentViewerModal from '../../components/common/DocumentViewerModal';
+import { useDocumentViewer } from '../../components/common/useDocumentViewer';
 
 export default function MemberDashboard() {
   const {
@@ -35,11 +38,27 @@ export default function MemberDashboard() {
     changePassword,
     updateBirthDate,
     createPaymentAndUpload,
+    getReceiptPreview,
     respondToInvitation,
     cancelMembership,
   } = useMemberViewModel();
 
   const { requestConfirm, confirmDialogProps } = useConfirmDialog();
+  const { openDocument, viewerProps } = useDocumentViewer();
+
+  const handleViewReceipt = async (pagoId: number) => {
+    const file = await getReceiptPreview(pagoId);
+    if (file) {
+      openDocument({
+        url: file.url,
+        mimeType: file.mimeType,
+        title: `Comprobante del pago #${pagoId}`,
+        downloadName: file.fileName,
+      });
+    } else {
+      toast.error('No fue posible abrir tu comprobante. Intenta de nuevo.');
+    }
+  };
 
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'membresias';
@@ -317,6 +336,16 @@ export default function MemberDashboard() {
                           Fecha de registro: {new Date(p.fechaPago).toLocaleDateString('es-CO')}
                         </p>
                       </div>
+                      {p.tieneComprobante && (
+                        <button
+                          type="button"
+                          onClick={() => handleViewReceipt(p.id)}
+                          aria-label={`Ver el comprobante que enviaste del pago #${p.id}`}
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30 transition-colors"
+                        >
+                          <Eye size={13} aria-hidden="true" /> Ver mi comprobante
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -674,6 +703,7 @@ export default function MemberDashboard() {
       )}
 
       <ConfirmDialogModal {...confirmDialogProps} />
+      <DocumentViewerModal {...viewerProps} />
     </div>
   );
 }

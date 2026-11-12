@@ -20,14 +20,14 @@ import {
 } from 'lucide-react';
 import { useAccountantViewModel } from '../../viewmodels/useAccountantViewModel';
 import { Payment } from '../../models';
-import { apiClient, API_URL } from '../../services/api/apiClient';
 import {
   microserviceClient,
   type AnalyticalAggregateResponse,
 } from '../../services/api/microserviceClient';
 import MembershipsPage from '../admin/MembershipsPage';
 import Pagination from '../../components/Pagination';
-import PdfViewerModal from '../../components/common/PdfViewerModal';
+import DocumentViewerModal from '../../components/common/DocumentViewerModal';
+import { useDocumentViewer } from '../../components/common/useDocumentViewer';
 
 const manualPaymentSchema = z.object({
   usuarioId: z.string().min(1, 'Debes seleccionar un miembro'),
@@ -58,6 +58,8 @@ export default function AccountantDashboard() {
     registerManualPayment,
     downloadReport,
     getVoucherPreviewUrl,
+    getReceiptPreview,
+    downloadAttachment,
     changePassword,
   } = useAccountantViewModel();
 
@@ -70,8 +72,7 @@ export default function AccountantDashboard() {
 
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
   const [comentario, setComentario] = useState('');
-  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
-  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const { openDocument, viewerProps } = useDocumentViewer();
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTE' | 'APROBADO' | 'RECHAZADO'>('ALL');
   const [ms2Report, setMs2Report] = useState<AnalyticalAggregateResponse | null>(null);
 
@@ -168,20 +169,10 @@ export default function AccountantDashboard() {
   };
 
   const handleDownloadReceipt = async (pagoId: number) => {
-    try {
-      const response = await apiClient.get(`/api/receipts/${pagoId}/preview`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Comprobante_Pago_${pagoId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+    const ok = await downloadAttachment(pagoId);
+    if (ok) {
       toast.success(`Comprobante del pago #${pagoId} descargado.`);
-    } catch {
+    } else {
       toast.error('Este registro de pago no posee archivo adjunto en el servidor.');
     }
   };
@@ -189,10 +180,27 @@ export default function AccountantDashboard() {
   const handleOpenVoucherPdf = async (pagoId: number) => {
     const blobUrl = await getVoucherPreviewUrl(pagoId);
     if (blobUrl) {
-      setSelectedPdfUrl(blobUrl);
-      setIsPdfModalOpen(true);
+      openDocument({
+        url: blobUrl,
+        mimeType: 'application/pdf',
+        title: `Colilla del pago #${pagoId}`,
+      });
     } else {
       toast.error('No fue posible generar la colilla PDF oficial.');
+    }
+  };
+
+  const handleViewReceipt = async (pagoId: number) => {
+    const file = await getReceiptPreview(pagoId);
+    if (file) {
+      openDocument({
+        url: file.url,
+        mimeType: file.mimeType,
+        title: `Comprobante del pago #${pagoId}`,
+        downloadName: file.fileName,
+      });
+    } else {
+      toast.error('No fue posible abrir el comprobante de este pago.');
     }
   };
 
@@ -399,19 +407,14 @@ export default function AccountantDashboard() {
                             <Download size={12} aria-hidden="true" /> Soporte
                           </button>
 
-                          {payment.tieneComprobante && payment.comprobanteUrl && (
+                          {payment.tieneComprobante && (
                             <button
                               type="button"
-                              aria-label={`Ver comprobante PDF del pago #${payment.id}`}
-                              onClick={() => {
-                                setSelectedPdfUrl(
-                                  `${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
-                                );
-                                setIsPdfModalOpen(true);
-                              }}
+                              aria-label={`Ver comprobante del pago #${payment.id}`}
+                              onClick={() => handleViewReceipt(payment.id)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30"
                             >
-                              <Eye size={12} aria-hidden="true" /> Ver PDF
+                              <Eye size={12} aria-hidden="true" /> Ver Comprobante
                             </button>
                           )}
 
@@ -713,11 +716,7 @@ export default function AccountantDashboard() {
         </div>
       )}
 
-      <PdfViewerModal
-        isOpen={isPdfModalOpen}
-        onClose={() => setIsPdfModalOpen(false)}
-        pdfUrl={selectedPdfUrl}
-      />
+      <DocumentViewerModal {...viewerProps} />
     </div>
   );
 }

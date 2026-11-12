@@ -71,6 +71,10 @@ appsettings.Local.json
 *.key
 *.p12
 
+# Comprobantes de pago subidos por los usuarios: documentos privados, nunca se versionan
+**/App_Data/
+**/wwwroot/comprobantes/
+
 # Respaldos de base de datos (scripts/backup-db.ps1)
 backups/
 *.sql.gz

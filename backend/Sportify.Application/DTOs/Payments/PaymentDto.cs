@@ -16,7 +16,9 @@ public class PaymentDto
     public string? NombreAprobador { get; set; }
     public string? ComentarioRechazo { get; set; }
 
-    /// <summary>Indica si el pago tiene un comprobante adjunto.</summary>
+    /// <summary>
+    /// Indica si el pago tiene un comprobante adjunto. El archivo se consulta con sesión en
+    /// <c>GET /api/receipts/{id}/preview</c>; su ruta interna no forma parte del contrato.
+    /// </summary>
     public bool TieneComprobante { get; set; }
-    public string? ComprobanteUrl { get; set; }
 }

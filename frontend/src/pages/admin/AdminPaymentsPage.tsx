@@ -18,9 +18,9 @@ import {
   PaymentStatusFilter,
 } from '../../viewmodels/useAdminPaymentsViewModel';
 import { Payment } from '../../models';
-import { API_URL } from '../../services/api/apiClient';
 import Pagination from '../../components/Pagination';
-import PdfViewerModal from '../../components/common/PdfViewerModal';
+import DocumentViewerModal from '../../components/common/DocumentViewerModal';
+import { useDocumentViewer } from '../../components/common/useDocumentViewer';
 
 export default function AdminPaymentsPage() {
   const {
@@ -44,6 +44,7 @@ export default function AdminPaymentsPage() {
     rejectPayment,
     registerManualPayment,
     downloadAttachment,
+    getReceiptPreview,
     getVoucherPreviewUrl,
     downloadReport,
   } = useAdminPaymentsViewModel();
@@ -51,8 +52,7 @@ export default function AdminPaymentsPage() {
   const [activeTab, setActiveTab] = useState<'pagos' | 'manual'>('pagos');
   const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
   const [comentario, setComentario] = useState('');
-  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
-  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const { openDocument, viewerProps } = useDocumentViewer();
 
   const [manualPayment, setManualPayment] = useState({
     usuarioId: '',
@@ -112,10 +112,27 @@ export default function AdminPaymentsPage() {
   const handleOpenVoucherPdf = async (pagoId: number) => {
     const blobUrl = await getVoucherPreviewUrl(pagoId);
     if (blobUrl) {
-      setSelectedPdfUrl(blobUrl);
-      setIsPdfModalOpen(true);
+      openDocument({
+        url: blobUrl,
+        mimeType: 'application/pdf',
+        title: `Colilla del pago #${pagoId}`,
+      });
     } else {
       toast.error('No fue posible generar la colilla PDF oficial.');
+    }
+  };
+
+  const handleViewReceipt = async (pagoId: number) => {
+    const file = await getReceiptPreview(pagoId);
+    if (file) {
+      openDocument({
+        url: file.url,
+        mimeType: file.mimeType,
+        title: `Comprobante del pago #${pagoId}`,
+        downloadName: file.fileName,
+      });
+    } else {
+      toast.error('No fue posible abrir el comprobante de este pago.');
     }
   };
 
@@ -320,16 +337,11 @@ export default function AdminPaymentsPage() {
                               <Download size={12} aria-hidden="true" /> Soporte
                             </button>
                           )}
-                          {payment.tieneComprobante && payment.comprobanteUrl && (
+                          {payment.tieneComprobante && (
                             <button
                               type="button"
                               aria-label={`Ver comprobante del pago #${payment.id}`}
-                              onClick={() => {
-                                setSelectedPdfUrl(
-                                  `${API_URL}/${payment.comprobanteUrl!.replace(/^\/+/, '')}`
-                                );
-                                setIsPdfModalOpen(true);
-                              }}
+                              onClick={() => handleViewReceipt(payment.id)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30"
                             >
                               <Eye size={12} aria-hidden="true" /> Ver Comprobante
@@ -494,11 +506,7 @@ export default function AdminPaymentsPage() {
         </div>
       )}
 
-      <PdfViewerModal
-        isOpen={isPdfModalOpen}
-        onClose={() => setIsPdfModalOpen(false)}
-        pdfUrl={selectedPdfUrl}
-      />
+      <DocumentViewerModal {...viewerProps} />
     </div>
   );
 }

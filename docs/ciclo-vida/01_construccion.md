@@ -27,7 +27,7 @@ En desarrollo local todo sigue funcionando igual porque los valores por defecto 
 
 ### `backend/Dockerfile` (multi-stage)
 1. **Etapa `build`** (`mcr.microsoft.com/dotnet/sdk:10.0`): copia primero solo los `.csproj` y ejecuta `dotnet restore` (así Docker reutiliza esa capa si solo cambia el código), luego copia el código y ejecuta `dotnet publish -c Release`.
-2. **Etapa `runtime`** (`mcr.microsoft.com/dotnet/aspnet:10.0`, más liviana, sin SDK): copia solo el resultado publicado, crea `wwwroot/comprobantes`, expone el puerto 8080 y define un `HEALTHCHECK` que consulta `/api/health`.
+2. **Etapa `runtime`** (`mcr.microsoft.com/dotnet/aspnet:10.0`, más liviana, sin SDK): copia solo el resultado publicado, crea `App_Data/comprobantes` (fuera de `wwwroot`: los comprobantes solo se entregan por el endpoint autenticado `GET /api/receipts/{id}/preview`), expone el puerto 8080 y define un `HEALTHCHECK` que consulta `/api/health`.
 
 `backend/.dockerignore` excluye `bin/`, `obj/`, el proyecto de pruebas y PDFs para que la imagen sea pequeña.
 

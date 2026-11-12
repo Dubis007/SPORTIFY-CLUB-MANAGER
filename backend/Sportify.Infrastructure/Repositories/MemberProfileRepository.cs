@@ -41,6 +41,7 @@ public class MemberProfileRepository : IMemberProfileRepository
     public async Task<IEnumerable<Pago>> GetPaymentsByUserIdAsync(int userId)
     {
         return await _context.Pagos
+            .Include(p => p.Comprobante)
             .Include(p => p.Membresia)
                 .ThenInclude(m => m!.PlanMembresia)
             .Where(p => p.UsuarioId == userId)

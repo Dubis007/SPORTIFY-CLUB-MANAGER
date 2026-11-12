@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import MemberDashboard from './MemberDashboard';
 import { memberService } from '../../services/members/memberService';
+import { paymentService } from '../../services/api/paymentService';
 
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
@@ -23,7 +24,7 @@ vi.mock('../../services/members/memberService', () => ({
 }));
 
 vi.mock('../../services/api/paymentService', () => ({
-  paymentService: { create: vi.fn(), uploadReceipt: vi.fn() },
+  paymentService: { create: vi.fn(), uploadReceipt: vi.fn(), getReceiptFile: vi.fn() },
 }));
 
 const renderAt = (tab: string) =>
@@ -49,7 +50,22 @@ describe('MemberDashboard — membresías y pagos del deportista', () => {
         { id: 1, plan: 'Plan Premium', estado: 'ACTIVA', fechaInicio: '2026-11-01T00:00:00', fechaFin: '2026-12-01T00:00:00' },
       ],
       payments: [
-        { id: 7, montoCOP: 120000, estado: 'APROBADO', fechaPago: '2026-11-01T00:00:00', plan: 'Plan Premium' },
+        {
+          id: 7,
+          montoCOP: 120000,
+          estado: 'APROBADO',
+          fechaPago: '2026-11-01T00:00:00',
+          plan: 'Plan Premium',
+          tieneComprobante: true,
+        },
+        {
+          id: 8,
+          montoCOP: 50000,
+          estado: 'APROBADO',
+          fechaPago: '2026-10-01T00:00:00',
+          plan: 'Plan Básico',
+          tieneComprobante: false,
+        },
       ],
     });
     vi.mocked(memberService.getActivities).mockResolvedValue({
@@ -86,6 +102,46 @@ describe('MemberDashboard — membresías y pagos del deportista', () => {
     expect(screen.getByRole('button', { name: /Subir Comprobante de Pago/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cancelar Membresía/ })).toBeInTheDocument();
     expect(screen.getByText(/120\.000 COP/)).toBeInTheDocument();
+  });
+
+  it('ofrece ver el comprobante solo en los pagos que lo tienen y lo abre en el visor', async () => {
+    vi.mocked(paymentService.getReceiptFile).mockResolvedValue({
+      url: 'blob:http://localhost/recibo-7',
+      mimeType: 'image/png',
+      fileName: 'Comprobante_Pago_7.png',
+    });
+    renderAt('membresias');
+
+    const viewButton = await screen.findByRole('button', {
+      name: 'Ver el comprobante que enviaste del pago #7',
+    });
+    // El pago #8 se registró sin soporte: no hay nada que mostrar
+    expect(
+      screen.queryByRole('button', { name: 'Ver el comprobante que enviaste del pago #8' })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(viewButton);
+
+    const viewer = await screen.findByRole('dialog', { name: 'Comprobante del pago #7' });
+    expect(paymentService.getReceiptFile).toHaveBeenCalledWith(7);
+    expect(within(viewer).getByRole('img', { name: 'Comprobante del pago #7' })).toHaveAttribute(
+      'src',
+      'blob:http://localhost/recibo-7'
+    );
+  });
+
+  it('avisa cuando el servidor no entrega el comprobante y no abre el visor', async () => {
+    vi.mocked(paymentService.getReceiptFile).mockRejectedValue({ response: { status: 404 } });
+    renderAt('membresias');
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Ver el comprobante que enviaste del pago #7' })
+    );
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('No fue posible abrir tu comprobante. Intenta de nuevo.');
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('cancela la membresía tras confirmar y avisa solo cuando el servidor lo acepta', async () => {

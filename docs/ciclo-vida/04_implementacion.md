@@ -76,6 +76,6 @@ Bundle JS del frontend                            -> contiene https://sportify-a
 
 Secretos cargados en GitHub: `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB` (Secrets) y `VITE_API_URL` (Variables).
 
-**Limitaciones conocidas del plan gratuito:** la API se duerme tras 15 minutos sin tráfico, y el disco no es persistente, así que los comprobantes de pago subidos (`wwwroot/comprobantes`) se pierden en cada redeploy. Para producción habría que usar un disco persistente de Render (de pago) o un almacenamiento externo (S3 o Cloudinary).
+**Limitaciones conocidas del plan gratuito:** la API se duerme tras 15 minutos sin tráfico, y el disco no es persistente, así que los comprobantes de pago subidos (`App_Data/comprobantes`) se pierden en cada redeploy. Para producción habría que usar un disco persistente de Render (de pago) o un almacenamiento externo (S3 o Cloudinary).
 
 > Nota del plan gratuito: la API se "duerme" tras 15 minutos sin tráfico y la primera petición tarda ~1 minuto en despertar. El monitor de UptimeRobot ([fase 6](06_monitoreo.md)) la mantiene activa ([keep-alive, 5.3](05_operacion.md#53-mantener-la-api-disponible-keep-alive)).

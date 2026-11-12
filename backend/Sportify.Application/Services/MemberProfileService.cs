@@ -76,7 +76,8 @@ public class MemberProfileService : IMemberProfileService
             MontoCOP = p.MontoCOP,
             Estado = p.Estado.ToString(),
             FechaPago = p.FechaPago,
-            Plan = p.Membresia?.PlanMembresia?.Nombre ?? string.Empty
+            Plan = p.Membresia?.PlanMembresia?.Nombre ?? string.Empty,
+            TieneComprobante = p.Comprobante != null
         }).ToList();
 
         return new MemberPaymentsDto

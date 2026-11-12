@@ -14,6 +14,8 @@ export interface MemberPayment {
   estado: string;
   fechaPago: string;
   plan: string;
+  /** Indica si el pago tiene un comprobante que el deportista puede volver a consultar. */
+  tieneComprobante: boolean;
 }
 
 /** La API serializa en camelCase: `GET /api/members/me/payments` devuelve `{ memberships, payments }`. */

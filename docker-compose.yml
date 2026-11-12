@@ -41,7 +41,7 @@ services:
     ports:
       - "${API_PORT:-8080}:8080"
     volumes:
-      - comprobantes:/app/wwwroot/comprobantes
+      - comprobantes:/app/App_Data/comprobantes
 
   # Microservicio 1: validación de JWT y control de sesiones concurrentes
   ms1:

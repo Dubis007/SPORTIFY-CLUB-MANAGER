@@ -1,6 +1,15 @@
 import { apiClient } from './apiClient';
 import { Payment, PagedResult, PaymentSummary } from '../../models';
 import { validateUploadFile } from '../../utils/fileValidation';
+import { buildReceiptFileName, ReceiptMimeType, resolveReceiptMimeType } from '../../utils/receiptFile';
+
+/** Comprobante descargado con sesión y listo para mostrarse o guardarse. */
+export interface ReceiptFile {
+  /** URL de objeto (`blob:`) propia de esta pestaña. Quien la pide la libera con `URL.revokeObjectURL`. */
+  url: string;
+  mimeType: ReceiptMimeType;
+  fileName: string;
+}
 
 /** Coincide con `RejectPaymentDto.ComentarioRechazo` del backend (RN-05, mínimo 10 caracteres). */
 export interface RejectPaymentDto {
@@ -78,18 +87,35 @@ export const paymentService = {
     return response.data;
   },
 
-  downloadReceiptAttachment: async (pagoId: number): Promise<void> => {
-    const response = await apiClient.get(`/api/receipts/${pagoId}/preview`, {
+  /**
+   * Descarga el comprobante de un pago con el token de sesión. El backend lo entrega al contador, al
+   * administrador y al deportista dueño del pago; el archivo no tiene una URL pública.
+   */
+  getReceiptFile: async (pagoId: number): Promise<ReceiptFile> => {
+    const response = await apiClient.get<Blob>(`/api/receipts/${pagoId}/preview`, {
       responseType: 'blob'
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const mimeType = resolveReceiptMimeType(
+      String(response.headers?.['content-type'] ?? response.data?.type ?? '')
+    );
+    // El tipo del blob sale de una lista cerrada (ver resolveReceiptMimeType), nunca del contenido
+    const blob = new Blob([response.data], { type: mimeType });
+    return {
+      url: window.URL.createObjectURL(blob),
+      mimeType,
+      fileName: buildReceiptFileName(pagoId, mimeType),
+    };
+  },
+
+  downloadReceiptAttachment: async (pagoId: number): Promise<void> => {
+    const file = await paymentService.getReceiptFile(pagoId);
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Comprobante_Pago_${pagoId}.pdf`);
+    link.href = file.url;
+    link.setAttribute('download', file.fileName);
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(file.url);
   },
 
   getPaymentVoucherBlobUrl: async (pagoId: number): Promise<string> => {

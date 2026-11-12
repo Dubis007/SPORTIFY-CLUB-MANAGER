@@ -22,7 +22,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-RUN mkdir -p wwwroot/comprobantes
+# Comprobantes fuera de wwwroot: solo se entregan por el endpoint autenticado de la API
+RUN mkdir -p App_Data/comprobantes
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080

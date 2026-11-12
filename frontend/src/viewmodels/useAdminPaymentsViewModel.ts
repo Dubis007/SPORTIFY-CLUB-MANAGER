@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { paymentService, PaymentOptionsDto } from '../services/api/paymentService';
+import { paymentService, PaymentOptionsDto, ReceiptFile } from '../services/api/paymentService';
 import { Payment, PaymentSummary } from '../models';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -116,6 +116,15 @@ export const useAdminPaymentsViewModel = () => {
     }
   };
 
+  // El comprobante se descarga con la sesión del usuario; no existe una URL pública del archivo.
+  const getReceiptPreview = async (pagoId: number): Promise<ReceiptFile | null> => {
+    try {
+      return await paymentService.getReceiptFile(pagoId);
+    } catch {
+      return null;
+    }
+  };
+
   const getVoucherPreviewUrl = async (pagoId: number): Promise<string | null> => {
     try {
       return await paymentService.getPaymentVoucherBlobUrl(pagoId);
@@ -170,6 +179,7 @@ export const useAdminPaymentsViewModel = () => {
     rejectPayment,
     registerManualPayment,
     downloadAttachment,
+    getReceiptPreview,
     getVoucherPreviewUrl,
     downloadReport,
     refresh: () => {

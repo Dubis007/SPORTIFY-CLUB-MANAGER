@@ -28,6 +28,15 @@
     opacity: 1;
   }
 
+  /* Diálogos nativos (<dialog>): desplazarse dentro del modal o sobre su fondo no arrastra la página de atrás */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
   /* Estilizado sobrio de barras de desplazamiento para tablas y paneles ERP */
   ::-webkit-scrollbar {
     width: 8px;

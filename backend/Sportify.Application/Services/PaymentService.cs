@@ -1,6 +1,7 @@
 using Sportify.Application.DTOs.Common;
 using Sportify.Application.DTOs.Payments;
 using Sportify.Application.Interfaces;
+using Sportify.Application.Security;
 using Sportify.Domain.Entities;
 using Sportify.Domain.Enums;
 
@@ -142,7 +143,8 @@ public class PaymentService : IPaymentService
             PagoId = pago.Id,
             RutaArchivo = relativePath,
             NombreArchivo = dto.Archivo.FileName,
-            TipoMime = dto.Archivo.ContentType,
+            // El tipo se deriva de la extensión ya validada, no del MIME que declaró el cliente
+            TipoMime = FileUploadValidator.ResolveContentType(fileName),
             TamanoBytes = dto.Archivo.Length,
             SubidoEn = DateTime.UtcNow
         };
@@ -260,8 +262,8 @@ public class PaymentService : IPaymentService
             FechaAprobacion = p.FechaAprobacion,
             NombreAprobador = nombreAprobador,
             ComentarioRechazo = p.ComentarioRechazo,
-            TieneComprobante = p.Comprobante != null,
-            ComprobanteUrl = p.Comprobante?.RutaArchivo
+            // La ruta interna del archivo no se expone: el comprobante se pide por GET /api/receipts/{id}/preview
+            TieneComprobante = p.Comprobante != null
         };
     }
 }

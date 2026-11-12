@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { memberService, MemberPaymentsData } from '../services/members/memberService';
-import { paymentService } from '../services/api/paymentService';
+import { paymentService, ReceiptFile } from '../services/api/paymentService';
 
 export const useMemberViewModel = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -68,6 +68,15 @@ export const useMemberViewModel = () => {
     }
   };
 
+  // El deportista vuelve a ver el comprobante que envió. El backend solo entrega los de sus propios pagos.
+  const getReceiptPreview = async (pagoId: number): Promise<ReceiptFile | null> => {
+    try {
+      return await paymentService.getReceiptFile(pagoId);
+    } catch {
+      return null;
+    }
+  };
+
   // Convocatoria a torneo: el personal convoca y el deportista decide. Aceptar la confirma; rechazar la cancela.
   const respondToInvitation = async (inscripcionId: number, accept: boolean) => {
     setError(null);
@@ -112,6 +121,7 @@ export const useMemberViewModel = () => {
     changePassword,
     updateBirthDate,
     createPaymentAndUpload,
+    getReceiptPreview,
     respondToInvitation,
     cancelMembership,
     refresh: fetchAllData

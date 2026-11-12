@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useMemberViewModel } from './useMemberViewModel';
 import { memberService } from '../services/members/memberService';
+import { paymentService } from '../services/api/paymentService';
 
 vi.mock('../services/members/memberService', () => ({
   memberService: {
@@ -17,7 +18,7 @@ vi.mock('../services/members/memberService', () => ({
 }));
 
 vi.mock('../services/api/paymentService', () => ({
-  paymentService: { create: vi.fn(), uploadReceipt: vi.fn() },
+  paymentService: { create: vi.fn(), uploadReceipt: vi.fn(), getReceiptFile: vi.fn() },
 }));
 
 const activeMembership = {
@@ -44,7 +45,16 @@ describe('useMemberViewModel — portal del deportista', () => {
     // Mismo contrato camelCase que devuelve GET /api/members/me/payments
     vi.mocked(memberService.getPayments).mockResolvedValue({
       memberships: [activeMembership],
-      payments: [{ id: 7, montoCOP: 120000, estado: 'APROBADO', fechaPago: '2026-11-01T00:00:00', plan: 'Plan Premium' }],
+      payments: [
+        {
+          id: 7,
+          montoCOP: 120000,
+          estado: 'APROBADO',
+          fechaPago: '2026-11-01T00:00:00',
+          plan: 'Plan Premium',
+          tieneComprobante: true,
+        },
+      ],
     });
     vi.mocked(memberService.getActivities).mockResolvedValue({
       upcomingTrainings: [],
@@ -61,6 +71,31 @@ describe('useMemberViewModel — portal del deportista', () => {
     expect(result.current.paymentsData.memberships).toHaveLength(1);
     expect(result.current.paymentsData.memberships[0].plan).toBe('Plan Premium');
     expect(result.current.paymentsData.payments[0].montoCOP).toBe(120000);
+  });
+
+  it('entrega al deportista el comprobante que envió, descargado con su sesión', async () => {
+    vi.mocked(paymentService.getReceiptFile).mockResolvedValue({
+      url: 'blob:http://localhost/recibo-7',
+      mimeType: 'image/png',
+      fileName: 'Comprobante_Pago_7.png',
+    });
+
+    const { result } = renderHook(() => useMemberViewModel());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const file = await result.current.getReceiptPreview(7);
+
+    expect(paymentService.getReceiptFile).toHaveBeenCalledWith(7);
+    expect(file?.mimeType).toBe('image/png');
+  });
+
+  it('devuelve null cuando el servidor no entrega el comprobante (p. ej. un pago ajeno)', async () => {
+    vi.mocked(paymentService.getReceiptFile).mockRejectedValue({ response: { status: 404 } });
+
+    const { result } = renderHook(() => useMemberViewModel());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(await result.current.getReceiptPreview(99)).toBeNull();
   });
 
   it('cancela la membresía propia en el servidor y refresca los datos', async () => {
