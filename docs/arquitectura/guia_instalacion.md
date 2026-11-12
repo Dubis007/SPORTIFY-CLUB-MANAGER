@@ -55,27 +55,19 @@ dotnet restore
 ```
 
 ### 3.2 Configurar variables de entorno
-Crear el archivo `backend/Sportify.Api/appsettings.Development.json`:
+En local no hay que crear ningún archivo: `dotnet run` usa el entorno `Development` y toma de `appsettings.Development.json` las llaves de desarrollo (firma de JWT y cifrado). Si no se define otra conexión, usa la de XAMPP (`root` sin clave, base `sportify_db`).
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3306;Database=sportify_db;User=root;Password=;"
-  },
-  "JwtSettings": {
-    "Secret": "[REEMPLAZAR con una cadena aleatoria de 32+ caracteres]",
-    "Issuer": "SportifyClubManager",
-    "Audience": "SportifyUsers",
-    "ExpirationMinutes": 480
-  },
-  "StorageSettings": {
-    "ComprobantesPath": "../../storage/comprobantes",
-    "MaxFileSizeMB": 5
-  }
-}
-```
+Para usar otra conexión o tus propias llaves, crea `backend/Sportify.Api/appsettings.Local.json` a partir de `appsettings.Example.json`, o define estas variables de entorno:
 
-> ⚠️ Este archivo está en `.gitignore` — NO subir a Git.
+| Variable | Para qué sirve |
+|---|---|
+| `SPORTIFY_MYSQL_CONNECTION` | Cadena de conexión a MySQL |
+| `JwtSettings__Secret` | Secreto con el que se firman los JWT (32 caracteres o más) |
+| `EncryptionSettings__MasterKey` | Llave maestra del cifrado AES-256 de datos sensibles (32 caracteres o más) |
+
+> ⚠️ `appsettings.Local.json` está en `.gitignore` — NO subir a Git.
+>
+> ⚠️ Fuera de `Development` la API **no arranca** sin `JwtSettings__Secret` y `EncryptionSettings__MasterKey` propios. Las llaves de desarrollo del repositorio son públicas y en producción se rechazan. Para generar una: `openssl rand -base64 48`.
 
 ### 3.3 Ejecutar migraciones (si aplica)
 ```bash

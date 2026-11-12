@@ -100,8 +100,10 @@ public class JwtTokenService : IJwtTokenService
 
     public string GenerateCsrfToken(int userId)
     {
-        var secret = _configuration["JwtSettings:Secret"]
-            ?? "A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!";
+        var secret = _configuration["JwtSettings:Secret"];
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException("JwtSettings:Secret no esta configurado.");
+
         var issuedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         var payload = $"{userId}:{issuedAtUnix}:{nonce}";
@@ -120,8 +122,10 @@ public class JwtTokenService : IJwtTokenService
         if (parts.Length != 2)
             return false;
 
-        var secret = _configuration["JwtSettings:Secret"]
-            ?? "A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!";
+        // Sin secreto configurado no se acepta ningún token: no existe una llave por defecto
+        var secret = _configuration["JwtSettings:Secret"];
+        if (string.IsNullOrWhiteSpace(secret))
+            return false;
 
         try
         {

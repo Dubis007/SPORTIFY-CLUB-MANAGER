@@ -15,24 +15,44 @@ public class AesSensitiveDataProtector : ISensitiveDataProtector
     private const int NonceSize = 12; // 96 bits recomendados para AES-GCM
     private const int TagSize = 16;   // 128 bits de etiqueta de autenticación
 
-    private static readonly byte[] DefaultDerivedKey = SHA256.HashData(
+    /// <summary>
+    /// Llave con la que se cifró todo antes de que la llave maestra fuera configurable. Está publicada en el
+    /// repositorio, así que ya no se usa para cifrar fuera de desarrollo: solo permite seguir leyendo los
+    /// registros que se guardaron con ella. Cada registro se vuelve a cifrar con la llave vigente al actualizarse.
+    /// </summary>
+    private static readonly byte[] LegacyDerivedKey = SHA256.HashData(
         Encoding.UTF8.GetBytes("SPORTIFY_AES256_DEFAULT_DATA_PROTECTION_KEY_2026!"));
+
+    // Llave vigente para los conversores de EF, que se crean sin inyección de dependencias.
+    private static byte[] _activeKey = LegacyDerivedKey;
 
     private readonly byte[] _key;
 
+    /// <summary>
+    /// Fija la llave maestra con la que los conversores de EF cifran y descifran. La API la configura una vez
+    /// al arrancar, con el valor validado de EncryptionSettings:MasterKey. Con null vuelve a la llave heredada
+    /// (solo para pruebas).
+    /// </summary>
+    public static void ConfigureMasterKey(string? masterKey)
+    {
+        var key = string.IsNullOrWhiteSpace(masterKey) ? LegacyDerivedKey : DeriveKey(masterKey);
+        Volatile.Write(ref _activeKey, key);
+    }
+
     public AesSensitiveDataProtector(IConfiguration? configuration = null)
     {
-        var rawKey = configuration?["EncryptionSettings:MasterKey"]
-                  ?? configuration?["JwtSettings:Secret"];
+        var rawKey = configuration?["EncryptionSettings:MasterKey"];
 
         _key = !string.IsNullOrWhiteSpace(rawKey)
-            ? SHA256.HashData(Encoding.UTF8.GetBytes(rawKey))
-            : DefaultDerivedKey;
+            ? DeriveKey(rawKey)
+            : Volatile.Read(ref _activeKey);
     }
 
     public string Encrypt(string plainText) => EncryptStatic(plainText, _key);
 
     public string Decrypt(string cipherText) => DecryptStatic(cipherText, _key);
+
+    private static byte[] DeriveKey(string masterKey) => SHA256.HashData(Encoding.UTF8.GetBytes(masterKey.Trim()));
 
     public static string EncryptStatic(string plainText, byte[]? key = null)
     {
@@ -43,7 +63,7 @@ public class AesSensitiveDataProtector : ISensitiveDataProtector
         if (plainText.StartsWith(Prefix, StringComparison.Ordinal))
             return plainText;
 
-        var activeKey = key ?? DefaultDerivedKey;
+        var activeKey = key ?? Volatile.Read(ref _activeKey);
         var plainBytes = Encoding.UTF8.GetBytes(plainText);
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
         var cipherBytes = new byte[plainBytes.Length];
@@ -69,9 +89,10 @@ public class AesSensitiveDataProtector : ISensitiveDataProtector
         if (!cipherText.StartsWith(Prefix, StringComparison.Ordinal))
             return cipherText;
 
+        var activeKey = key ?? Volatile.Read(ref _activeKey);
+
         try
         {
-            var activeKey = key ?? DefaultDerivedKey;
             var payloadBase64 = cipherText[Prefix.Length..];
             var combined = Convert.FromBase64String(payloadBase64);
 
@@ -90,10 +111,10 @@ public class AesSensitiveDataProtector : ISensitiveDataProtector
         }
         catch (CryptographicException)
         {
-            // Fallback con llave por defecto si fue cifrado por seeder estático
-            if (key is not null && !key.SequenceEqual(DefaultDerivedKey))
+            // Registro guardado antes de configurar una llave propia: se lee con la llave heredada
+            if (!activeKey.AsSpan().SequenceEqual(LegacyDerivedKey))
             {
-                return DecryptStatic(cipherText, DefaultDerivedKey);
+                return DecryptStatic(cipherText, LegacyDerivedKey);
             }
             return cipherText;
         }
@@ -106,6 +127,7 @@ public class AesSensitiveDataProtector : ISensitiveDataProtector
 
 /// <summary>
 /// ValueConverter de Entity Framework Core para cifrar automáticamente propiedades string no nulas en reposo.
+/// Usa la llave maestra configurada con <see cref="AesSensitiveDataProtector.ConfigureMasterKey"/>.
 /// </summary>
 public sealed class EncryptedStringConverter : ValueConverter<string, string>
 {
@@ -119,6 +141,7 @@ public sealed class EncryptedStringConverter : ValueConverter<string, string>
 
 /// <summary>
 /// ValueConverter de Entity Framework Core para cifrar automáticamente propiedades string anulables en reposo.
+/// Usa la llave maestra configurada con <see cref="AesSensitiveDataProtector.ConfigureMasterKey"/>.
 /// </summary>
 public sealed class NullableEncryptedStringConverter : ValueConverter<string?, string?>
 {

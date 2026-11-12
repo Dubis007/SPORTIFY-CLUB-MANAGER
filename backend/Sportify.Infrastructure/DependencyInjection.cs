@@ -14,8 +14,21 @@ namespace Sportify.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    /// <param name="encryptionMasterKey">
+    /// Llave maestra AES ya validada por <see cref="SecretConfigurationValidator.ResolveEncryptionMasterKey"/>.
+    /// Es obligatoria para que ningún anfitrión cifre datos con una llave por defecto.
+    /// </param>
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string encryptionMasterKey)
     {
+        if (string.IsNullOrWhiteSpace(encryptionMasterKey))
+            throw new ArgumentException("La llave maestra de cifrado es obligatoria.", nameof(encryptionMasterKey));
+
+        // Los conversores de EF cifran en reposo con esta llave (Direccion, Telefono, Observaciones, ComentarioRechazo)
+        AesSensitiveDataProtector.ConfigureMasterKey(encryptionMasterKey);
+
         var connectionString = SecretConfigurationValidator.ResolveMySqlConnectionString(configuration);
         services.AddDbContextPool<SportifyDbContext>(options =>
             options.UseMySQL(connectionString)

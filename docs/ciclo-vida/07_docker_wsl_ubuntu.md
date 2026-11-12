@@ -47,7 +47,12 @@ Funciona, pero compilar desde `/mnt/c` es más lento. Si la construcción tarda 
 ```bash
 # 1. Crear el archivo de secretos (git lo ignora)
 cp .env.example .env
-nano .env        # cambia MYSQL_ROOT_PASSWORD, JWT_SECRET (32 caracteres o más) y SPORTIFY_AES_MASTER_KEY
+
+# Generar dos secretos propios (uno para JWT_SECRET y otro para SPORTIFY_AES_MASTER_KEY)
+openssl rand -base64 48
+openssl rand -base64 48
+
+nano .env        # pega los dos secretos y cambia MYSQL_ROOT_PASSWORD
 
 # 2. Validar el archivo de composición sin levantar nada
 docker compose config --quiet && echo "compose OK"
@@ -60,6 +65,8 @@ docker compose ps
 ```
 
 La primera construcción descarga las imágenes base de .NET, Node, nginx y MySQL, así que tarda varios minutos.
+
+> **Los secretos son obligatorios.** El código no trae llaves por defecto: la API y el microservicio 1 se niegan a arrancar si `JWT_SECRET` o `SPORTIFY_AES_MASTER_KEY` faltan, tienen menos de 32 caracteres o conservan el valor de ejemplo de `.env.example`. `docker compose logs api` muestra el motivo exacto. `SPORTIFY_AES_MASTER_KEY` cifra datos sensibles en la base: si la cambias después de guardar datos, esos datos dejan de poder leerse.
 
 ## 5. Verificar que todo funciona
 
@@ -95,7 +102,8 @@ docker compose down -v              # detener y BORRAR la base de datos y los co
 | `Cannot connect to the Docker daemon` | El motor no está encendido o falta la integración con Ubuntu. | Abrir Docker Desktop y activar la integración (paso 2), o `sudo service docker start`. |
 | El login falla con error de CORS | Se entra al frontend por una dirección distinta de `http://localhost:8081`. | Usar `localhost` y el `WEB_PORT` configurado. |
 | El panel de administrador muestra los microservicios "fuera de línea" | `ms1` o `ms2` no arrancaron, o sus puertos están ocupados. | `docker compose ps` y `docker compose logs ms1 ms2`. |
-| Error al firmar el token al iniciar sesión | `JWT_SECRET` tiene menos de 32 caracteres. | Poner un secreto más largo en `.env` y `docker compose up -d`. |
+| `required variable JWT_SECRET is missing a value` al ejecutar `docker compose` | Falta `.env` o no define ese secreto. | `cp .env.example .env` y completar los secretos (paso 4). |
+| `api` o `ms1` reinician en bucle y el log dice `Falta el secreto…`, `debe tener al menos 32 caracteres` o `publicado en el repositorio` | `JWT_SECRET` o `SPORTIFY_AES_MASTER_KEY` están vacíos, son cortos o siguen con el valor de ejemplo. | Generar valores con `openssl rand -base64 48`, pegarlos en `.env` y `docker compose up -d`. |
 | La API reinicia en bucle al primer arranque | La base aún se estaba inicializando. | Esperar a que `db` quede *healthy*; `docker compose logs api` muestra el motivo. |
 
 ## 8. Qué queda fuera de esta configuración
@@ -103,7 +111,7 @@ docker compose down -v              # detener y BORRAR la base de datos y los co
 - **HTTPS.** Todo se publica por HTTP en `localhost`. En la nube, el proveedor termina TLS.
 - **Secretos.** `.env` es solo para uso local. En la nube deben definirse como variables del proveedor.
 - **Respaldos.** `scripts/backup-db.ps1` respalda la base local de XAMPP, no el volumen `db_data` de Docker.
-- **Comprobantes.** Se guardan en el volumen `comprobantes` y hoy se sirven como archivos estáticos sin autenticación; está anotado como pendiente de seguridad.
+- **Comprobantes.** Se guardan en el volumen `comprobantes` (`/app/App_Data/comprobantes`, fuera de `wwwroot`). No tienen URL pública: solo se entregan por `GET /api/receipts/{id}/preview` al contador, al administrador y al deportista dueño del pago.
 
 ## Archivos de esta fase
 

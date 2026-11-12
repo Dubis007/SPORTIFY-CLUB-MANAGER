@@ -17,6 +17,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
 
+// Secretos: el código no trae llaves por defecto. Fuera de Development la API no arranca si falta alguna
+// o si se dejó un valor de ejemplo; en Development usa las de appsettings.Development.json.
+var isDevelopment = builder.Environment.IsDevelopment();
+var jwtSecret = Sportify.Infrastructure.Security.SecretConfigurationValidator.ResolveJwtSecret(builder.Configuration, isDevelopment);
+var encryptionMasterKey = Sportify.Infrastructure.Security.SecretConfigurationValidator.ResolveEncryptionMasterKey(builder.Configuration, isDevelopment);
+
 // Los comprobantes se guardan fuera de wwwroot y solo se entregan por GET /api/receipts/{id}/preview, que exige sesión.
 // La carpeta se crea al arrancar para que un despliegue limpio no falle en la primera subida.
 Directory.CreateDirectory(Path.Combine(
@@ -57,7 +63,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // Configurar base de datos y servicios (DbContext Pooling ya configurado en AddInfrastructure)
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, encryptionMasterKey);
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddApplication();
 
@@ -69,7 +75,6 @@ builder.Services.AddControllers(options => options.Filters.Add<Sportify.Api.Filt
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!";
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -109,6 +114,15 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+if (isDevelopment
+    && (Sportify.Infrastructure.Security.SecretConfigurationValidator.IsPubliclyKnownSecret(jwtSecret)
+        || Sportify.Infrastructure.Security.SecretConfigurationValidator.IsPubliclyKnownSecret(encryptionMasterKey)))
+{
+    app.Logger.LogWarning(
+        "Sportify usa las llaves de desarrollo incluidas en el repositorio (JWT y cifrado). " +
+        "Sirven solo para trabajar en local: no expongas esta instancia a Internet.");
+}
 
 // Seeders y Migraciones
 using (var scope = app.Services.CreateScope())

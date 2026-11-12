@@ -32,8 +32,9 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=sportify_db;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD};"
-      JwtSettings__Secret: ${JWT_SECRET}
-      EncryptionSettings__MasterKey: ${SPORTIFY_AES_MASTER_KEY}
+      # Secretos obligatorios: la API no arranca sin ellos ni con los valores de ejemplo de .env.example
+      JwtSettings__Secret: "${JWT_SECRET:?Define JWT_SECRET en .env (32 caracteres o más)}"
+      EncryptionSettings__MasterKey: "${SPORTIFY_AES_MASTER_KEY:?Define SPORTIFY_AES_MASTER_KEY en .env (32 caracteres o más)}"
       Cors__AllowedOrigins__0: http://localhost:${WEB_PORT:-8081}
       # Dentro de la red de Docker los microservicios se resuelven por nombre de servicio
       Microservices__Ms1AuthUrl: http://ms1:5101
@@ -54,7 +55,7 @@ services:
       - api
     environment:
       # Debe ser el mismo secreto con el que la API firma los JWT
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: "${JWT_SECRET:?Define JWT_SECRET en .env (32 caracteres o más)}"
       CORE_API_URL: http://api:8080
       MS1_PORT: "5101"
     ports:

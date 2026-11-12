@@ -24,7 +24,7 @@ Infraestructura como código: un archivo en el repositorio describe los dos serv
 
 | Servicio | Tipo | Detalle |
 |---|---|---|
-| `sportify-api` | Web service, runtime **docker**, plan free | `backend/Dockerfile`; `healthCheckPath: /api/health`; `JwtSettings__Secret` generado por Render; conexión y CORS se ingresan en el panel (`sync: false`) |
+| `sportify-api` | Web service, runtime **docker**, plan free | `backend/Dockerfile`; `healthCheckPath: /api/health`; `JwtSettings__Secret` y `EncryptionSettings__MasterKey` generados por Render; conexión y CORS se ingresan en el panel (`sync: false`) |
 | `sportify-web` | Static site | `rootDir: frontend`, `npm ci && npm run build`, publica `dist`; regla *rewrite* `/* → /index.html`; `VITE_API_URL` se ingresa en el panel |
 
 Ambos tienen `autoDeploy: false`: **solo se despliega lo que se libera** (tag), no cada commit.
@@ -36,6 +36,7 @@ Ambos tienen `autoDeploy: false`: **solo se despliega lo que se libera** (tag), 
    - `ConnectionStrings__DefaultConnection`: la cadena de Aiven.
    - `Cors__AllowedOrigins__0`: `https://sportify-web.onrender.com` (URL real del static site).
    - `VITE_API_URL`: `https://sportify-api.onrender.com` (URL real de la API).
+   - `JwtSettings__Secret` y `EncryptionSettings__MasterKey` no se escriben: Render los genera (`generateValue: true`). Son obligatorios: la API no arranca sin ellos ni con las llaves de desarrollo del repositorio.
 4. **Apply** → primer despliegue.
 5. En cada servicio: **Settings → Deploy Hook** → copiar la URL.
 6. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**:
@@ -75,6 +76,8 @@ Bundle JS del frontend                            -> contiene https://sportify-a
 ```
 
 Secretos cargados en GitHub: `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB` (Secrets) y `VITE_API_URL` (Variables).
+
+**Antes de volver a desplegar (cambio del 2026-11-12):** el servicio creado el 2026-10-19 no tiene `EncryptionSettings__MasterKey`, y desde este cambio la API no arranca sin esa variable. Al sincronizar el Blueprint, Render la crea con un valor generado; si el servicio no está enlazado al Blueprint, hay que añadirla a mano en **Environment** (32 caracteres o más, por ejemplo con `openssl rand -base64 48`). Los datos que ya estaban cifrados en Aiven se siguen leyendo: se guardaron con la llave anterior, que la API conserva solo para descifrar, y cada registro pasa a la llave nueva cuando se actualiza.
 
 **Limitaciones conocidas del plan gratuito:** la API se duerme tras 15 minutos sin tráfico, y el disco no es persistente, así que los comprobantes de pago subidos (`App_Data/comprobantes`) se pierden en cada redeploy. Para producción habría que usar un disco persistente de Render (de pago) o un almacenamiento externo (S3 o Cloudinary).
 

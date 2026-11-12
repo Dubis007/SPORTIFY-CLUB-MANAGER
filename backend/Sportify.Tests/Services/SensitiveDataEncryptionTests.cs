@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Sportify.Infrastructure.Security;
 
 namespace Sportify.Tests.Services;
@@ -45,6 +46,92 @@ public class SensitiveDataEncryptionTests
         var result = protector.Decrypt(legacyPlain);
 
         Assert.Equal(legacyPlain, result);
+    }
+
+    // Las pruebas que cambian la llave vigente viven en esta clase: xUnit ejecuta en serie las pruebas de una
+    // misma clase, así que ninguna otra prueba de cifrado corre mientras la llave está cambiada.
+    private const string LlavePropia = "k9Qw2rT7yU1iO5pA8sD3fG6hJ0kL4zX9cV2bN7mQ1wE5";
+
+    [Fact]
+    public void ConfigureMasterKey_LosConversoresDeEfCifranConLaLlaveConfigurada()
+    {
+        var converter = new EncryptedStringConverter();
+        var toProvider = converter.ConvertToProviderExpression.Compile();
+        var fromProvider = converter.ConvertFromProviderExpression.Compile();
+        var original = "Calle 100 # 15-20";
+
+        try
+        {
+            AesSensitiveDataProtector.ConfigureMasterKey(LlavePropia);
+            var storedInDb = toProvider(original);
+
+            Assert.Equal(original, fromProvider(storedInDb));
+
+            // Con otra llave el dato ya no se puede leer: antes los conversores ignoraban la llave configurada
+            AesSensitiveDataProtector.ConfigureMasterKey("otra-llave-maestra-distinta-de-32-caracteres!!");
+            Assert.NotEqual(original, fromProvider(storedInDb));
+
+            // Tampoco con la llave heredada, que es pública
+            AesSensitiveDataProtector.ConfigureMasterKey(null);
+            Assert.NotEqual(original, fromProvider(storedInDb));
+        }
+        finally
+        {
+            AesSensitiveDataProtector.ConfigureMasterKey(null);
+        }
+    }
+
+    [Fact]
+    public void ConfigureMasterKey_LosDatosCifradosConLaLlaveHeredadaSiguenLeyendose()
+    {
+        var converter = new NullableEncryptedStringConverter();
+        var toProvider = converter.ConvertToProviderExpression.Compile();
+        var fromProvider = converter.ConvertFromProviderExpression.Compile();
+        var original = "Lesión de rodilla: reposo de dos semanas";
+
+        try
+        {
+            // Registro guardado antes de que la llave fuera configurable
+            AesSensitiveDataProtector.ConfigureMasterKey(null);
+            var legacyRow = toProvider(original);
+
+            AesSensitiveDataProtector.ConfigureMasterKey(LlavePropia);
+
+            Assert.Equal(original, fromProvider(legacyRow));
+
+            // Al volver a guardarse queda cifrado con la llave propia
+            var rewritten = toProvider(original)!;
+            AesSensitiveDataProtector.ConfigureMasterKey(null);
+            Assert.NotEqual(original, fromProvider(rewritten));
+        }
+        finally
+        {
+            AesSensitiveDataProtector.ConfigureMasterKey(null);
+        }
+    }
+
+    [Fact]
+    public void Protector_ConLlaveMaestraEnConfiguracion_NoDependeDelSecretoJwt()
+    {
+        var conLlave = new AesSensitiveDataProtector(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["EncryptionSettings:MasterKey"] = LlavePropia,
+                ["JwtSettings:Secret"] = "un-secreto-jwt-cualquiera-de-32-caracteres!!"
+            })
+            .Build());
+        var soloJwt = new AesSensitiveDataProtector(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["JwtSettings:Secret"] = LlavePropia
+            })
+            .Build());
+
+        var cifrado = conLlave.Encrypt("dato sensible");
+
+        Assert.Equal("dato sensible", conLlave.Decrypt(cifrado));
+        // El secreto de firma de los JWT ya no se reutiliza como llave de cifrado
+        Assert.NotEqual("dato sensible", soloJwt.Decrypt(cifrado));
     }
 
     [Fact]

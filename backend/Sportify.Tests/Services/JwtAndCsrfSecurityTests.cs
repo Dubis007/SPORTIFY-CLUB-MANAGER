@@ -49,6 +49,19 @@ public class JwtAndCsrfSecurityTests
     }
 
     [Fact]
+    public void TokensCsrf_SinSecretoConfigurado_NoUsanUnaLlavePorDefecto()
+    {
+        var conSecreto = CreateTokenService();
+        var sinSecreto = new JwtTokenService(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["JwtSettings:Secret"] = "" })
+            .Build());
+
+        Assert.Throws<InvalidOperationException>(() => sinSecreto.GenerateCsrfToken(userId: 4));
+        // Un token válido emitido con secreto no se acepta en un servicio que no tiene ninguno
+        Assert.False(sinSecreto.ValidateCsrfToken(conSecreto.GenerateCsrfToken(userId: 4), expectedUserId: 4));
+    }
+
+    [Fact]
     public async Task CsrfValidationMiddleware_TokenAlteradoEnPost_Retorna403Forbidden()
     {
         var service = CreateTokenService();

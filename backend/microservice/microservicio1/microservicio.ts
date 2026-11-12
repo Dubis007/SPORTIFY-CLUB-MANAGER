@@ -8,9 +8,53 @@ import {
   type AuditSessionInput,
 } from './validator.js';
 
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  'A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!';
+/**
+ * Secreto de desarrollo local: el mismo que la API toma de appsettings.Development.json. Está publicado en
+ * el repositorio, así que solo se usa cuando NODE_ENV no es "production".
+ */
+const DEVELOPMENT_JWT_SECRET = 'A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!';
+const MINIMUM_SECRET_LENGTH = 32;
+
+/** Valores de ejemplo o de desarrollo que cualquiera conoce: en producción se rechazan. */
+function isPubliclyKnownSecret(value: string): boolean {
+  return (
+    value === DEVELOPMENT_JWT_SECRET ||
+    value.toLowerCase().startsWith('cambia_') ||
+    value.toUpperCase().includes('REEMPLAZAR')
+  );
+}
+
+/**
+ * Resuelve el secreto con el que la API firma los JWT. En producción es obligatorio definir JWT_SECRET con un
+ * valor propio: sin él el microservicio no arranca, en lugar de validar tokens con una llave conocida.
+ */
+export function resolveJwtSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = env.JWT_SECRET?.trim();
+  const isProduction = env.NODE_ENV === 'production';
+
+  if (!configured) {
+    if (isProduction) {
+      throw new Error(
+        'Falta JWT_SECRET. Debe ser el mismo secreto con el que la API firma los JWT (JwtSettings__Secret).'
+      );
+    }
+    return DEVELOPMENT_JWT_SECRET;
+  }
+
+  if (configured.length < MINIMUM_SECRET_LENGTH) {
+    throw new Error(`JWT_SECRET debe tener al menos ${MINIMUM_SECRET_LENGTH} caracteres.`);
+  }
+
+  if (isProduction && isPubliclyKnownSecret(configured)) {
+    throw new Error(
+      'JWT_SECRET usa un valor de ejemplo o de desarrollo publicado en el repositorio. Genera uno propio (por ejemplo: openssl rand -base64 48).'
+    );
+  }
+
+  return configured;
+}
+
+const JWT_SECRET = resolveJwtSecret();
 const CORE_API_URL = process.env.CORE_API_URL || 'http://localhost:5000';
 
 export interface ActiveSessionRecord {

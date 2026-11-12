@@ -5,12 +5,12 @@ import {
   verifyJwtToken,
   auditAndSanitizeSession,
   getAuthServiceTelemetry,
+  resolveJwtSecret,
 } from '../microservicio1/microservicio.js';
 import { CredentialsSchema, TokenVerifyRequestSchema } from '../microservicio1/validator.js';
 
-const DEFAULT_SECRET =
-  process.env.JWT_SECRET ||
-  'A_VERY_SECRET_KEY_THAT_NEEDS_TO_BE_AT_LEAST_32_CHARACTERS_LONG!';
+// El mismo secreto con el que el microservicio verifica las firmas en esta ejecución de pruebas
+const DEFAULT_SECRET = resolveJwtSecret();
 
 function toBase64Url(input: string): string {
   return Buffer.from(input, 'utf8')
@@ -156,6 +156,34 @@ describe('Microservicio 1 — Validación JWT y Control de Sesiones Concurrentes
     const telemetry = getAuthServiceTelemetry();
     assert.equal(telemetry.status, 'Healthy');
     assert.ok(telemetry.totalActiveSessions >= 2);
+  });
+
+  it('en producción exige un JWT_SECRET propio y no cae a la llave de desarrollo', () => {
+    const propio = 'k9Qw2rT7yU1iO5pA8sD3fG6hJ0kL4zX9cV2bN7mQ1wE5';
+
+    assert.equal(resolveJwtSecret({ NODE_ENV: 'production', JWT_SECRET: propio }), propio);
+    assert.throws(() => resolveJwtSecret({ NODE_ENV: 'production' }), /Falta JWT_SECRET/);
+    assert.throws(
+      () => resolveJwtSecret({ NODE_ENV: 'production', JWT_SECRET: resolveJwtSecret({}) }),
+      /publicado en el repositorio/
+    );
+    assert.throws(
+      () =>
+        resolveJwtSecret({
+          NODE_ENV: 'production',
+          JWT_SECRET: 'cambia_este_secreto_de_al_menos_32_caracteres',
+        }),
+      /publicado en el repositorio/
+    );
+    assert.throws(() => resolveJwtSecret({ NODE_ENV: 'production', JWT_SECRET: 'corto' }), /al menos 32/);
+  });
+
+  it('en desarrollo usa la llave local cuando JWT_SECRET no está definido', () => {
+    const dev = resolveJwtSecret({});
+
+    assert.ok(dev.length >= 32);
+    assert.equal(resolveJwtSecret({ NODE_ENV: 'development' }), dev);
+    assert.equal(resolveJwtSecret({ JWT_SECRET: `  ${dev}  ` }), dev);
   });
 
   it('valida esquemas Zod de credenciales y estructura JWT', () => {

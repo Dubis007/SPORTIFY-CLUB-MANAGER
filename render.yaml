@@ -16,7 +16,12 @@ services:
       # Aiven MySQL: Server=<host>;Port=<puerto>;Database=sportify_db;Uid=avnadmin;Pwd=<clave>;SslMode=Required;
       - key: ConnectionStrings__DefaultConnection
         sync: false
+      # Secreto de firma de los JWT. Render lo genera una vez y lo conserva entre despliegues.
       - key: JwtSettings__Secret
+        generateValue: true
+      # Llave maestra AES-256 del cifrado en reposo. Sin ella la API no arranca: el código no trae llaves por defecto.
+      # No la cambies después: los datos cifrados con ella dejarían de poder leerse.
+      - key: EncryptionSettings__MasterKey
         generateValue: true
       # URL pública del frontend, p. ej. https://sportify-web.onrender.com
       - key: Cors__AllowedOrigins__0
