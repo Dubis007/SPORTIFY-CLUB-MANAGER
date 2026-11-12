@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Esquema Zod para credenciales de autenticación
  */
 export const CredentialsSchema = z.object({
-  email: z.string().email('Formato de correo electrónico inválido').min(5).max(120),
+  email: z.email('Formato de correo electrónico inválido').min(5).max(120),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').max(128),
   deviceFingerprint: z.string().min(3).max(256).optional(),
 });
@@ -14,7 +14,7 @@ export const CredentialsSchema = z.object({
  */
 export const JwtClaimsSchema = z.object({
   sub: z.string().min(1, 'El identificador de sujeto (sub) es obligatorio'),
-  email: z.string().email('El claim email no es válido'),
+  email: z.email('El claim email no es válido'),
   role: z.enum(['ADMIN', 'CONTADOR', 'ENTRENADOR', 'MIEMBRO']),
   iss: z.string().default('SportifyApi'),
   aud: z.string().default('SportifyClients'),
@@ -43,7 +43,7 @@ export const TokenVerifyRequestSchema = z.object({
 export const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(16, 'Refresh token inválido'),
   userId: z.string().min(1, 'ID de usuario requerido'),
-  ipAddress: z.string().ip().optional(),
+  ipAddress: z.union([z.ipv4(), z.ipv6()]).optional(),
 });
 
 /**
@@ -51,7 +51,7 @@ export const RefreshTokenSchema = z.object({
  */
 export const AuditSessionRequestSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
-  email: z.string().email('Correo electrónico inválido'),
+  email: z.email('Correo electrónico inválido'),
   role: z.enum(['ADMIN', 'CONTADOR', 'ENTRENADOR', 'MIEMBRO']),
   sessionId: z.string().min(4).default(() => `sess_${Date.now()}`),
   token: z.string().optional(),

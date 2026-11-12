@@ -28,7 +28,9 @@ import ConfirmDialogModal, {
   useConfirmDialog,
 } from '../../components/common/ConfirmDialogModal';
 
-type TrainingFormInputs = z.infer<typeof trainingSchema>;
+// El formulario maneja la entrada del esquema (la capacidad puede faltar) y al enviar recibe la salida validada
+type TrainingFormValues = z.input<typeof trainingSchema>;
+type TrainingFormInputs = z.output<typeof trainingSchema>;
 
 const ATTENDANCE_OPTIONS: Array<{
   value: AttendanceStatus;
@@ -91,7 +93,7 @@ export default function TrainingsPage() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<TrainingFormInputs>({
+  } = useForm<TrainingFormValues, unknown, TrainingFormInputs>({
     resolver: zodResolver(trainingSchema),
   });
 

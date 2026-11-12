@@ -10,7 +10,7 @@ const forgotPasswordSchema = z.object({
   correo: z
     .string()
     .min(1, 'El correo electrónico es obligatorio')
-    .email('Ingresa un correo electrónico institucional válido'),
+    .pipe(z.email('Ingresa un correo electrónico institucional válido')),
 });
 
 type ForgotPasswordInputs = z.infer<typeof forgotPasswordSchema>;

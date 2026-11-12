@@ -33,11 +33,13 @@ const manualPaymentSchema = z.object({
   usuarioId: z.string().min(1, 'Debes seleccionar un miembro'),
   membresiaId: z.string().optional(),
   montoCOP: z.coerce
-    .number({ invalid_type_error: 'Ingresa un monto numérico válido' })
+    .number({ error: 'Ingresa un monto numérico válido' })
     .min(1000, 'El monto mínimo permitido es $1.000 COP'),
 });
 
-type ManualPaymentFormInputs = z.infer<typeof manualPaymentSchema>;
+// El formulario maneja la entrada del esquema (el monto llega como texto) y al enviar recibe la salida ya convertida
+type ManualPaymentFormValues = z.input<typeof manualPaymentSchema>;
+type ManualPaymentFormInputs = z.output<typeof manualPaymentSchema>;
 
 export default function AccountantDashboard() {
   const {
@@ -89,7 +91,7 @@ export default function AccountantDashboard() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<ManualPaymentFormInputs>({
+  } = useForm<ManualPaymentFormValues, unknown, ManualPaymentFormInputs>({
     resolver: zodResolver(manualPaymentSchema),
     defaultValues: { usuarioId: '', membresiaId: '', montoCOP: 120000 },
   });
