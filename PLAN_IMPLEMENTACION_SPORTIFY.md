@@ -234,7 +234,8 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
   - **Pruebas a ejecutar**: `dotnet test` validando generación de bytes `%PDF` y caso inexistente (`404`/null), más `vitest run` y `tsc --noEmit`.
   - **Commit propuesto**: `feat(recibos): genera colilla PDF individual de pago mediante QuestPDF`
 
-- [ ] [BLOQUEADA: DEC-001, DEC-002] **TAREA-P1-03B** — *Prioridad 1 | Rediseño del Motor de Cobranza (Tarifa General 1-28, Lote Mensual, Abonos Parciales y Despacho WhatsApp)*
+- [ ] [DESCARTADA EN COBRANZA: DEC-002 · DIFERIDA EN WHATSAPP: DEC-001] **TAREA-P1-03B** — *Prioridad 1 | Rediseño del Motor de Cobranza (Tarifa General 1-28, Lote Mensual, Abonos Parciales y Despacho WhatsApp)*
+  - **Decisión del 2026-11-11**: el responsable del producto definió que el pago es único y total. No habrá abonos parciales, tarifa general ni lote mensual, y el envío por WhatsApp no se aborda por ahora. La parte de cobranza queda descartada y el despacho por WhatsApp queda diferido (ver Sección G).
   - **Requerimientos y brechas**: `VID1-RF-001`, `VID1-RF-002`, `VID2-RF-005`, `VID2-RF-006`, `VID1-RNF-005`, `GRP-RF-03`, `GRP-RF-04`, `CMP-02`, `CMP-03`, `GAP-003`, `GAP-005` (Reglas: `VID1-RN-001`, `VID1-RN-002`, `VID1-RN-006`, `VID1-RN-010`, `VID2-RN-006`, `VID2-RN-007`; Criterios: `CA-001`, `CA-002`, `VID2-CA-005`, `VID2-CA-006`; Dudas: `VID1-DU-001`, `VID1-DU-003`, `VID2-DU-003`, `VID2-DU-004`).
   - **Descripción**: Rediseñar el flujo transaccional de `Pago.cs` para definir si el club opera con suscripción a `PlanMembresia` + `Otros Cargos` + `Abonos Parciales` con barra de progreso (Video 1), con `Tarifa General` masiva (día 1-28 solo para `'Sin configurar'`) + generación masiva bloqueada (Video 2), manteniendo o reemplazando el rol `CONTADOR` actual (`RN-04`/`RN-05`), e integrar envío por WhatsApp (API oficial Meta/Twilio con bandeja `'Chats de WhatsApp'` vs enlace manual `wa.me`).
   - **Estado actual comprobado**: Sportify implementa pago manual único por membresía con aprobación/rechazo obligatorio por `CONTADOR`/`ADMIN`, sin abonos parciales, sin tarifa general día 1-28 ni integración WhatsApp.
@@ -506,7 +507,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 - **Consecuencia técnica**: La API oficial exige cuenta Meta Business verificada, plantillas aprobadas, webhook público, costos por conversación y tabla de historial de mensajes; `wa.me` no requiere infraestructura pagada pero no puede adjuntar binarios PDF automáticamente sin URL firmada pública ni ofrece bandeja de chats automatizada.
 - **Evidencia en el repositorio**: No existen credenciales de Meta/Twilio en `appsettings.json` ni mención a WhatsApp API en `docs/requisitos/RF_catalogo.md` (`RF-01`..`RF-13`).
 - **Recomendación técnica razonada**: Emitir la colilla PDF individual con QuestPDF ya mismo (`TAREA-P1-03A`, sin bloqueo) y, para el MVP académico/operativo sin costos recurrentes, adoptar en una siguiente iteración enlaces `wa.me` con mensaje prellenado + descarga/URL firmada temporal del PDF, dejando WhatsApp Cloud API como adaptador opcional.
-- **Estado**: **Pendiente / Bloquea `TAREA-P1-03B` (despacho WhatsApp)**.
+- **Estado**: **Diferida por instrucción del usuario (2026-11-11)**: el envío por WhatsApp no se implementa por ahora. Deja de bloquear trabajo en curso; `TAREA-P1-03B` queda sin ejecutar.
 
 #### `DEC-002` (Relacionada con `CMP-02`, `VID1-DU-003`, `VID2-DU-003`, `VID2-DU-004`)
 - **Pregunta concreta**: ¿Cuál es el modelo transaccional definitivo de cobranza: combinar `Tarifa General` masiva (día 1-28 para socios `'Sin configurar'`) y generación por lote mensual (Video 2) con `Abonos Parciales` acumulativos, barra de progreso y `Otros Cargos` (Video 1), conservando o eliminando la aprobación manual obligatoria del rol `CONTADOR` actual?
@@ -515,7 +516,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 - **Consecuencia técnica**: Soportar abonos parciales y otros cargos requiere separar la entidad `ObligacionCobro` (deuda con saldo pendiente) de `AbonoPago` (transacción individual aprobada por Contador o caja directa), modificando migraciones MySQL y reportes financieros.
 - **Evidencia en el repositorio**: `docs/requisitos/reglas_negocio.md` (`RN-04`, `RN-05`, `RN-08`) define explícitamente el rol `CONTADOR` y la validación manual de pagos (`PENDIENTE` → `APROBADO`/`RECHAZADO`), pero no arbitra entre Tarifa General (Video 2) y Abonos Parciales/Otros Cargos (Video 1).
 - **Recomendación técnica razonada**: Conservar el rol `CONTADOR` (`RN-08`) e introducir una entidad `CargoFacturable` (generable en lote mensual o como otro cargo) asociada a `1..N` registros `Pago` (abonos) cuyo saldo se descuente al pasar a `APROBADO`.
-- **Estado**: **Pendiente / Bloquea `TAREA-P1-03B`**.
+- **Estado**: **Resuelta por instrucción del usuario (2026-11-11)**: el pago es único y total, sin abonos parciales, tarifa general ni lote mensual. Se conserva la aprobación manual por `CONTADOR` o `ADMIN`. La parte de cobranza de `TAREA-P1-03B` queda descartada.
 
 #### `DEC-003` (Relacionada con `CMP-01`, `VID1-RN-003`, `VID2-RN-004`, `VID2-RN-005`, `VID2-DU-006`)
 - **Pregunta concreta**: ¿Cómo debe operar la pantalla de Asistencia: rotación táctil cíclica iniciando todos en `'Ausente'` (Video 2), tabla vertical con 4 botones separados, notas opcionales y alta de `'persona no registrada'` (Video 1), o vista dual conmutable? ¿Cuál será el nombre oficial del 4° estado (`'Justificada'` vs `'Excusa médica'`)?
@@ -533,7 +534,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 - **Consecuencia técnica**: Impacta claves foráneas entre sedes, grupos, deportistas y entrenamientos en `sportify_db`.
 - **Evidencia en el repositorio**: `Sede.cs` modela ubicaciones físicas reales (`Nombre`, `Ciudad`, `Direccion`) y `Entrenamiento.cs` ya tiene `SedeId` y `EntrenadorId`, pero no existe `Grupo`.
 - **Recomendación técnica razonada**: Mantener `Sede` como instalación física y agregar `GrupoDeportivo` con `SedeId`, `EntrenadorId`, `CupoMaximo`, `CategoriaEdad`, `Nivel` y tabla puente `GrupoMiembro` con `Dorsal`.
-- **Estado**: **Pendiente / Bloquea `TAREA-P2-01` y `TAREA-P2-02`**.
+- **Estado**: **Pendiente / Bloquea `TAREA-P2-01` y `TAREA-P2-02`**. El 2026-11-11 el usuario indicó dejar la jerarquía sede/grupo en pendientes para abordarla más adelante.
 
 #### `DEC-005` (Relacionada con `VID1-DU-005`)
 - **Pregunta concreta**: En planes limitados por número de entradas/clases (ej. `12 entradas/mes`), ¿los estados `'Tarde'` y `'Justificada / Excusa médica'` descuentan una entrada del saldo del deportista o solo `'Presente'` y `'Tarde'`?
@@ -609,8 +610,21 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-11-01 12:37 | `TAREA-P1-02` (`DEC-003` resuelta): Estados de asistencia (`Presente`, `Ausente`, `Tarde`, `Excusa`) con comentarios opcionales | Completado | `e6d85160` | `dotnet build` 0 err/0 warn, `dotnet test` 41/41 OK, `frontend typecheck` 0 err, `vitest` 6/6 suites (16/16 tests) OK | Selector optimista `<100ms`, contadores en vivo, comentarios desplegables y vista de historial en deportista. |
 | 2026-11-01 13:01 | `TAREA-P2-06C` (`DEC-009` resuelta): Fecha de nacimiento y avisos de próximos cumpleaños en Calendario y Dashboard | Completado | `67c92917` | `dotnet build` 0 err/0 warn, `dotnet test` 42/42 OK, `frontend typecheck` 0 err, `vitest` 6/6 suites (17/17 tests) OK | Cálculo de días faltantes con cruce de año/bisiestos, banner de aviso en `CalendarPage`, chips mensuales y edición en perfil/directorio. |
 | 2026-11-07 10:30 | Optimización integral UX/UI centrada por rol (`VID1-RNF-001`, `VID2-RNF-005`, `GAP-010`): interfaces independientes sin ruido técnico, esqueletos de carga en todas las vistas y `ConfirmDialogModal` | Completado | Registrado en este commit | `dotnet test` 42/42 OK, `frontend typecheck` 0 err, `vitest` 8/8 suites (22/22 tests) OK, `ms test` 9/9 OK | Aislamiento de telemetría solo para `ADMIN`, eliminación total de `alert`/`window.confirm` bloqueantes y desacoplamiento MVVM completo. |
+| 2026-11-10 17:47 – 21:11 | Lista de 17 consejos de seguridad y calidad (frontend 3, backend 6 y 5 de full stack), ejecutada por otro agente | Completado (14 commits) | `1863ca48`, `4c1ba7a3`, `5ae53987`, `9ee34ebb`, `2ea5d42b`, `eb016fa5`, `a97350da`, `be176936`, `a8f490f6`, `05fdb68c`, `8b18e0a8`, `aa683872`, `11727081`, `68a552be` | No se registraron resultados por commit. Verificado en conjunto el 2026-11-11: `dotnet test` 100/100, `vitest` 34/34, `ms test` 9/9 | La prueba en navegador del 2026-11-11 mostró que varios flujos quedaron rotos pese a las pruebas en verde (Sección G.3). |
+| 2026-11-11 | Prueba del flujo real en navegador (Chromium automatizado, copia temporal, base `sportify_e2e`) sobre `68a552be` | Completado | Sin commit (no modifica código) | 4 roles, todas las pantallas y flujos interactivos | 14 hallazgos funcionales y 6 de seguridad documentados en la Sección G.3. |
+| 2026-11-11 15:24 | Consejo full stack 6: mantenimiento preventivo de dependencias (trabajo que estaba sin commit) | Completado | `029e52e1` | `dotnet test` 100/100, `vitest` 34/34 | Auditoría: NuGet sin vulnerabilidades; npm con pendientes (Sección G.5). |
+| 2026-11-11 15:28 | Corrección: el interceptor anti-inyección SQL bloqueaba los lotes parametrizados de EF Core (eliminar usuario daba 500) | Completado | `fb9ef485` | `SqlInjectionPreventionTests` 12/12 | Regresión introducida por `9ee34ebb`. |
+| 2026-11-11 15:28 | Corrección: avisos de éxito en usuarios solo cuando el servidor confirma | Completado | `19773330` | `UsersPage.test.tsx` 5/5 | — |
+| 2026-11-11 15:29 | Límite de comprobantes a 5 MB en React y C# (`RF-06`) | Completado | `c1028e40` | `FileUploadValidationTests` 10/10, `fileValidation.test.ts` 3/3 | Sustituye el límite de 2 MB de `8b18e0a8`. |
+| 2026-11-11 15:31 | Corrección: rechazo de pagos e ingreso manual alineados con el contrato JSON de la API | Completado | `5136098a` | `useAdminPaymentsViewModel.test.ts` 3/3, `tsc` 0 errores | El rechazo devolvía 400 siempre y el selector de miembro salía vacío. |
+| 2026-11-11 15:31 | Corrección: el frontend muestra el motivo real de la API (`ProblemDetails`) | Completado | `3bb70cc8` | `apiError.test.ts` 4/4 | Hace visible el bloqueo tras 5 intentos y las reglas de negocio. |
+| 2026-11-11 15:34 | Cancelación de membresía por el propio miembro y corrección del portal del miembro | Completado | `fb637936` | `dotnet test` (membresías y controlador) 10/10, `vitest` (miembro) 6/6 | Nuevo `POST /api/members/me/memberships/{id}/cancel`. |
+| 2026-11-11 15:39 | Convocatoria a torneos por el personal y aceptación o rechazo por el miembro (`RF-10`, `RN-03`) | Completado | `4ace2f2f` | `dotnet test` 123/123, `vitest` 54/54, `eslint` 0 errores | Nuevos `POST /api/members/me/registrations/{id}/accept` y `/decline`. |
+| 2026-11-11 15:43 | Consejo full stack 7: Docker preparado para WSL 2 / Ubuntu, con microservicios | Preparado, sin ejecutar | `bc2d647e` | `docker compose config` válido, `dotnet publish -c Release` correcto, `dotnet test` 123/123 | Las imágenes no se construyeron: Docker Desktop estaba apagado. Guía en `docs/ciclo-vida/07_docker_wsl_ubuntu.md`. |
+| 2026-11-11 15:44 | Corrección: el contador ve la aprobación solo cuando el servidor la confirma | Completado | `e8023b9b` | `tsc` 0 errores | — |
+| 2026-11-11 | Segunda prueba en navegador y regresión completa sobre `e8023b9b` | Completado | Sin commit | Todas las pantallas, 26 pasos de administrador y 41 de miembro, contador, entrenador y autenticación; 0 errores `fail:` en el log de la API | Verificación final: `dotnet test` 123/123, `vitest` 54/54, `ms test` 9/9, `eslint` 0 errores, `vite build` correcto. |
 
-### Estado operativo actual (Cierre de tareas ejecutables)
+### Estado operativo al 2026-11-07 (histórico; el estado vigente está en la Sección G)
 - **Última tarea iniciada**: Optimización integral UX/UI centrada por rol y confort de carga asíncrona
 - **Última tarea completada**: Optimización integral UX/UI centrada por rol (13 de 13 entregables ejecutables completados, verificados y confirmados en commits atómicos)
 - **Balance global de pruebas automatizadas (73/73 en verde)**:
@@ -621,3 +635,118 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 - **Tareas bloqueadas por decisiones de producto**: `TAREA-P1-03B` (`DEC-001`, `DEC-002`), `TAREA-P2-01` (`DEC-004`, `DEC-008`), `TAREA-P2-02` (`DEC-004`), `TAREA-P2-03` (`DEC-005`, `DEC-008`), `TAREA-P2-04` (`DEC-006`), `TAREA-P2-05B` (`DEC-007`), `TAREA-P4-01A..F` (`DEC-010`).
 - **Siguiente tarea prioritaria recomendada tras resolución de decisiones de negocio**: `TAREA-P1-03B` (*Tarifa General, abonos parciales y despacho de colilla por WhatsApp*, tras resolver `DEC-001` y `DEC-002`), seguida de `TAREA-P2-02` (*Grupos y Categorías Deportivas con control de aforo*, tras resolver `DEC-004`).
 - **Incidencias que condicionan la continuación**: Únicamente las decisiones de negocio pendientes documentadas en la Sección E; el repositorio queda 100% limpio, compilando sin errores ni advertencias y con las 73 pruebas automatizadas del ecosistema en verde.
+
+---
+
+## G. Actualización del 10 y 11 de noviembre de 2026
+
+Esta sección registra el trabajo posterior al 2026-11-07 y es el estado vigente del proyecto. El código descrito corresponde al commit `e8023b9b`; este documento se registra en el commit siguiente.
+
+### G.1 Lista de 17 consejos de seguridad y calidad
+
+El responsable del producto incorporó una lista de 17 consejos, repartida en tres frentes. Otro agente ejecutó 14 el 2026-11-10; el resto se cerró el 2026-11-11.
+
+| # | Frente | Consejo | Estado | Commits |
+| :-- | :-- | :-- | :-- | :-- |
+| 1 | Frontend | Accesibilidad (atributos `alt`, foco por teclado, contraste) | Hecho | `eb016fa5` |
+| 2 | Frontend | Eliminar patrones oscuros | Hecho | `5ae53987`; la cancelación directa solo funciona de verdad desde `fb637936` |
+| 3 | Frontend | Sacar claves API del navegador | Hecho | `1863ca48` |
+| 4 | Backend | Criptografía y datos (BCrypt, cifrado en reposo) | Hecho con una limitación (G.3.2) | `4c1ba7a3` |
+| 5 | Backend | Prevención de inyección SQL | Hecho | `9ee34ebb`, corregido en `fb9ef485` |
+| 6 | Backend | Validación pura y lógica de negocio en el servidor | Hecho | `2ea5d42b` |
+| 7 | Backend | Diseño de API con DTOs de mínimo privilegio | Hecho | `a97350da` |
+| 8 | Backend | Lógica de autenticación (PIN de 15 minutos, bloqueo tras 5 intentos) | Hecho; el PIN no se entrega (G.3.2) | `be176936`; el aviso de bloqueo se ve desde `3bb70cc8` |
+| 9 | Backend | Row Level Security | Hecho; inactivo sin la cabecera `X-Tenant-Id` (decisión: basta con que exista) | `a8f490f6` |
+| 10 | Full stack | Validación de entradas y XSS | Hecho | `05fdb68c` |
+| 11 | Full stack | Manejo de archivos (peso y formato en React y C#) | Hecho, a 5 MB | `8b18e0a8`, `c1028e40` |
+| 12 | Full stack | Control de acceso (guards y `Authorize`) | Hecho | `aa683872` |
+| 13 | Full stack | Gestión del código y secretos | Hecho con una limitación (G.3.2) | `11727081` |
+| 14 | Full stack | Autenticación y CSRF | Hecho; la validación CSRF no es obligatoria (G.3.2) | `68a552be` |
+| 15 | Full stack | Mantenimiento preventivo de dependencias | Hecho; quedan vulnerabilidades por decidir (G.5) | `029e52e1` |
+| 16 | Full stack | Docker en WSL / Ubuntu | Preparado, sin ejecutar | `bc2d647e` |
+| 17 | Full stack | Moderación (reportar reseñas falsas) | Excluido por decisión: Sportify no tiene reseñas ni las tendrá | — |
+
+### G.2 Decisiones del responsable del producto (2026-11-11)
+
+1. **Cobranza (`DEC-002`)**: el pago es único y total. No hay abonos parciales, tarifa general ni lote mensual.
+2. **WhatsApp (`DEC-001`)**: no se implementa por ahora.
+3. **Jerarquía sede/grupo (`DEC-004`)**: queda pendiente para más adelante.
+4. **Recuperación de contraseña**: por ahora la restablece el administrador. El envío por correo se hará al desplegar, con Firebase.
+5. **Permisos del miembro**: puede cancelar su propia membresía (también el administrador). En torneos, el administrador o el entrenador convocan y el miembro debe aceptar para quedar inscrito.
+6. **RLS**: basta con que exista; no se requiere aislar datos por sede.
+7. **Límite de archivo**: 5 MB (`RF-06`).
+8. **Moderación de reseñas**: fuera de alcance de forma definitiva.
+9. **Entorno**: se sigue en local; falta cargar un conjunto de datos de prueba; el despliegue se decidirá después.
+
+### G.3 Prueba del flujo real en navegador (2026-11-11)
+
+Se ejecutó con Chromium automatizado, desde una copia temporal del proyecto y contra una base de prueba vacía (`sportify_e2e`, MariaDB 10.4 de XAMPP). La base `sportify_db` no se tocó. Se hicieron tres pasadas: una sobre `68a552be`, otra sobre los flujos cambiados y una regresión completa sobre `e8023b9b`.
+
+#### G.3.1 Fallos encontrados y corregidos
+
+| Fallo observado en `68a552be` | Causa | Corrección |
+| :-- | :-- | :-- |
+| El portal del miembro no listaba membresías ni pagos; no podía reportar pagos ni cancelar | El frontend leía `Memberships`/`Payments` y la API devuelve `memberships`/`payments` | `fb637936` |
+| El ingreso manual de pagos no listaba miembros (administrador y contador) | El frontend leía `Members`/`Memberships` y la API devuelve `members`/`memberships` | `5136098a` |
+| Rechazar un pago devolvía 400 siempre | El frontend enviaba `comentario` y el backend exige `comentarioRechazo` | `5136098a` |
+| Eliminar un usuario devolvía 500 | El interceptor anti-inyección bloqueaba el lote `DELETE … ; DELETE …` que genera EF Core | `fb9ef485` |
+| La pantalla anunciaba "Usuario eliminado" aunque el borrado fallara; lo mismo al aprobar pagos como contador | El aviso de éxito no dependía del resultado | `19773330`, `e8023b9b` |
+| El miembro recibía 403 al inscribirse a un torneo y al cancelar su membresía; la cancelación simulaba éxito | Los endpoints solo admitían personal y el frontend ocultaba el error | `4ace2f2f`, `fb637936` |
+| El usuario no veía el motivo real de un error (cuenta bloqueada, cuenta desactivada, regla de negocio) | La API responde `ProblemDetails` (`detail`) y el frontend leía `message` | `3bb70cc8` |
+| Mensaje "La contrasea actual…" | Error de texto en `MembersController` | `3bb70cc8` |
+
+#### G.3.2 Hallazgos sin corregir
+
+**Seguridad**
+
+1. **Comprobantes sin protección**: un comprobante subido se descarga sin autenticación en `/comprobantes/receipts/<guid>.pdf`, porque se guarda bajo `wwwroot` y se sirve como archivo estático. El endpoint `GET /api/receipts/{id}/preview` sí exige sesión.
+2. **CSRF no obligatorio**: `CsrfValidationMiddleware` solo valida cuando llega la cabecera; una petición sin `X-CSRF-TOKEN` pasa. Con token inválido responde 403.
+3. **Llaves por defecto versionadas**: `appsettings.json` contiene un secreto JWT y una llave AES por defecto; el commit de secretos solo retiró la cadena de conexión.
+4. **Cifrado AES con llave fija**: los conversores de EF (`EncryptedStringConverter`) usan una llave derivada de una constante del código e ignoran `EncryptionSettings:MasterKey`.
+5. **PIN de recuperación**: se genera y se guarda con hash, pero no se entrega por ningún canal; además sigue sin usar tras el restablecimiento por el administrador.
+6. **Documentación de la API**: Scalar queda abierta en el entorno `Development` (comportamiento esperado, a tener en cuenta al desplegar).
+
+**Funcionales y visuales**
+
+1. Falta `/vite.svg` (no existe `frontend/public`): el logo aparece roto en el login y en el menú lateral.
+2. La pestaña Membresías del contador llama a `GET /api/locations` y recibe 403 (solo produce errores en consola).
+3. El calendario muestra "Sede #1" en los entrenamientos en lugar del nombre de la sede.
+4. El formulario de entrenamiento no permite elegir sede ni entrenador: guarda la sede 1 y al usuario creador como entrenador.
+5. En el ingreso manual, la opción de membresía se lee "Plan Plan Básico".
+6. En MariaDB (XAMPP), `Database.Migrate()` falla en silencio y el esquema se crea con `EnsureCreated()`; no queda tabla `__EFMigrationsHistory`. Las columnas posteriores a `InitialCreate` dependen de las guardas de `Program.cs`.
+7. La serie mensual y las tendencias de `microservicio2` son valores fijos, no datos reales.
+8. Una subida mayor de 6 MB recibe un corte de conexión en lugar de un 400 legible. Solo ocurre si se salta la validación del navegador.
+9. `docs/ciclo-vida/02_test.md` sigue documentando `npm run test:ui`, retirado en `029e52e1`; `README.md` aún muestra los MVP 2 y 3 como pendientes.
+
+### G.4 Funcionalidades incorporadas el 2026-11-11
+
+- **Límite de comprobantes de 5 MB** (`c1028e40`): `FileUploadValidator.DefaultMaxFileSizeBytes`, `StorageSettings:MaxFileSizeMB` y `MAX_UPLOAD_FILE_SIZE_MB` en React. El cuerpo de la petición admite 6 MB para que un archivo de entre 5 y 6 MB reciba un 400 con mensaje.
+- **Cancelación de membresía por el titular** (`fb637936`): `POST /api/members/me/memberships/{id}/cancel`, solo para membresías propias en estado `ACTIVA` o `PENDIENTE`. La membresía queda `SUSPENDIDA` y el administrador o el contador pueden reactivarla. No se creó un estado `CANCELADA` para no alterar gráficas, filtros ni reportes.
+- **Convocatoria y aceptación de torneos** (`4ace2f2f`, cumple `RF-10`):
+  - El administrador o el entrenador convocan desde "Convocar Deportista"; `POST /api/registrations` crea la inscripción siempre en `PENDIENTE`.
+  - El miembro responde desde "Convocatorias Pendientes": `POST /api/members/me/registrations/{id}/accept` la deja `CONFIRMADA` y `/decline` la deja `CANCELADA`.
+  - **`RN-03`**: para aceptar, la membresía más reciente del miembro debe estar `ACTIVA`.
+  - El personal conserva la opción de corregir el estado a mano desde "Estado".
+  - Se retiró la autoinscripción directa del miembro, que devolvía 403.
+- **Docker para WSL 2 / Ubuntu** (`bc2d647e`): `docker-compose.yml` incluye `ms1` y `ms2`, los puertos publicados son configurables en `.env` y `/api/microservices/status` lee las URLs de configuración. Guía: `docs/ciclo-vida/07_docker_wsl_ubuntu.md`.
+
+### G.5 Pendientes
+
+1. **Seguridad** (G.3.2): proteger los comprobantes, hacer obligatoria la validación CSRF, sacar del repositorio las llaves por defecto y usar la llave AES configurada. Requieren decisión del responsable del producto.
+2. **Docker**: construir y levantar las imágenes siguiendo la guía; hasta ahora solo se validó la configuración.
+3. **Dependencias**: la auditoría del 2026-11-11 no encontró paquetes NuGet vulnerables. En npm quedan `follow-redirects` (alta; se corrige con `npm audit fix` sin cambios incompatibles), `zod` (alta; exige la versión 4) y, solo en herramientas de desarrollo, `tinypool` vía `vitest` (crítica; exige `vitest` 5).
+4. **Hallazgos funcionales y visuales** de G.3.2.
+5. **Recuperación de contraseña por correo** (Firebase), al desplegar.
+6. **Conjunto de datos de prueba** para la base local.
+7. **Decisiones de producto abiertas**: `DEC-004` (sede/grupo), `DEC-005`, `DEC-006`, `DEC-007`, `DEC-008`, `DEC-010` y el envío por WhatsApp (`DEC-001`).
+8. **Publicación**: hay 25 commits locales sin subir a `origin/Requerimientos_en_Automatico`, contando el de este documento; no se ha hecho `git push`.
+
+### G.6 Estado operativo vigente
+
+- **Rama**: `Requerimientos_en_Automatico`. **Código**: `e8023b9b`. Árbol de trabajo limpio.
+- **Balance de pruebas automatizadas (186 en verde)**:
+  - **Backend (.NET 10 / xUnit)**: `dotnet build` 0 errores y 0 advertencias · `dotnet test` **123/123** (24 archivos).
+  - **Frontend (React 19 / Vitest)**: `tsc --noEmit` 0 errores · `vitest run` **54/54** (15 archivos) · `eslint` 0 errores y 109 advertencias por `any` · `vite build` correcto.
+  - **Microservicios (Node / TypeScript)**: `tsc --noEmit` 0 errores · `npm run test` **9/9**.
+- **Prueba en navegador**: regresión completa sobre `e8023b9b` sin errores en el log de la API.
+- **Lección registrada**: las suites estaban en verde mientras cuatro flujos principales estaban rotos, porque los dobles de prueba reproducían un contrato que la API no cumple. Las pruebas nuevas usan el contrato real y conviene repetir la prueba en navegador tras cada cambio de contrato.
