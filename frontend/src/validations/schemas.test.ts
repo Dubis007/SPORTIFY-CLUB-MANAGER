@@ -64,11 +64,37 @@ describe('Validación de entradas y prevención XSS (competitionSchema, training
     const trainResult = trainingSchema.safeParse({
       titulo: 'Funcional',
       descripcion: '<svg onload=alert(1)>',
+      sedeId: '1',
+      entrenadorId: '3',
       fechaHora: '2026-11-15T10:00:00Z',
       fechaFin: '2026-11-15T12:00:00Z',
       capacidadMaxima: 20,
     });
     expect(trainResult.success).toBe(false);
+    expect(trainResult.error?.issues.map((i) => i.path[0])).toEqual(['descripcion']);
+  });
+
+  it('exige elegir sede y entrenador en un entrenamiento y entrega sus identificadores como números', () => {
+    const base = {
+      titulo: 'Funcional',
+      fechaHora: '2026-11-15T10:00:00Z',
+      fechaFin: '2026-11-15T12:00:00Z',
+    };
+
+    // Un selector sin elegir envía texto vacío
+    const sinElegir = trainingSchema.safeParse({ ...base, sedeId: '', entrenadorId: '' });
+    expect(sinElegir.success).toBe(false);
+    const mensajes = Object.fromEntries(
+      (sinElegir.error?.issues ?? []).map((i) => [String(i.path[0]), i.message])
+    );
+    expect(mensajes).toEqual({
+      sedeId: 'Selecciona una sede',
+      entrenadorId: 'Selecciona un entrenador',
+    });
+
+    const elegido = trainingSchema.safeParse({ ...base, sedeId: '2', entrenadorId: '7' });
+    expect(elegido.success).toBe(true);
+    expect(elegido.data).toMatchObject({ sedeId: 2, entrenadorId: 7, capacidadMaxima: 20 });
   });
 
   it('escapa y limpia texto dinámico para renderizado seguro en React', () => {

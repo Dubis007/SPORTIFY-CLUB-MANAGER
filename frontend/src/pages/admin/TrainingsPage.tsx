@@ -17,11 +17,19 @@ import {
   AlertTriangle,
   Calendar,
   Users,
+  MapPin,
+  User as UserIcon,
   X,
 } from 'lucide-react';
 import { useTrainingsViewModel } from '../../viewmodels/useTrainingsViewModel';
 import { trainingSchema } from '../../validations/schemas';
-import { Training, AttendanceMember, AttendanceStatus } from '../../models';
+import {
+  Training,
+  TrainingOption,
+  AttendanceMember,
+  AttendanceStatus,
+  UserRole,
+} from '../../models';
 import { trainingService } from '../../services/trainings/trainingService';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmDialogModal, {
@@ -31,6 +39,47 @@ import ConfirmDialogModal, {
 // El formulario maneja la entrada del esquema (la capacidad puede faltar) y al enviar recibe la salida validada
 type TrainingFormValues = z.input<typeof trainingSchema>;
 type TrainingFormInputs = z.output<typeof trainingSchema>;
+
+const FIELD_LABEL_CLASS = 'block text-xs font-semibold text-slate-300 mb-1';
+
+const fieldControlClass = (hasError: boolean, width = 'w-full') =>
+  `${width} bg-slate-950 border ${
+    hasError ? 'border-rose-500/80' : 'border-slate-800'
+  } rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500`;
+
+/** Marca visual de campo obligatorio; para lectores de pantalla ya lo indica el atributo required. */
+function RequiredMark() {
+  return (
+    <span aria-hidden="true" className="text-rose-400">
+      {' '}
+      *
+    </span>
+  );
+}
+
+/** El mensaje lleva icono además de color y solo existe mientras el campo es inválido. */
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="text-rose-400 text-xs mt-1 flex items-center gap-1">
+      <AlertTriangle size={12} aria-hidden="true" className="shrink-0" />
+      {message}
+    </p>
+  );
+}
+
+/** Añade a la lista la opción que la sesión ya tenía cuando hoy no figura entre las elegibles. */
+function withCurrentOption(
+  options: TrainingOption[],
+  currentId: number | undefined,
+  currentName: string | null | undefined,
+  fallbackName: string,
+  note: string | null
+): TrainingOption[] {
+  if (!currentId || options.some((o) => o.id === currentId)) return options;
+  const name = currentName?.trim() || fallbackName;
+  return [...options, { id: currentId, nombre: note ? `${name} (${note})` : name }];
+}
 
 const ATTENDANCE_OPTIONS: Array<{
   value: AttendanceStatus;
@@ -70,11 +119,19 @@ export default function TrainingsPage() {
     trainings,
     loading,
     error,
+    formOptions,
+    formOptionsLoaded,
+    formOptionsError,
+    reloadFormOptions,
     createTraining,
     updateTraining,
     deleteTraining,
     closeTraining,
   } = useTrainingsViewModel();
+
+  // El administrador elige al entrenador responsable; el entrenador programa siempre a su nombre
+  const isAdmin = user?.rol === UserRole.ADMIN;
+  const ownName = user ? `${user.nombre} ${user.apellido}`.trim() : '';
 
   const [showModal, setShowModal] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
@@ -96,6 +153,37 @@ export default function TrainingsPage() {
   } = useForm<TrainingFormValues, unknown, TrainingFormInputs>({
     resolver: zodResolver(trainingSchema),
   });
+
+  // aria-invalid arranca en "false" y el mensaje solo se enlaza al campo mientras este es inválido
+  const fieldA11y = (name: keyof TrainingFormValues, errorId: string) => ({
+    'aria-invalid': errors[name] ? ('true' as const) : ('false' as const),
+    'aria-describedby': errors[name] ? errorId : undefined,
+  });
+
+  // Al editar se conserva la sede o el responsable que la sesión ya tenía aunque hoy no se puedan elegir.
+  // La nota solo se añade cuando las opciones ya cargaron: antes no se sabe si siguen disponibles.
+  const sedeOptions = useMemo(
+    () =>
+      withCurrentOption(
+        formOptions.sedes,
+        editingTraining?.sedeId,
+        editingTraining?.sedeNombre,
+        'Sede actual',
+        formOptionsLoaded ? 'inactiva' : null
+      ),
+    [formOptions.sedes, formOptionsLoaded, editingTraining]
+  );
+  const entrenadorOptions = useMemo(
+    () =>
+      withCurrentOption(
+        formOptions.entrenadores,
+        editingTraining?.entrenadorId,
+        editingTraining?.entrenadorNombre,
+        'Responsable actual',
+        formOptionsLoaded ? 'ya no es entrenador activo' : null
+      ),
+    [formOptions.entrenadores, formOptionsLoaded, editingTraining]
+  );
 
   // Regla automática "Trabajo de Gym" para martes y jueves al crear nueva sesión
   const watchFechaHora = watch('fechaHora');
@@ -153,6 +241,8 @@ export default function TrainingsPage() {
     reset({
       titulo: training.titulo,
       descripcion: training.descripcion || '',
+      sedeId: String(training.sedeId),
+      entrenadorId: String(training.entrenadorId),
       fechaHora: training.fechaHora.substring(0, 16),
       fechaFin: training.fechaFin.substring(0, 16),
       capacidadMaxima: training.capacidadMaxima,
@@ -173,9 +263,15 @@ export default function TrainingsPage() {
     end.setHours(18, 0, 0, 0);
     const localEnd = new Date(end.getTime() - tzOffset).toISOString().slice(0, 16);
 
+    // Con una sola opción disponible se deja elegida; con varias decide quien programa la sesión
+    const onlyOption = (options: TrainingOption[]) =>
+      options.length === 1 ? String(options[0].id) : '';
+
     reset({
       titulo: '',
       descripcion: '',
+      sedeId: onlyOption(formOptions.sedes),
+      entrenadorId: isAdmin ? onlyOption(formOptions.entrenadores) : String(user?.id ?? ''),
       fechaHora: localNow,
       fechaFin: localEnd,
       capacidadMaxima: 20,
@@ -199,11 +295,11 @@ export default function TrainingsPage() {
   };
 
   const onSubmit = async (data: TrainingFormInputs) => {
-    const payload = { ...data, sedeId: 1, entrenadorId: user?.id || 1 };
-
+    // La sede y el entrenador salen del formulario. La API vuelve a validarlos y, si quien guarda
+    // es un entrenador, toma al responsable de la sesión iniciada y no de este envío.
     const success = editingTraining
-      ? await updateTraining(editingTraining.id, payload)
-      : await createTraining(payload);
+      ? await updateTraining(editingTraining.id, data)
+      : await createTraining(data);
 
     if (success) {
       toast.success(editingTraining ? 'Sesión actualizada.' : 'Sesión programada.');
@@ -383,6 +479,9 @@ export default function TrainingsPage() {
                     Sesión
                   </th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Sede y entrenador
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Fecha y Horario
                   </th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -399,7 +498,7 @@ export default function TrainingsPage() {
               <tbody className="divide-y divide-slate-800/80">
                 {trainings.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 text-sm">
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
                       No hay sesiones programadas todavía. Crea una nueva sesión para comenzar.
                     </td>
                   </tr>
@@ -418,6 +517,16 @@ export default function TrainingsPage() {
                               {t.descripcion}
                             </div>
                           )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={14} className="text-blue-400 shrink-0" aria-hidden="true" />
+                            {t.sedeNombre || 'Sede por confirmar'}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
+                            <UserIcon size={13} className="shrink-0" aria-hidden="true" />
+                            {t.entrenadorNombre || 'Entrenador por asignar'}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-300">
                           <div className="flex items-center gap-1.5">
@@ -512,60 +621,192 @@ export default function TrainingsPage() {
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* noValidate: los mensajes los da el esquema de validación, en español y junto a cada campo */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+              {error && (
+                <div
+                  role="alert"
+                  className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-3 text-xs flex items-center gap-2"
+                >
+                  <AlertTriangle size={15} aria-hidden="true" className="shrink-0" /> {error}
+                </div>
+              )}
+              <p className="text-[11px] text-slate-400">
+                Los campos marcados con * son obligatorios.
+              </p>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label htmlFor="training-titulo" className={FIELD_LABEL_CLASS}>
                   Título de la sesión
+                  <RequiredMark />
                 </label>
                 <input
+                  id="training-titulo"
                   type="text"
+                  required
                   placeholder="Ej. Entrenamiento táctico o Trabajo de Gym"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 outline-none focus:border-blue-500"
+                  className={fieldControlClass(!!errors.titulo)}
+                  {...fieldA11y('titulo', 'training-titulo-error')}
                   {...register('titulo')}
                 />
-                {errors.titulo && (
-                  <p className="text-rose-400 text-xs mt-1">{errors.titulo.message}</p>
-                )}
+                <FieldError id="training-titulo-error" message={errors.titulo?.message} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Inicio</label>
-                  <input
-                    type="datetime-local"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
-                    {...register('fechaHora')}
+                  <label htmlFor="training-sede" className={FIELD_LABEL_CLASS}>
+                    Sede
+                    <RequiredMark />
+                  </label>
+                  <select
+                    id="training-sede"
+                    required
+                    className={fieldControlClass(!!errors.sedeId)}
+                    {...fieldA11y('sedeId', 'training-sede-error')}
+                    {...register('sedeId')}
+                  >
+                    {/* Opción vacía y deshabilitada: obliga a elegir una sede real.
+                        El texto es corto para que quepa completo en la columna del formulario. */}
+                    <option value="" disabled>
+                      Elige una sede…
+                    </option>
+                    {sedeOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldError
+                    id="training-sede-error"
+                    message={errors.sedeId?.message as string | undefined}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Fin</label>
+                  {isAdmin ? (
+                    <>
+                      <label htmlFor="training-entrenador" className={FIELD_LABEL_CLASS}>
+                        Entrenador responsable
+                        <RequiredMark />
+                      </label>
+                      <select
+                        id="training-entrenador"
+                        required
+                        className={fieldControlClass(!!errors.entrenadorId)}
+                        {...fieldA11y('entrenadorId', 'training-entrenador-error')}
+                        {...register('entrenadorId')}
+                      >
+                        <option value="" disabled>
+                          Elige un entrenador…
+                        </option>
+                        {entrenadorOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <FieldError
+                        id="training-entrenador-error"
+                        message={errors.entrenadorId?.message as string | undefined}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label htmlFor="training-entrenador-fijo" className={FIELD_LABEL_CLASS}>
+                        Entrenador responsable
+                      </label>
+                      <input
+                        id="training-entrenador-fijo"
+                        type="text"
+                        readOnly
+                        value={
+                          editingTraining
+                            ? editingTraining.entrenadorNombre || 'Sin asignar'
+                            : ownName
+                        }
+                        aria-describedby="training-entrenador-ayuda"
+                        className={`${fieldControlClass(false)} text-slate-400 cursor-default`}
+                      />
+                      <p id="training-entrenador-ayuda" className="text-[11px] text-slate-400 mt-1">
+                        {editingTraining
+                          ? 'Solo el administrador puede reasignar la sesión.'
+                          : 'Las sesiones que programas quedan a tu nombre.'}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+              {formOptionsError && (
+                <p role="alert" className="text-amber-300 text-xs flex flex-wrap items-center gap-2">
+                  <AlertTriangle size={13} aria-hidden="true" className="shrink-0" />
+                  {formOptionsError}
+                  <button
+                    type="button"
+                    onClick={reloadFormOptions}
+                    className="underline font-semibold hover:text-amber-200"
+                  >
+                    Reintentar
+                  </button>
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="training-inicio" className={FIELD_LABEL_CLASS}>
+                    Inicio
+                    <RequiredMark />
+                  </label>
                   <input
+                    id="training-inicio"
                     type="datetime-local"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+                    required
+                    className={fieldControlClass(!!errors.fechaHora)}
+                    {...fieldA11y('fechaHora', 'training-inicio-error')}
+                    {...register('fechaHora')}
+                  />
+                  <FieldError id="training-inicio-error" message={errors.fechaHora?.message} />
+                </div>
+                <div>
+                  <label htmlFor="training-fin" className={FIELD_LABEL_CLASS}>
+                    Fin
+                    <RequiredMark />
+                  </label>
+                  <input
+                    id="training-fin"
+                    type="datetime-local"
+                    required
+                    className={fieldControlClass(!!errors.fechaFin)}
+                    {...fieldA11y('fechaFin', 'training-fin-error')}
                     {...register('fechaFin')}
                   />
+                  <FieldError id="training-fin-error" message={errors.fechaFin?.message} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label htmlFor="training-cupo" className={FIELD_LABEL_CLASS}>
                   Cupo máximo
+                  <RequiredMark />
                 </label>
                 <input
+                  id="training-cupo"
                   type="number"
                   min={1}
-                  className="w-36 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+                  required
+                  className={fieldControlClass(!!errors.capacidadMaxima, 'w-36')}
+                  {...fieldA11y('capacidadMaxima', 'training-cupo-error')}
                   {...register('capacidadMaxima', { valueAsNumber: true })}
                 />
+                <FieldError id="training-cupo-error" message={errors.capacidadMaxima?.message} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label htmlFor="training-notas" className={FIELD_LABEL_CLASS}>
                   Objetivo o notas breves (opcional)
                 </label>
                 <textarea
+                  id="training-notas"
                   rows={2}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none focus:border-blue-500 resize-none"
+                  className={`${fieldControlClass(!!errors.descripcion)} resize-y`}
                   placeholder="Ej. Resistencia aeróbica, trabajo técnico..."
+                  {...fieldA11y('descripcion', 'training-notas-error')}
                   {...register('descripcion')}
                 />
+                <FieldError id="training-notas-error" message={errors.descripcion?.message} />
               </div>
               <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
                 <button

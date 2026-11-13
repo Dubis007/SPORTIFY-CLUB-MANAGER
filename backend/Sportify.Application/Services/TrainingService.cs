@@ -18,15 +18,41 @@ public class TrainingService : ITrainingService
     public async Task<IEnumerable<TrainingDto>> GetAllAsync()
     {
         var trainings = await _repository.GetAllActiveAsync();
-        return trainings.OrderByDescending(e => e.FechaHora).Select(MapToDto).ToList();
+        return trainings.OrderByDescending(e => e.FechaHora).Select(e => MapToDto(e)).ToList();
     }
 
-    public async Task<TrainingDto> CreateAsync(SaveTrainingDto dto)
+    public async Task<TrainingFormOptionsDto> GetFormOptionsAsync(int? actingCoachId = null)
     {
+        var sedes = await _repository.GetActiveSedesAsync();
+        var entrenadores = await _repository.GetActiveCoachesAsync();
+
+        // Un entrenador programa sesiones a su nombre: no recibe la lista de sus colegas
+        if (actingCoachId is int coachId)
+            entrenadores = entrenadores.Where(u => u.Id == coachId).ToList();
+
+        return new TrainingFormOptionsDto
+        {
+            Sedes = sedes
+                .Select(s => new TrainingOptionDto { Id = s.Id, Nombre = s.Nombre })
+                .OrderBy(o => o.Nombre, StringComparer.CurrentCultureIgnoreCase)
+                .ToList(),
+            Entrenadores = entrenadores
+                .Select(u => new TrainingOptionDto { Id = u.Id, Nombre = NombreCompleto(u) })
+                .OrderBy(o => o.Nombre, StringComparer.CurrentCultureIgnoreCase)
+                .ToList()
+        };
+    }
+
+    public async Task<TrainingDto> CreateAsync(SaveTrainingDto dto, int? actingCoachId = null)
+    {
+        var sede = await RequireActiveSedeAsync(dto.SedeId);
+        // El entrenador que crea la sesión queda como responsable; solo el administrador elige a otro
+        var entrenador = await RequireActiveCoachAsync(actingCoachId ?? dto.EntrenadorId);
+
         var entity = new Entrenamiento
         {
-            SedeId = dto.SedeId,
-            EntrenadorId = dto.EntrenadorId,
+            SedeId = sede.Id,
+            EntrenadorId = entrenador.Id,
             Titulo = XssSanitizer.ValidateAndSanitize(dto.Titulo, nameof(dto.Titulo)),
             Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty,
             FechaHora = dto.FechaHora,
@@ -37,23 +63,36 @@ public class TrainingService : ITrainingService
         };
 
         await _repository.AddAsync(entity);
-        return MapToDto(entity);
+        return MapToDto(entity, sede, entrenador);
     }
 
-    public async Task<TrainingDto?> UpdateAsync(int id, SaveTrainingDto dto)
+    public async Task<TrainingDto?> UpdateAsync(int id, SaveTrainingDto dto, int? actingCoachId = null)
     {
         var existing = await _repository.GetByIdActiveAsync(id);
         if (existing == null) return null;
+
+        // La sede y el entrenador solo se validan cuando cambian: una sesión antigua conserva los que ya tenía,
+        // aunque la sede se haya desactivado después o su responsable ya no sea entrenador.
+        var nuevaSede = dto.SedeId != existing.SedeId
+            ? await RequireActiveSedeAsync(dto.SedeId)
+            : null;
+
+        // Reasignar la sesión a otro entrenador es decisión del administrador
+        var nuevoEntrenador = actingCoachId is null && dto.EntrenadorId != existing.EntrenadorId
+            ? await RequireActiveCoachAsync(dto.EntrenadorId)
+            : null;
 
         existing.Titulo = XssSanitizer.ValidateAndSanitize(dto.Titulo, nameof(dto.Titulo));
         existing.Descripcion = XssSanitizer.ValidateAndSanitizeOptional(dto.Descripcion, nameof(dto.Descripcion)) ?? string.Empty;
         existing.FechaHora = dto.FechaHora;
         existing.FechaFin = dto.FechaFin;
-        existing.SedeId = dto.SedeId;
         existing.CapacidadMaxima = dto.CapacidadMaxima;
+        // Solo se cambia la llave foránea: EF ajusta la navegación al guardar
+        if (nuevaSede != null) existing.SedeId = nuevaSede.Id;
+        if (nuevoEntrenador != null) existing.EntrenadorId = nuevoEntrenador.Id;
 
         await _repository.UpdateAsync(existing);
-        return MapToDto(existing);
+        return MapToDto(existing, nuevaSede, nuevoEntrenador);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -137,18 +176,48 @@ public class TrainingService : ITrainingService
         return (true, string.Empty);
     }
 
-    private static TrainingDto MapToDto(Entrenamiento e) => new()
+    private async Task<Sede> RequireActiveSedeAsync(int sedeId)
     {
-        Id = e.Id,
-        SedeId = e.SedeId,
-        SedeNombre = e.Sede?.Nombre,
-        EntrenadorId = e.EntrenadorId,
-        Titulo = e.Titulo,
-        Descripcion = e.Descripcion,
-        FechaHora = e.FechaHora,
-        FechaFin = e.FechaFin,
-        CapacidadMaxima = e.CapacidadMaxima,
-        Estado = e.Estado,
-        CreadoEn = e.CreadoEn
-    };
+        var sede = sedeId > 0 ? await _repository.GetSedeByIdAsync(sedeId) : null;
+        if (sede is null || !sede.Activo)
+            throw new ArgumentException("Selecciona una sede activa para el entrenamiento.");
+
+        return sede;
+    }
+
+    private async Task<Usuario> RequireActiveCoachAsync(int usuarioId)
+    {
+        var entrenador = usuarioId > 0 ? await _repository.GetActiveCoachByIdAsync(usuarioId) : null;
+        if (entrenador is null)
+            throw new ArgumentException("Selecciona un entrenador activo como responsable del entrenamiento.");
+
+        return entrenador;
+    }
+
+    private static string NombreCompleto(Usuario u) => $"{u.Nombre} {u.Apellido}".Trim();
+
+    /// <summary>
+    /// <paramref name="sede"/> y <paramref name="entrenador"/> son los recién elegidos al crear o editar:
+    /// en ese momento la entidad todavía no trae cargadas sus navegaciones.
+    /// </summary>
+    private static TrainingDto MapToDto(Entrenamiento e, Sede? sede = null, Usuario? entrenador = null)
+    {
+        var responsable = entrenador ?? e.Entrenador;
+
+        return new TrainingDto
+        {
+            Id = e.Id,
+            SedeId = e.SedeId,
+            SedeNombre = (sede ?? e.Sede)?.Nombre,
+            EntrenadorId = e.EntrenadorId,
+            EntrenadorNombre = responsable is null ? null : NombreCompleto(responsable),
+            Titulo = e.Titulo,
+            Descripcion = e.Descripcion,
+            FechaHora = e.FechaHora,
+            FechaFin = e.FechaFin,
+            CapacidadMaxima = e.CapacidadMaxima,
+            Estado = e.Estado,
+            CreadoEn = e.CreadoEn
+        };
+    }
 }

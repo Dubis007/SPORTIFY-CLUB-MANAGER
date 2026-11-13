@@ -44,7 +44,19 @@ export const competitionSchema = z.object({
 export const trainingSchema = z.object({
   titulo: safeString(3, 'El título es obligatorio'),
   descripcion: optionalSafeString(),
+  // Los selectores entregan el identificador como texto; vacío significa que no se eligió nada
+  sedeId: z.coerce
+    .number({ error: 'Selecciona una sede' })
+    .int('Selecciona una sede')
+    .positive('Selecciona una sede'),
+  entrenadorId: z.coerce
+    .number({ error: 'Selecciona un entrenador' })
+    .int('Selecciona un entrenador')
+    .positive('Selecciona un entrenador'),
   fechaHora: z.string().refine(isValidDate, 'Fecha inválida'),
   fechaFin: z.string().refine(isValidDate, 'Fecha inválida'),
-  capacidadMaxima: z.number().min(1, 'La capacidad mínima es 1').default(20),
+  capacidadMaxima: z
+    .number({ error: 'Indica el cupo con un número' })
+    .min(1, 'La capacidad mínima es 1')
+    .default(20),
 });

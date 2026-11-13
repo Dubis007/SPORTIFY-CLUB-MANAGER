@@ -19,6 +19,7 @@ public class TrainingRepository : ITrainingRepository
         return await _context.Entrenamientos
             .Include(e => e.Asistencias)
             .Include(e => e.Sede)
+            .Include(e => e.Entrenador)
             .Where(e => e.EliminadoEn == null)
             .ToListAsync();
     }
@@ -27,7 +28,40 @@ public class TrainingRepository : ITrainingRepository
     {
         return await _context.Entrenamientos
             .Include(e => e.Sede)
+            .Include(e => e.Entrenador)
             .FirstOrDefaultAsync(e => e.Id == id && e.EliminadoEn == null);
+    }
+
+    public async Task<List<Sede>> GetActiveSedesAsync()
+    {
+        return await _context.Sedes
+            .AsNoTracking()
+            .Where(s => s.Activo)
+            .ToListAsync();
+    }
+
+    public async Task<Sede?> GetSedeByIdAsync(int sedeId)
+    {
+        return await _context.Sedes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == sedeId);
+    }
+
+    public async Task<List<Usuario>> GetActiveCoachesAsync()
+    {
+        return await _context.Usuarios
+            .AsNoTracking()
+            .Where(u => u.Activo && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "ENTRENADOR"))
+            .ToListAsync();
+    }
+
+    public async Task<Usuario?> GetActiveCoachByIdAsync(int usuarioId)
+    {
+        return await _context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == usuarioId
+                && u.Activo
+                && u.UsuarioRoles.Any(ur => ur.Rol.Nombre == "ENTRENADOR"));
     }
 
     public async Task<Entrenamiento?> GetByIdAsync(int id)

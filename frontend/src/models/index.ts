@@ -73,9 +73,23 @@ export interface Competition {
   creadoEn: string;
 }
 
+/** Opción de los selectores del formulario de sesiones: identificador y nombre visible. */
+export interface TrainingOption {
+  id: number;
+  nombre: string;
+}
+
+/** Sedes activas y entrenadores que la sesión iniciada puede elegir al programar o editar una sesión. */
+export interface TrainingFormOptions {
+  sedes: TrainingOption[];
+  entrenadores: TrainingOption[];
+}
+
 export interface Training {
   id: number;
   entrenadorId: number;
+  /** Nombre completo del entrenador responsable; llega vacío si ese usuario ya no existe. */
+  entrenadorNombre?: string | null;
   sedeId: number;
   /** Nombre de la sede; llega vacío si el entrenamiento se acaba de crear o la sede ya no existe. */
   sedeNombre?: string | null;

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sportify.Application.DTOs.Trainings;
@@ -17,6 +18,21 @@ public class TrainingsController : ControllerBase
         _trainingService = trainingService;
     }
 
+    /// <summary>
+    /// Id del entrenador que hace la petición, o null si la hace un administrador.
+    /// El responsable de la sesión se toma de la sesión iniciada y no del cuerpo de la petición.
+    /// </summary>
+    private int? GetActingCoachId()
+    {
+        if (User.IsInRole("ADMIN")) return null;
+
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (!int.TryParse(claim, out var userId))
+            throw new UnauthorizedAccessException("No fue posible identificar al usuario de la sesión.");
+
+        return userId;
+    }
+
     [HttpGet]
     [Authorize(Roles = "ADMIN,ENTRENADOR,MIEMBRO")]
     public async Task<IActionResult> GetAll()
@@ -25,11 +41,23 @@ public class TrainingsController : ControllerBase
         return Ok(trainings);
     }
 
+    /// <summary>
+    /// Sedes activas y entrenadores que se pueden elegir en el formulario de sesiones.
+    /// Solo entrega identificador y nombre: la dirección y el teléfono de las sedes siguen siendo del administrador.
+    /// </summary>
+    [HttpGet("form-options")]
+    [Authorize(Roles = "ADMIN,ENTRENADOR")]
+    public async Task<IActionResult> GetFormOptions()
+    {
+        var options = await _trainingService.GetFormOptionsAsync(GetActingCoachId());
+        return Ok(options);
+    }
+
     [HttpPost]
     [Authorize(Roles = "ADMIN,ENTRENADOR")]
     public async Task<IActionResult> Create([FromBody] SaveTrainingDto dto)
     {
-        var created = await _trainingService.CreateAsync(dto);
+        var created = await _trainingService.CreateAsync(dto, GetActingCoachId());
         return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
     }
 
@@ -37,7 +65,7 @@ public class TrainingsController : ControllerBase
     [Authorize(Roles = "ADMIN,ENTRENADOR")]
     public async Task<IActionResult> Update(int id, [FromBody] SaveTrainingDto dto)
     {
-        var existing = await _trainingService.UpdateAsync(id, dto);
+        var existing = await _trainingService.UpdateAsync(id, dto, GetActingCoachId());
         if (existing == null) return NotFound();
 
         return Ok(existing);

@@ -1,12 +1,18 @@
 import { apiClient } from '../api/apiClient';
-import { Training, AttendanceMember, AttendanceStatus } from '../../models';
+import { Training, TrainingFormOptions, AttendanceMember, AttendanceStatus } from '../../models';
 
 export const trainingService = {
   getAll: async (): Promise<Training[]> => {
     const response = await apiClient.get('/api/trainings');
     return response.data;
   },
-  
+
+  /** Sedes activas y entrenadores que se pueden elegir en el formulario (solo ADMIN y ENTRENADOR). */
+  getFormOptions: async (): Promise<TrainingFormOptions> => {
+    const response = await apiClient.get('/api/trainings/form-options');
+    return response.data;
+  },
+
   create: async (data: Partial<Training>): Promise<Training> => {
     const response = await apiClient.post('/api/trainings', data);
     return response.data;

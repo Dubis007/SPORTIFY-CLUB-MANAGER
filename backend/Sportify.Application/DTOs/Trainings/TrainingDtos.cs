@@ -10,6 +10,9 @@ public class TrainingDto
     /// <summary>Nombre de la sede donde se entrena, para mostrarlo en el calendario en lugar del identificador.</summary>
     public string? SedeNombre { get; set; }
     public int EntrenadorId { get; set; }
+
+    /// <summary>Nombre completo del entrenador responsable, para mostrarlo en el listado de sesiones.</summary>
+    public string? EntrenadorNombre { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string Descripcion { get; set; } = string.Empty;
     public DateTime FechaHora { get; set; }
@@ -29,6 +32,20 @@ public class SaveTrainingDto
     public DateTime FechaFin { get; set; }
     public int CapacidadMaxima { get; set; }
     public string Estado { get; set; } = "PENDIENTE";
+}
+
+/// <summary>Opción de un selector del formulario de entrenamientos: solo el identificador y el nombre visible.</summary>
+public class TrainingOptionDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+}
+
+/// <summary>Sedes y entrenadores que el usuario puede elegir al programar o editar una sesión.</summary>
+public class TrainingFormOptionsDto
+{
+    public List<TrainingOptionDto> Sedes { get; set; } = new();
+    public List<TrainingOptionDto> Entrenadores { get; set; } = new();
 }
 
 public class TrainingAttendanceMemberDto
