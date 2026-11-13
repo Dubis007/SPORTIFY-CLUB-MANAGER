@@ -11,6 +11,13 @@ vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
 
+// El directorio de usuarios es del administrador: solo ese rol consulta las sedes
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 1, nombre: 'Ana', apellido: 'Admin', correo: 'admin@sportify.com', activo: true, rol: 'ADMIN' },
+  }),
+}));
+
 vi.mock('../../services/users/userService', () => ({
   userService: {
     getAllUsers: vi.fn(),

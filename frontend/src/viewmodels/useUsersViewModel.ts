@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { userService, CreateUserDto, UpdateUserDto } from '../services/users/userService';
 import { locationService, LocationDto } from '../services/api/locationService';
+import { useAuth } from '../context/AuthContext';
 import { User, UserRole } from '../models';
 
 export type UserRoleFilter = 'ALL' | UserRole;
@@ -65,6 +66,11 @@ export function buildUsersExcelCsv(rows: User[], locationsMap?: Map<number, stri
 }
 
 export const useUsersViewModel = () => {
+  const { user: sessionUser } = useAuth();
+  // Las sedes las administra solo el ADMIN (/api/locations responde 403 a los demás roles).
+  // El contador reutiliza este directorio en Membresías y no las necesita.
+  const canReadLocations = sessionUser?.rol === UserRole.ADMIN;
+
   const [users, setUsers] = useState<User[]>([]);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -82,7 +88,9 @@ export const useUsersViewModel = () => {
     try {
       const [usersData, locationsData] = await Promise.all([
         userService.getAllUsers(),
-        locationService.getAll().catch(() => [] as LocationDto[]),
+        canReadLocations
+          ? locationService.getAll().catch(() => [] as LocationDto[])
+          : Promise.resolve([] as LocationDto[]),
       ]);
 
       const mappedData: User[] = usersData.map((u: any) => ({
@@ -96,7 +104,7 @@ export const useUsersViewModel = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canReadLocations]);
 
   const locationsMap = useMemo(() => {
     const map = new Map<number, string>();
