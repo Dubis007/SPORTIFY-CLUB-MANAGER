@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import { useLoginViewModel } from '../../viewmodels/useLoginViewModel';
 import { loginSchema } from '../../validations/schemas';
+// Se importa como recurso del código: si el archivo falta, la compilación falla en lugar de mostrar un logo roto
+import sportifyLogo from '../../assets/sportify-logo.svg';
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
@@ -33,8 +35,10 @@ export default function LoginPage() {
         <div className="px-8 pt-8 pb-6 text-center border-b border-slate-800/80 bg-slate-950/50">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-inner">
             <img
-              src="/vite.svg"
+              src={sportifyLogo}
               alt="Logotipo institucional de Sportify Club Manager"
+              width={28}
+              height={28}
               className="w-7 h-7"
             />
           </div>

@@ -19,6 +19,8 @@ import {
   type MicroserviceHealthStatus,
   type SessionAuditResponse,
 } from '../services/api/microserviceClient';
+// Se importa como recurso del código: si el archivo falta, la compilación falla en lugar de mostrar un logo roto
+import sportifyLogo from '../assets/sportify-logo.svg';
 
 export interface ErpNavItem {
   label: string;
@@ -132,8 +134,10 @@ export default function EnterpriseErpLayout({
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner shrink-0">
               <img
-                src="/vite.svg"
+                src={sportifyLogo}
                 alt="Logotipo institucional de Sportify Club"
+                width={20}
+                height={20}
                 className="w-5 h-5"
               />
             </div>

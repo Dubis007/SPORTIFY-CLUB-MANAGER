@@ -88,7 +88,12 @@ describe('EnterpriseErpLayout — Interfaces Independientes Centradas por Rol', 
 
     // Accesibilidad (A11y): Verifica Skip Link y atributo alt en el logotipo institucional
     expect(screen.getByRole('link', { name: /Saltar al contenido principal/i })).toBeInTheDocument();
-    expect(screen.getByAltText('Logotipo institucional de Sportify Club')).toBeInTheDocument();
+    // El logotipo sale de un recurso del proyecto (no del antiguo /vite.svg) y reserva su espacio con dimensiones fijas
+    const logo = screen.getByAltText('Logotipo institucional de Sportify Club');
+    expect(logo).toBeInTheDocument();
+    expect(logo.getAttribute('src') ?? '').toMatch(/^data:image\/svg\+xml|sportify-logo/);
+    expect(logo).toHaveAttribute('width', '20');
+    expect(logo).toHaveAttribute('height', '20');
   });
 
   it('oculta telemetría técnica y expone solo herramientas contables con pestañas activas para CONTADOR', () => {

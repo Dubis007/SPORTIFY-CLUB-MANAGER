@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- Logotipo de Sportify Club Manager: una S en movimiento con un punto, a modo de deportista -->
+  <path d="M23 9.5C21.5 7.3 19 6 16 6c-4 0-7 2.2-7 5.5 0 3.2 2.6 4.4 7 5.2 4.4.8 7 2 7 5.3 0 3.3-3 5.5-7 5.5-3 0-5.5-1.3-7-3.5" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="26.5" cy="4.5" r="2.5" fill="#60a5fa"/>
+</svg>
