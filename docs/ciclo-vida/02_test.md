@@ -29,11 +29,12 @@ Resultado: `Correctas! - Con error: 0, Superado: 3, Total: 3` y el reporte `cove
 **Qué es:** Vitest es el ejecutor de pruebas nativo de Vite (reutiliza su configuración); Testing Library permite renderizar componentes React y probarlos como los usaría el usuario.
 
 **Pasos realizados:**
-1. Instalación:
+1. Instalación (versiones vigentes desde el 2026-11-12, commit `a9945065`; la instalación original del 2026-10-19 usó Vitest 3):
    ```powershell
    cd frontend
-   npm install -D vitest@3 jsdom @testing-library/react @testing-library/jest-dom @vitest/coverage-v8@3
+   npm install -D vitest@5 jsdom @testing-library/react @testing-library/jest-dom @vitest/coverage-v8@5
    ```
+   Vitest 5 necesita Node `^22.12` o `>=24`. `vitest`, `@vitest/coverage-v8` y, si se usa, `@vitest/ui` deben tener la misma versión mayor.
 2. `frontend/vitest.config.ts`: combina `vite.config.ts` (alias `@`, plugin React) con el entorno `jsdom` y la cobertura.
 3. `frontend/src/test/setup.ts`: carga los *matchers* de jest-dom (`toBeInTheDocument`, `toBeDisabled`) y limpia el DOM tras cada prueba.
 4. Scripts en `package.json`: `"test": "vitest run"` y `"test:coverage": "vitest run --coverage"`.
@@ -71,17 +72,19 @@ El workflow **CI** se ejecuta en cada `push`, `pull_request` o manualmente (`wor
 
 **Qué es:** `@vitest/ui` es la interfaz web oficial de Vitest. Muestra en el navegador el árbol de pruebas en verde/rojo, el código de cada prueba, el error con su detalle, el tiempo de ejecución y (con `--coverage`) el reporte de cobertura. En modo *watch* vuelve a ejecutar las pruebas al guardar un archivo.
 
-**Instalación** (misma versión que Vitest):
+**Instalación** (la misma versión que `vitest`; hoy, 5.1.0):
 ```powershell
 cd frontend
-npm install -D @vitest/ui@3.2.7
+npm install -D @vitest/ui@5.1.0
 ```
-Script en `package.json`: `"test:ui": "vitest --ui --watch --coverage --open"`.
+`@vitest/ui` y el script `test:ui` ya no están en `package.json`: el commit `029e52e1` los retiró por no usarse. Para la demostración hay que instalar la UI como se indica arriba (`npm audit` sigue en 0 con ella) y elegir una de estas dos opciones:
+- volver a agregar el script `"test:ui": "vitest --ui --watch --coverage --open"`;
+- ejecutar directamente `npx vitest --ui --watch --coverage --open`, sin tocar los scripts.
 
-**Ejecución:** `npm run test:ui` abre `http://localhost:51204/__vitest__/` (para cerrarla, `Ctrl+C` en la terminal).
+**Ejecución:** `npm run test:ui` abre el navegador en `http://localhost:51204/__vitest__/?token=…`. Desde Vitest 5 la dirección lleva un `token` que cambia en cada arranque; la terminal lo muestra en la línea `UI started at …`. Sin el token la UI responde 403. Para cerrarla, `Ctrl+C` en la terminal.
 
 **Guion de demostración (≈2 min):**
-1. Ejecutar `npm run test:ui`: aparecen los 2 archivos y las 7 pruebas en verde.
+1. Ejecutar `npm run test:ui`: aparecen todos los archivos de prueba en verde (19 archivos y 88 pruebas al 2026-11-12).
 2. Abrir `Pagination.test.tsx` en la UI y explicar qué valida cada prueba.
 3. Provocar un fallo: en `src/components/Pagination.test.tsx` cambiar `'11–20 de 25 registros'` por `'11–20 de 99 registros'` y guardar. La UI marca en rojo *muestra el rango de registros de la página actual* con el error `Unable to find an element with the text: 11–20 de 99 registros`.
 4. Revertir el cambio y guardar: la prueba vuelve a verde.
@@ -90,4 +93,6 @@ Script en `package.json`: `"test:ui": "vitest --ui --watch --coverage --open"`.
 
 **Alternativa sin la UI:** `npm run test:coverage` y abrir `frontend/coverage/index.html` en el navegador.
 
-**Verificación (2026-10-20):** UI respondió HTTP 200 en el puerto 51204; al cambiar el texto la prueba falló (`1 failed | 2 passed`) y al revertirlo volvió a `3 passed`. `npm run test` (7 passed), `npm run lint` (0 errores) y `npm run build` siguen OK.
+**Verificación (2026-10-20, Vitest 3):** UI respondió HTTP 200 en el puerto 51204; al cambiar el texto la prueba falló (`1 failed | 2 passed`) y al revertirlo volvió a `3 passed`. `npm run test` (7 passed), `npm run lint` (0 errores) y `npm run build` siguen OK.
+
+**Verificación (2026-11-12, Vitest 5):** en una copia temporal del proyecto con `@vitest/ui@5.1.0`, `vitest --ui --watch --coverage` quedó escuchando en el puerto 51204. La dirección con token respondió 200 (título "Vitest") y sin token, 403. Pasaron 19 archivos y 88 pruebas, y `schemas.ts` sigue con 100 % de cobertura.

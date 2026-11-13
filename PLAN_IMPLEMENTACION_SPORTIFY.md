@@ -623,6 +623,14 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 | 2026-11-11 15:43 | Consejo full stack 7: Docker preparado para WSL 2 / Ubuntu, con microservicios | Preparado, sin ejecutar | `bc2d647e` | `docker compose config` válido, `dotnet publish -c Release` correcto, `dotnet test` 123/123 | Las imágenes no se construyeron: Docker Desktop estaba apagado. Guía en `docs/ciclo-vida/07_docker_wsl_ubuntu.md`. |
 | 2026-11-11 15:44 | Corrección: el contador ve la aprobación solo cuando el servidor la confirma | Completado | `e8023b9b` | `tsc` 0 errores | — |
 | 2026-11-11 | Segunda prueba en navegador y regresión completa sobre `e8023b9b` | Completado | Sin commit | Todas las pantallas, 26 pasos de administrador y 41 de miembro, contador, entrenador y autenticación; 0 errores `fail:` en el log de la API | Verificación final: `dotnet test` 123/123, `vitest` 54/54, `ms test` 9/9, `eslint` 0 errores, `vite build` correcto. |
+| 2026-11-12 02:29 | Comprobantes visibles para contador, admin y el miembro titular, sin URL pública | Completado | `1ba36b07` | 20 pruebas nuevas en `ReceiptAccessTests.cs`; `vitest` 78/78; navegador con los 4 roles, accesos cruzados y cabeceras | Resuelve el hallazgo de seguridad 1 de G.3.2. Detalle en H.1. |
+| 2026-11-12 02:38 | Llaves por defecto fuera del repositorio y AES con la llave configurada | Completado | `d1e167cd` | `dotnet test` 160/160, `ms test` 11/11; arranque en Production rechazado sin llaves propias y aceptado con ellas | Resuelve los hallazgos de seguridad 3 y 4 de G.3.2. |
+| 2026-11-12 17:39 | Dependencias: zod 4, Vitest 5 y `@hookform/resolvers` 7 | Completado | `a9945065` | `npm audit` 0 en frontend (antes 15) y en microservicios (antes 1); `vitest` 78/78, `ms test` 11/11 | Cierra el pendiente G.5.3. |
+| 2026-11-12 17:39 | Calendario: nombre de la sede en lugar de "Sede #1" | Completado | `5ff3423c` | `dotnet test` 161/161, `vitest` 78/78 | Hallazgo funcional 3 de G.3.2. |
+| 2026-11-12 19:57 | Logotipo propio en login, menú lateral y favicon | Completado | `4a789470` | `vitest` 88/88 con `LoginPage.test.tsx` | Hallazgo funcional 1 de G.3.2. |
+| 2026-11-12 19:57 | Membresías del contador sin el 403 de sedes | Completado | `1ceb032b` | `vitest` 88/88 con `useUsersViewModel.test.ts` | Hallazgo funcional 2 de G.3.2. |
+| 2026-11-12 19:57 | Formulario de entrenamientos con sede y entrenador responsable | Completado | `999a3697` | `dotnet test` 174/174 (13 casos nuevos), `vitest` 88/88 | Hallazgo funcional 4 de G.3.2. Decisión en H.2. |
+| 2026-11-12 | Prueba en navegador de toda la tarea (copia temporal, base `sportify_e2e`) | Completado | Sin commit | Comprobantes 19/19 pasos, recorrido 30 rutas sin errores, administrador 26/26, roles 41/41, arreglos 18/18 | Detalle en H.3. |
 
 ### Estado operativo al 2026-11-07 (histórico; el estado vigente está en la Sección G)
 - **Última tarea iniciada**: Optimización integral UX/UI centrada por rol y confort de carga asíncrona
@@ -640,7 +648,7 @@ Se conserva intacta la nomenclatura original de ambas fuentes (`VID1-*`, `VID2-*
 
 ## G. Actualización del 10 y 11 de noviembre de 2026
 
-Esta sección registra el trabajo posterior al 2026-11-07 y es el estado vigente del proyecto. El código descrito corresponde al commit `e8023b9b`; este documento se registra en el commit siguiente.
+Esta sección registra el trabajo posterior al 2026-11-07. Fue el estado vigente hasta el 2026-11-11; lo resuelto después y el estado actual están en la Sección H. El código descrito corresponde al commit `e8023b9b`.
 
 ### G.1 Lista de 17 consejos de seguridad y calidad
 
@@ -741,7 +749,7 @@ Se ejecutó con Chromium automatizado, desde una copia temporal del proyecto y c
 7. **Decisiones de producto abiertas**: `DEC-004` (sede/grupo), `DEC-005`, `DEC-006`, `DEC-007`, `DEC-008`, `DEC-010` y el envío por WhatsApp (`DEC-001`).
 8. **Publicación**: hay 25 commits locales sin subir a `origin/Requerimientos_en_Automatico`, contando el de este documento; no se ha hecho `git push`.
 
-### G.6 Estado operativo vigente
+### G.6 Estado operativo al 2026-11-11 (histórico; el vigente está en H.6)
 
 - **Rama**: `Requerimientos_en_Automatico`. **Código**: `e8023b9b`. Árbol de trabajo limpio.
 - **Balance de pruebas automatizadas (186 en verde)**:
@@ -750,3 +758,84 @@ Se ejecutó con Chromium automatizado, desde una copia temporal del proyecto y c
   - **Microservicios (Node / TypeScript)**: `tsc --noEmit` 0 errores · `npm run test` **9/9**.
 - **Prueba en navegador**: regresión completa sobre `e8023b9b` sin errores en el log de la API.
 - **Lección registrada**: las suites estaban en verde mientras cuatro flujos principales estaban rotos, porque los dobles de prueba reproducían un contrato que la API no cumple. Las pruebas nuevas usan el contrato real y conviene repetir la prueba en navegador tras cada cambio de contrato.
+
+---
+
+## H. Actualización del 12 de noviembre de 2026
+
+Pedido del responsable del producto: "Los comprobantes sí o sí los debe poder visualizar el contador, admin y el miembro que lo envía. Revisa lo de las llaves por defecto en el repositorio; si es algo delicado, soluciónalo. Corrige las vulnerabilidades de las dependencias. Y los fallos menores como el logo roto del login, menú, y sede 1 en el calendario." Al retomar la tarea pidió además incluir la decisión y la solución de los fallos menores.
+
+Esta sección es el estado vigente. El código corresponde al commit `999a3697`; este documento y la guía de pruebas se registran en el commit siguiente.
+
+### H.1 Commits y hallazgos que resuelven
+
+| Commit | Cambio | Hallazgo resuelto |
+| :-- | :-- | :-- |
+| `1ba36b07` | ADMIN y CONTADOR ven cualquier comprobante y el MIEMBRO solo los de sus pagos, siempre con sesión. Los archivos pasan de `wwwroot` a `App_Data/comprobantes` y la API ya no sirve archivos estáticos. Visor con `<dialog>` nativo en los tres roles. | Seguridad 1 (G.3.2) |
+| `d1e167cd` | `appsettings.json` ya no trae llaves; las de desarrollo quedan solo en `appsettings.Development.json`. Fuera de Development la API no arranca si `JwtSettings:Secret` o `EncryptionSettings:MasterKey` faltan, son cortas o son valores publicados. AES usa la llave configurada; la llave fija anterior solo descifra filas viejas. | Seguridad 3 y 4 (G.3.2) |
+| `a9945065` | zod 4.6.7, Vitest 5.1.0, `@hookform/resolvers` 7 y `react-hook-form` 7.92. `npm audit` queda en 0 en frontend y microservicios. | Pendiente G.5.3 |
+| `5ff3423c` | La API entrega `SedeNombre` y el calendario lo muestra; si falta, "Sede por confirmar". | Funcional 3 (G.3.2) |
+| `4a789470` | Logotipo propio en `src/assets/sportify-logo.svg`, importado desde el código en el login y el menú lateral y usado como favicon. | Funcional 1 (G.3.2) |
+| `1ceb032b` | `useUsersViewModel` pide las sedes solo para el ADMIN; el contador abre Membresías sin el 403. | Funcional 2 (G.3.2) |
+| `999a3697` | El formulario de entrenamientos pide la sede y el entrenador responsable (H.2). | Funcional 4 (G.3.2) |
+| (siguiente) | Este plan y `docs/ciclo-vida/02_test.md` pasan a Vitest 5. | Funcional 9 (G.3.2), salvo el README |
+
+### H.2 Decisión y solución de los fallos menores
+
+**Logotipo.** No existía `frontend/public`, así que `/vite.svg` daba 404 en el login, el menú y el favicon. Se creó un logotipo propio en `src/assets` y se importa desde el código: si el archivo falta, la compilación falla en lugar de publicar una imagen rota. Las imágenes declaran `width` y `height` para no mover el diseño al cargar.
+
+**"Sede #1" en el calendario.** El calendario armaba el lugar con el identificador interno. Ahora la API envía el nombre de la sede.
+
+**403 del contador en Membresías.** La pantalla reutiliza el directorio de usuarios, que también pedía las sedes, y `/api/locations` es solo del ADMIN. Se decidió no abrir ese permiso: el contador no necesita las sedes en esa vista, así que el frontend ya no las pide para él.
+
+**Sede y entrenador en el formulario de entrenamientos.** Antes cada sesión se guardaba con la sede 1 y con el usuario conectado como entrenador, también cuando era el ADMIN. Decisión: incorporarlo a esta tarea, con estas reglas:
+1. Nuevo `GET /api/trainings/form-options` (ADMIN y ENTRENADOR) con solo `id` y `nombre` de las sedes activas y de los entrenadores activos. No se reutiliza `/api/locations` porque es solo del ADMIN y además expone direcciones y teléfonos.
+2. El ENTRENADOR siempre crea a su nombre: el servidor toma el id del token, no el del cuerpo. Solo el ADMIN elige o cambia el responsable.
+3. El servidor valida que la sede exista y esté activa y que el responsable sea un usuario activo con rol ENTRENADOR. Si no, responde 400 con un mensaje en español.
+4. Al editar, la sede o el responsable que no cambian no se vuelven a validar. Así, las sesiones antiguas conservan los suyos, y el formulario los muestra con la nota "(inactiva)" o "(ya no es entrenador activo)".
+5. Formulario: selectores obligatorios con la primera opción vacía y deshabilitada, mensaje de error con icono y texto junto a cada campo, y una columna "Sede y entrenador" en el listado. Si las opciones no cargan, el formulario lo dice y ofrece reintentar.
+
+**Para revisar:**
+- El entrenador puede editar cualquier sesión, como antes, y cambiarle la sede, pero no reasignarla.
+- Las sesiones que el ADMIN creó antes de este cambio lo muestran a él como entrenador. Se corrigen editándolas.
+- En el selector cerrado, una nota larga como "Pedro Coach (ya no es entrenador activo)" se corta; se lee completa al abrirlo.
+- Otras decisiones de esta tarea: un pago ajeno responde 404 y no 403, para no revelar que existe. El entrenador no ve comprobantes (403). Las llaves de desarrollo publicadas solo se aceptan en Development, y la API lo avisa en el log.
+
+### H.3 Prueba en navegador (2026-11-12)
+
+Se hizo con Chromium automatizado, desde una copia temporal del proyecto, contra una base nueva `sportify_e2e`. La base `sportify_db` no se tocó.
+
+| Recorrido | Resultado |
+| :-- | :-- |
+| Comprobantes (base nueva) | 19/19 pasos. El miembro titular, el contador y el admin ven el PNG y el PDF. Otro miembro recibe 404, el entrenador 403, y sin sesión o con token falso, 401. Cabeceras `nosniff`, `no-store`, `frame-ancestors 'none'` y `X-Frame-Options: DENY`. Las rutas estáticas antiguas responden 404. |
+| Recorrido de pantallas (4 roles) | 30 rutas sin respuestas 4xx/5xx, errores de consola ni peticiones fallidas. Incluye Membresías del contador. |
+| Flujo del administrador | 26/26 pasos. |
+| Flujos de miembro, contador, entrenador y autenticación | 41/41 pasos. |
+| Arreglos de esta tarea | 18/18 pasos. Logotipos cargados (login 28×28, menú 20×20) y favicon 200. Correo inválido explicado junto al campo sin llamar a la API. El servidor rechaza sede inexistente, miembro o entrenador inactivo como responsable, y sede o entrenador sin elegir. Crear, editar y recargar conservan sede y entrenador. Una sesión con entrenador ya inactivo lo conserva al editar otro dato. El calendario no muestra "Sede #". El entrenador no puede asignar ni reasignar a otro. El miembro recibe 403 en las opciones. Membresías del contador sin errores, y el ingreso manual valida y registra. |
+
+**Hallazgos nuevos sin corregir:**
+1. **Fechas en UTC**: los nombres de los reportes descargados (pagos, sedes, directorio y desempeño) y la fecha de inicio por defecto al asignar una membresía usan `toISOString()`. Después de las 7 p. m. (UTC-5) muestran el día siguiente. Archivos: `paymentService.ts`, `locationService.ts`, `useUsersViewModel.ts`, `useCoachViewModel.ts` y `MembershipsPage.tsx`. También la fecha de registro de los pagos y de las inscripciones hechos esa noche se vio como 13/11/2026; no se revisó si la causa está en la API o en la pantalla.
+2. El hallazgo funcional 8 de G.3.2 se repitió: el archivo de 6 MB recibe un corte de conexión en lugar de un 400.
+
+### H.4 Pendientes
+
+1. **Antes del próximo despliegue en Render**: el servicio debe tener `JwtSettings__Secret` y `EncryptionSettings__MasterKey`; sin ellas, la API no arranca.
+2. **Seguridad**: la validación CSRF no es obligatoria; el PIN de recuperación no se entrega (depende del correo con Firebase); Scalar queda abierta en Development.
+3. **Funcionales**: el texto "Plan Plan Básico"; `Migrate()` falla sin avisar en MariaDB; datos fijos en `microservicio2`; corte de conexión con más de 6 MB; fechas en UTC (H.3); `README.md` desactualizado.
+4. **Docker**: construir y levantar las imágenes según la guía.
+5. **CI**: Vitest 5 necesita Node `^22.12` o `>=24`; el workflow usa Node 22 y debe resolver una versión 22.12 o superior.
+6. Recuperación de contraseña por correo (Firebase), conjunto de datos de prueba y decisiones de producto abiertas (`DEC-001`, `DEC-004` a `DEC-008` y `DEC-010`).
+7. **Publicación**: hay 8 commits locales sin subir, contando el de este documento; no se ha hecho `git push`.
+
+### H.5 Evidencias
+
+Fuera del repositorio, en `PROYECTO\Evidencias_Prueba_Navegador_2026-11-12\`: capturas, registros por rol (los tokens de prueba se cambiaron por `[JWT eliminado]`) y los scripts del recorrido, entre ellos `12-fixes.mjs` y `13-form-visual.mjs`.
+
+### H.6 Estado operativo vigente
+
+- **Rama**: `Requerimientos_en_Automatico`. **Código**: `999a3697`. Árbol de trabajo limpio tras el commit de este documento.
+- **Balance de pruebas automatizadas (273 en verde)**:
+  - **Backend (.NET 10 / xUnit)**: `dotnet test` **174/174**. NuGet sin paquetes vulnerables.
+  - **Frontend (React 19 / Vitest 5)**: `tsc --noEmit` 0 errores · `vitest run` **88/88** (19 archivos) · `eslint` 0 errores y 109 advertencias por `any` · `vite build` correcto (JS de 1.141,78 kB) · cobertura correcta · `npm audit` 0.
+  - **Microservicios (Node / TypeScript)**: `tsc --noEmit` 0 errores · `npm run test` **11/11** · `npm audit` 0.
+- **Prueba en navegador**: H.3, sin fallos.
